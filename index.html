@@ -123,6 +123,9 @@
     .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(124,58,237,0.45); }
     .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
     .form-notice { text-align: center; color: var(--gray); font-size: 0.82rem; margin-top: 14px; }
+    .presta-tag { display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); color: var(--violet); font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 50px; }
+    .presta-tag button { background: none; border: none; cursor: pointer; color: var(--violet); opacity: 0.6; font-size: 0.9rem; padding: 0; line-height: 1; }
+    .presta-tag button:hover { opacity: 1; color: var(--red); }
 
     /* INSTAGRAM */
     .instagram-section { padding: 90px 24px; background: white; }
@@ -269,16 +272,19 @@
           <input type="tel" id="f-tel" placeholder="06 XX XX XX XX" required />
         </div>
         <div class="form-group full">
-          <label>Prestation souhaitée *</label>
-          <select id="f-service" required>
+          <label>Prestation(s) souhaitée(s) *</label>
+          <div id="selectedTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:0"></div>
+          <select id="f-service" onchange="addPrestation(this)">
             <option value="">-- Choisir une prestation --</option>
           </select>
+          <p style="font-size:0.78rem;color:var(--gray);margin-top:6px">Vous pouvez choisir plusieurs prestations</p>
         </div>
       </div>
       <input type="hidden" id="f-date" />
       <input type="hidden" id="f-creneau" />
       <button type="submit" class="btn-submit" id="submitBtn">Envoyer ma demande ✨</button>
       <p class="form-notice">Je vous recontacte rapidement pour confirmer votre créneau. ⭐</p>
+      <p class="form-notice" style="margin-top:10px;border-top:1px solid #F3F4F6;padding-top:12px">Pour toute autre demande, contactez-moi sur Instagram&nbsp;→&nbsp;<a href="https://www.instagram.com/l.instant_k" target="_blank" style="color:var(--violet);font-weight:700">@l.instant_k</a></p>
     </form>
   </div>
 </section>
@@ -543,11 +549,41 @@ function selectSlot(dateStr, slot, label) {
   }, 200);
 }
 
+/* ══ MULTI-PRESTATIONS ══ */
+let selectedPrestations = [];
+
+function addPrestation(sel) {
+  const val = sel.value;
+  sel.value = '';
+  if (!val) return;
+  if (selectedPrestations.length >= 2) {
+    alert('Maximum 2 prestations par rendez-vous.');
+    return;
+  }
+  if (!selectedPrestations.includes(val)) {
+    selectedPrestations.push(val);
+    renderTags();
+  }
+}
+
+function removePrestation(i) {
+  selectedPrestations.splice(i, 1);
+  renderTags();
+}
+
+function renderTags() {
+  const container = document.getElementById('selectedTags');
+  container.innerHTML = selectedPrestations.map((p, i) =>
+    `<div class="presta-tag">${p}<button type="button" onclick="removePrestation(${i})">✕</button></div>`
+  ).join('');
+}
+
 /* ══ FORMULAIRE ══ */
 document.getElementById('rdvForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const creneau = document.getElementById('f-creneau').value;
   if (!creneau) { alert('Veuillez choisir un créneau dans le calendrier ci-dessus.'); return; }
+  if (selectedPrestations.length === 0) { alert('Veuillez choisir au moins une prestation.'); return; }
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = 'Envoi en cours...';
@@ -565,13 +601,15 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
         prenom: document.getElementById('f-prenom').value.trim(),
         nom: document.getElementById('f-nom').value.trim(),
         telephone: document.getElementById('f-tel').value.trim(),
-        prestation: document.getElementById('f-service').value,
+        prestation: selectedPrestations.join(' + '),
         date: dateLabel,
         date_str: dateVal,
         creneau: creneau
       })
     });
     this.reset();
+    selectedPrestations = [];
+    renderTags();
     document.getElementById('f-date').value = '';
     document.getElementById('f-creneau').value = '';
     document.getElementById('formRecap').classList.remove('show');
