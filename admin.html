@@ -115,6 +115,22 @@
     .cal-cell.has-slots .cal-cell-label { color: var(--violet); }
     .cal-cell.blocked .cal-cell-label { color: var(--red); }
 
+    /* MODÈLE SEMAINE */
+    .week-template { background: white; border-radius: 20px; padding: 24px 28px; border: 1px solid #EDE9FE; margin-bottom: 24px; }
+    .week-template-title { font-size: 1rem; font-weight: 800; margin-bottom: 4px; }
+    .week-template-sub { font-size: 0.83rem; color: var(--gray); margin-bottom: 18px; }
+    .week-cols { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 18px; }
+    .week-col { display: flex; flex-direction: column; gap: 5px; }
+    .week-col-header { text-align: center; font-size: 0.72rem; font-weight: 800; color: var(--gray); text-transform: uppercase; padding: 6px 0; border-bottom: 2px solid #EDE9FE; margin-bottom: 4px; }
+    .week-slot-btn { padding: 5px 4px; border-radius: 8px; border: 1.5px solid #E5E7EB; background: white; color: var(--gray); font-size: 0.72rem; font-weight: 600; cursor: pointer; text-align: center; transition: all .15s; }
+    .week-slot-btn.active { background: var(--violet); border-color: var(--violet); color: white; }
+    .week-slot-btn:hover:not(.active) { border-color: var(--violet); color: var(--violet); }
+    .week-template-footer { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .btn-apply-template { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 11px 26px; border-radius: 50px; font-weight: 700; font-size: 0.88rem; cursor: pointer; }
+    .btn-clear-template { background: transparent; border: 2px solid #E5E7EB; color: var(--gray); padding: 9px 20px; border-radius: 50px; font-size: 0.83rem; font-weight: 600; cursor: pointer; }
+    .btn-clear-template:hover { border-color: var(--red); color: var(--red); }
+    .template-note { font-size: 0.78rem; color: var(--gray); font-style: italic; }
+
     /* DAY PANEL */
     .day-panel { background: white; border-radius: 20px; padding: 28px; border: 2px solid #EDE9FE; margin-top: 8px; }
     .day-panel-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; text-transform: capitalize; }
@@ -236,6 +252,18 @@
     <div id="page-dispo" class="page">
       <div class="page-title">Disponibilités</div>
       <div class="page-sub">Cliquez sur un jour pour gérer vos créneaux — puis cliquez <strong>Enregistrer</strong></div>
+
+      <!-- MODÈLE DE SEMAINE -->
+      <div class="week-template">
+        <div class="week-template-title">⚡ Modèle de semaine</div>
+        <div class="week-template-sub">Cochez vos créneaux habituels par jour — puis cliquez "Appliquer" pour les ajouter au mois affiché. Ce qui est déjà enregistré ne sera pas effacé.</div>
+        <div class="week-cols" id="weekCols"></div>
+        <div class="week-template-footer">
+          <button class="btn-apply-template" onclick="applyTemplate()">▶ Appliquer au mois affiché</button>
+          <button class="btn-clear-template" onclick="clearTemplate()">Tout décocher</button>
+          <span class="template-note">Seuls les jours non bloqués sont modifiés</span>
+        </div>
+      </div>
 
       <div class="cal-nav">
         <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
@@ -446,11 +474,65 @@ function renderStats() {
   chart.innerHTML = sorted.map(([name,count]) => `<div class="bar-row"><div class="bar-name" title="${name}">${name}</div><div class="bar-track"><div class="bar-fill" style="width:${count/max*100}%"></div></div><div class="bar-val">${count}</div></div>`).join('');
 }
 
+/* ══ MODÈLE DE SEMAINE ══ */
+const WEEK_DAYS = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+const PRESET_SLOTS = ['8h00','11h00','14h00','17h00'];
+// weekTemplate[0] = slots du lundi, ..., [6] = dimanche
+let weekTemplate = WEEK_DAYS.map(() => []);
+
+function buildWeekCols() {
+  const container = document.getElementById('weekCols');
+  container.innerHTML = WEEK_DAYS.map((day, di) => `
+    <div class="week-col">
+      <div class="week-col-header">${day}</div>
+      ${PRESET_SLOTS.map(s => `<button class="week-slot-btn${weekTemplate[di].includes(s)?' active':''}" onclick="toggleWeekSlot(${di},'${s}')">${s}</button>`).join('')}
+    </div>
+  `).join('');
+}
+
+function toggleWeekSlot(di, slot) {
+  const idx = weekTemplate[di].indexOf(slot);
+  if (idx >= 0) weekTemplate[di].splice(idx, 1);
+  else weekTemplate[di].push(slot);
+  buildWeekCols();
+}
+
+function clearTemplate() {
+  weekTemplate = WEEK_DAYS.map(() => []);
+  buildWeekCols();
+}
+
+function applyTemplate() {
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  let changed = false;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const jsDay = new Date(calYear, calMonth, d).getDay(); // 0=dim
+    const di = jsDay === 0 ? 6 : jsDay - 1; // 0=lun ... 6=dim
+    const templateSlots = weekTemplate[di];
+    if (!templateSlots.length) continue;
+    // skip jours bloqués
+    if (dispo[dateStr] && dispo[dateStr][0] === '__blocked__') continue;
+    if (!dispo[dateStr]) dispo[dateStr] = [];
+    templateSlots.forEach(s => {
+      if (!dispo[dateStr].includes(s)) { dispo[dateStr].push(s); changed = true; }
+    });
+  }
+  if (changed) {
+    renderCal();
+    document.getElementById('saveBarDispo').style.display = 'flex';
+    alert('✅ Modèle appliqué au mois de ' + MOIS[calMonth] + ' ! Pensez à cliquer Enregistrer.');
+  } else {
+    alert('Aucun changement — soit le modèle est vide, soit les créneaux sont déjà tous présents.');
+  }
+}
+
 /* ══ CALENDRIER DISPO ══ */
 function initCal() {
   const now = new Date();
   calYear = now.getFullYear();
   calMonth = now.getMonth();
+  buildWeekCols();
 }
 
 function changeMonth(dir) {
