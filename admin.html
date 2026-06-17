@@ -131,6 +131,18 @@
     .btn-clear-template:hover { border-color: var(--red); color: var(--red); }
     .template-note { font-size: 0.78rem; color: var(--gray); font-style: italic; }
 
+    /* MULTI-SELECT */
+    .multiselect-bar { background: var(--dark); color: white; border-radius: 16px; padding: 14px 20px; margin-bottom: 16px; display: none; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .multiselect-bar.active { display: flex; }
+    .multiselect-info { font-size: 0.88rem; font-weight: 600; }
+    .multiselect-btns { display: flex; gap: 10px; }
+    .btn-multi-block { background: var(--red); color: white; border: none; padding: 9px 20px; border-radius: 50px; font-size: 0.83rem; font-weight: 700; cursor: pointer; }
+    .btn-multi-unblock { background: var(--green); color: white; border: none; padding: 9px 20px; border-radius: 50px; font-size: 0.83rem; font-weight: 700; cursor: pointer; }
+    .btn-multi-cancel { background: transparent; border: 2px solid rgba(255,255,255,0.3); color: white; padding: 7px 16px; border-radius: 50px; font-size: 0.83rem; font-weight: 600; cursor: pointer; }
+    .cal-cell.multi-selected { outline: 3px solid var(--violet); outline-offset: 2px; }
+    .btn-toggle-multi { background: transparent; border: 2px solid #C4B5FD; color: var(--violet); padding: 8px 20px; border-radius: 50px; font-size: 0.83rem; font-weight: 700; cursor: pointer; margin-bottom: 16px; transition: all .2s; }
+    .btn-toggle-multi.active { background: var(--violet); color: white; border-color: var(--violet); }
+
     /* DAY PANEL */
     .day-panel { background: white; border-radius: 20px; padding: 28px; border: 2px solid #EDE9FE; margin-top: 8px; }
     .day-panel-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; text-transform: capitalize; }
@@ -262,6 +274,16 @@
           <button class="btn-apply-template" onclick="applyTemplate()">▶ Appliquer au mois affiché</button>
           <button class="btn-clear-template" onclick="clearTemplate()">Tout décocher</button>
           <span class="template-note">Seuls les jours non bloqués sont modifiés</span>
+        </div>
+      </div>
+
+      <button class="btn-toggle-multi" id="btnToggleMulti" onclick="toggleMultiMode()">☑ Sélectionner plusieurs jours</button>
+      <div class="multiselect-bar" id="multiselectBar">
+        <span class="multiselect-info" id="multiInfo">0 jour sélectionné</span>
+        <div class="multiselect-btns">
+          <button class="btn-multi-block" onclick="multiBlock()">🚫 Bloquer</button>
+          <button class="btn-multi-unblock" onclick="multiUnblock()">✅ Débloquer</button>
+          <button class="btn-multi-cancel" onclick="cancelMulti()">Annuler</button>
         </div>
       </div>
 
@@ -527,6 +549,47 @@ function applyTemplate() {
   }
 }
 
+/* ══ MULTI-SELECT ══ */
+let multiMode = false;
+let multiSelected = new Set();
+
+function toggleMultiMode() {
+  multiMode = !multiMode;
+  multiSelected.clear();
+  document.getElementById('btnToggleMulti').classList.toggle('active', multiMode);
+  document.getElementById('multiselectBar').classList.toggle('active', multiMode);
+  document.getElementById('dayPanel').style.display = 'none';
+  selectedDate = null;
+  renderCal();
+}
+
+function cancelMulti() {
+  multiMode = false;
+  multiSelected.clear();
+  document.getElementById('btnToggleMulti').classList.remove('active');
+  document.getElementById('multiselectBar').classList.remove('active');
+  renderCal();
+}
+
+function updateMultiInfo() {
+  const n = multiSelected.size;
+  document.getElementById('multiInfo').textContent = n + ' jour' + (n > 1 ? 's' : '') + ' sélectionné' + (n > 1 ? 's' : '');
+}
+
+function multiBlock() {
+  if (!multiSelected.size) return;
+  multiSelected.forEach(dateStr => { dispo[dateStr] = ['__blocked__']; });
+  cancelMulti();
+  renderCal();
+}
+
+function multiUnblock() {
+  if (!multiSelected.size) return;
+  multiSelected.forEach(dateStr => { delete dispo[dateStr]; });
+  cancelMulti();
+  renderCal();
+}
+
 /* ══ CALENDRIER DISPO ══ */
 function initCal() {
   const now = new Date();
@@ -580,9 +643,15 @@ function renderCal() {
 
     const labelTxt = isBlocked ? 'Bloqué' : hasSlots ? slots.length + ' cr.' : '';
     cell.innerHTML = `<div class="cal-cell-num">${d}</div>${labelTxt ? `<div class="cal-cell-label">${labelTxt}</div>` : ''}`;
-    if (!isPast) cell.onclick = () => selectDay(dateStr);
+    if (!isPast) cell.onclick = () => multiMode ? toggleMultiDay(dateStr, cell) : selectDay(dateStr);
     grid.appendChild(cell);
   }
+}
+
+function toggleMultiDay(dateStr, cell) {
+  if (multiSelected.has(dateStr)) { multiSelected.delete(dateStr); cell.classList.remove('multi-selected'); }
+  else { multiSelected.add(dateStr); cell.classList.add('multi-selected'); }
+  updateMultiInfo();
 }
 
 function selectDay(dateStr) {
