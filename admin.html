@@ -3,585 +3,651 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#8b5e8f" />
-  <title>RDV Beauté — Espace pro</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <title>Admin – L'Instant K</title>
+  <script src="config.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: #fdf6f0;
-      color: #2d2d2d;
-      min-height: 100vh;
+    :root {
+      --violet: #7C3AED; --violet-dark: #5B21B6; --violet-pale: #EDE9FE;
+      --pink: #EC4899; --pink-pale: #FCE7F3; --dark: #1E1B4B; --gray: #6B7280;
+      --bg: #FAF5FF; --green: #10B981; --red: #EF4444; --orange: #F59E0B;
     }
-    .wrap { max-width: 720px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
-
-    /* HEADER */
-    .header {
-      background: linear-gradient(135deg, #c9a0dc 0%, #f4a7b9 60%, #ffd6c0 100%);
-      padding: 28px 20px 18px;
-      flex-shrink: 0;
-    }
-    .header-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: white;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.12);
-    }
-    .header-sub { font-size: 0.75rem; color: rgba(255,255,255,0.85); margin-top: 2px; }
-    .logout-btn {
-      position: absolute; top: 28px; right: 20px;
-      background: rgba(255,255,255,0.25); border: none; color: white;
-      padding: 6px 12px; border-radius: 20px; font-size: 0.72rem; cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--dark); }
 
     /* LOGIN */
-    .login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .login-box { background: white; border-radius: 18px; padding: 32px 26px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); width: 100%; max-width: 340px; text-align: center; }
-    .login-emoji { font-size: 2.4rem; margin-bottom: 6px; }
-    .login-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: #8b5e8f; margin-bottom: 18px; }
-    .login-input {
-      width: 100%; padding: 12px 14px; border-radius: 10px; border: 2px solid #eee;
-      font-size: 1rem; text-align: center; outline: none; margin-bottom: 12px;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .login-input:focus { border-color: #c9a0dc; }
-    .login-error { color: #d65d5d; font-size: 0.78rem; margin-bottom: 10px; min-height: 16px; }
-    .login-btn {
-      width: 100%; padding: 12px; border-radius: 30px; border: none;
-      background: linear-gradient(135deg, #c9a0dc, #f4a7b9); color: white;
-      font-weight: 600; font-size: 0.92rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
-    }
+    #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1E1B4B, #4C1D95, #831843); }
+    .login-card { background: white; border-radius: 28px; padding: 52px 44px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.35); }
+    .login-logo { font-size: 2.2rem; font-weight: 900; background: linear-gradient(135deg, var(--violet), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+    .login-sub { color: var(--gray); font-size: 0.88rem; margin-bottom: 36px; }
+    .login-card input { width: 100%; padding: 14px 18px; border: 2px solid #E5E7EB; border-radius: 14px; font-size: 1rem; margin-bottom: 14px; color: var(--dark); }
+    .login-card input:focus { outline: none; border-color: var(--violet); }
+    .login-card button { width: 100%; background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 15px; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .login-error { color: var(--red); font-size: 0.82rem; margin-top: 12px; display: none; }
 
-    /* TABS */
-    .tabs { display: flex; gap: 6px; padding: 14px 16px 0; flex-shrink: 0; }
-    .tab {
-      flex: 1; text-align: center; padding: 10px 6px; border-radius: 12px;
-      font-size: 0.78rem; font-weight: 500; color: #b89bb8; background: white;
-      cursor: pointer; border: 2px solid transparent; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
-    }
-    .tab.active { color: white; background: linear-gradient(135deg, #c9a0dc, #f4a7b9); border-color: transparent; }
+    /* LAYOUT */
+    #adminUI { display: none; }
+    .topbar { background: white; height: 64px; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(124,58,237,0.08); position: sticky; top: 0; z-index: 50; }
+    .topbar-logo { font-size: 1.25rem; font-weight: 900; background: linear-gradient(135deg,var(--violet),var(--pink)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .topbar-right { display: flex; gap: 10px; align-items: center; }
+    .topbar a { color: var(--gray); font-size: 0.83rem; text-decoration: none; }
+    .topbar a:hover { color: var(--violet); }
+    .btn-sm { padding: 8px 18px; border-radius: 50px; font-size: 0.83rem; font-weight: 600; cursor: pointer; border: none; }
+    .btn-outline { background: transparent; border: 2px solid #E5E7EB; color: var(--dark); }
+    .btn-outline:hover { border-color: var(--violet); color: var(--violet); }
+    .tab-nav { background: white; border-bottom: 2px solid #EDE9FE; display: flex; overflow-x: auto; }
+    .tab-nav-btn { padding: 16px 24px; border: none; background: transparent; font-size: 0.9rem; font-weight: 600; color: var(--gray); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .2s; white-space: nowrap; }
+    .tab-nav-btn.active { color: var(--violet); border-bottom-color: var(--violet); }
+    .tab-nav-btn:hover { color: var(--violet); }
+    main { max-width: 1200px; margin: 0 auto; padding: 36px 24px 120px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-title { font-size: 1.5rem; font-weight: 900; margin-bottom: 8px; }
+    .page-sub { color: var(--gray); font-size: 0.88rem; margin-bottom: 28px; }
 
-    .content { flex: 1; overflow-y: auto; padding: 16px; }
+    /* STATS */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-box { background: white; border-radius: 20px; padding: 28px 22px; text-align: center; border: 1px solid #EDE9FE; }
+    .stat-emoji { font-size: 1.8rem; margin-bottom: 10px; }
+    .stat-num { font-size: 2.6rem; font-weight: 900; line-height: 1; margin-bottom: 6px; }
+    .stat-label { font-size: 0.82rem; color: var(--gray); font-weight: 500; }
+    .c-violet { background: linear-gradient(135deg,var(--violet),#A855F7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .c-green  { background: linear-gradient(135deg,var(--green),#34D399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .c-orange { background: linear-gradient(135deg,var(--orange),#FCD34D); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .c-red    { background: linear-gradient(135deg,var(--red),#F87171); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .chart-box { background: white; border-radius: 20px; padding: 28px; border: 1px solid #EDE9FE; }
+    .chart-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 22px; }
+    .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .bar-name { font-size: 0.78rem; color: var(--dark); width: 200px; min-width: 200px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-track { flex: 1; background: var(--violet-pale); border-radius: 50px; height: 9px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 50px; background: linear-gradient(135deg, var(--violet), var(--pink)); transition: width .7s ease; }
+    .bar-val { font-size: 0.8rem; font-weight: 800; color: var(--violet); min-width: 24px; }
 
-    .section-title { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 600; color: #8b5e8f; margin-bottom: 12px; }
-    .empty-msg { color: #bbb; font-size: 0.85rem; text-align: center; padding: 30px 10px; }
+    /* RDV */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; align-items: center; }
+    .filter-chip { padding: 8px 18px; border-radius: 50px; border: 2px solid #E5E7EB; background: white; color: var(--gray); font-size: 0.83rem; font-weight: 600; cursor: pointer; }
+    .filter-chip.active { background: var(--violet); border-color: var(--violet); color: white; }
+    .refresh { margin-left: auto; padding: 8px 18px; border-radius: 50px; border: 2px solid var(--violet); color: var(--violet); background: white; font-size: 0.83rem; font-weight: 600; cursor: pointer; }
+    .refresh:hover { background: var(--violet-pale); }
+    .rdv-list { display: flex; flex-direction: column; gap: 12px; }
+    .rdv-card { background: white; border-radius: 18px; padding: 20px 24px; border: 1px solid #EDE9FE; border-left: 4px solid #E5E7EB; display: grid; grid-template-columns: auto 1fr auto auto; gap: 16px; align-items: center; transition: box-shadow .2s; }
+    .rdv-card:hover { box-shadow: 0 4px 20px rgba(124,58,237,0.1); }
+    .rdv-card.attente { border-left-color: var(--orange); }
+    .rdv-card.accepte { border-left-color: var(--green); }
+    .rdv-card.refuse  { border-left-color: var(--red); opacity: 0.6; }
+    .rdv-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; color: var(--violet); }
+    .rdv-info .rdv-name { font-weight: 800; font-size: 1rem; }
+    .rdv-info .rdv-prestation { font-size: 0.83rem; color: var(--gray); margin-top: 2px; }
+    .rdv-info .rdv-meta { font-size: 0.78rem; color: #9CA3AF; margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .rdv-status-badge { padding: 5px 14px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+    .badge-attente { background: #FEF3C7; color: #92400E; }
+    .badge-accepte { background: #D1FAE5; color: #065F46; }
+    .badge-refuse  { background: #FEE2E2; color: #991B1B; }
+    .rdv-actions { display: flex; gap: 8px; }
+    .btn-accept { background: var(--green); color: white; border: none; padding: 8px 16px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .btn-accept:hover { opacity: 0.85; }
+    .btn-refuse { background: white; color: var(--red); border: 2px solid #FECACA; padding: 7px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .btn-refuse:hover { background: #FEF2F2; }
+    .empty-msg { text-align: center; padding: 60px; color: var(--gray); font-size: 0.95rem; }
+    .loading-msg { text-align: center; padding: 60px; color: var(--gray); }
+    .spinner { width: 32px; height: 32px; border: 3px solid #EDE9FE; border-top-color: var(--violet); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* RDV CARDS */
-    .rdv-card { background: white; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 8px rgba(0,0,0,0.05); border-left: 4px solid #e0c8f0; }
-    .rdv-card.confirme { border-left-color: #7fc28a; }
-    .rdv-card.annule { border-left-color: #e08a8a; opacity: 0.6; }
-    .rdv-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-    .rdv-name { font-weight: 600; font-size: 0.95rem; }
-    .rdv-when { font-size: 0.8rem; color: #9b59b6; font-weight: 500; }
-    .rdv-detail { font-size: 0.82rem; color: #777; margin-bottom: 2px; }
-    .rdv-statut {
-      font-size: 0.65rem; padding: 3px 9px; border-radius: 20px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
-    }
-    .rdv-statut.en_attente { background: #fff3cd; color: #8a6d00; }
-    .rdv-statut.confirme { background: #e1f5e4; color: #2e7d4f; }
-    .rdv-statut.annule { background: #fde2e2; color: #b03939; }
-    .rdv-actions { display: flex; gap: 7px; margin-top: 10px; }
-    .rdv-actions button {
-      flex: 1; padding: 7px; border-radius: 20px; border: none; font-size: 0.75rem;
-      font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif;
-    }
-    .btn-valider { background: #e1f5e4; color: #2e7d4f; }
-    .btn-annuler { background: #fde2e2; color: #b03939; }
-    .btn-suppr { background: #f0f0f0; color: #888; }
+    /* CALENDRIER ADMIN */
+    .cal-nav { display: flex; align-items: center; justify-content: center; gap: 24px; margin-bottom: 20px; }
+    .cal-nav-btn { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #EDE9FE; background: white; font-size: 1.4rem; cursor: pointer; color: var(--violet); display: flex; align-items: center; justify-content: center; transition: all .2s; }
+    .cal-nav-btn:hover { background: var(--violet); color: white; }
+    .cal-month-label { font-size: 1.2rem; font-weight: 800; color: var(--dark); min-width: 200px; text-align: center; text-transform: capitalize; }
+    .cal-week-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+    .cal-week-header div { text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--gray); text-transform: uppercase; padding: 8px 0; }
+    .cal-month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 24px; }
+    .cal-cell { aspect-ratio: 1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 2px solid transparent; transition: all .2s; position: relative; background: white; min-height: 52px; }
+    .cal-cell:hover:not(.empty):not(.past) { border-color: var(--violet); }
+    .cal-cell.empty { background: transparent; cursor: default; }
+    .cal-cell.has-slots { background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); border-color: #C4B5FD; }
+    .cal-cell.blocked { background: #FEE2E2; border-color: #FECACA; }
+    .cal-cell.selected { background: linear-gradient(135deg, var(--violet), var(--pink)); border-color: transparent; }
+    .cal-cell.selected .cal-cell-num, .cal-cell.selected .cal-cell-label { color: white !important; }
+    .cal-cell.past { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+    .cal-cell-num { font-weight: 800; font-size: 0.95rem; color: var(--dark); }
+    .cal-cell.has-slots .cal-cell-num { color: var(--violet); }
+    .cal-cell.blocked .cal-cell-num { color: var(--red); }
+    .cal-cell-label { font-size: 0.58rem; font-weight: 700; color: var(--gray); margin-top: 2px; text-transform: uppercase; }
+    .cal-cell.has-slots .cal-cell-label { color: var(--violet); }
+    .cal-cell.blocked .cal-cell-label { color: var(--red); }
 
-    /* SERVICES */
-    .cat-block { background: white; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 8px rgba(0,0,0,0.05); }
-    .cat-block-title { font-weight: 600; font-size: 0.9rem; color: #8b5e8f; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-    .svc-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #f5f0f8; }
-    .svc-row:first-of-type { border-top: none; }
-    .svc-name { flex: 1; font-size: 0.85rem; }
-    .svc-price-input {
-      width: 78px; padding: 6px 8px; border-radius: 8px; border: 1.5px solid #eee;
-      font-size: 0.82rem; text-align: right; font-family: 'DM Sans', sans-serif; outline: none;
-    }
-    .svc-price-input:focus { border-color: #c9a0dc; }
-    .svc-del { background: none; border: none; color: #e0a0a0; font-size: 1rem; cursor: pointer; padding: 0 4px; }
-    .add-svc-row { display: flex; gap: 6px; margin-top: 8px; }
-    .add-svc-row input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #eee; font-size: 0.82rem; outline: none; font-family: 'DM Sans', sans-serif; }
-    .add-svc-row input:focus { border-color: #c9a0dc; }
-    .add-svc-row button { padding: 8px 14px; border-radius: 8px; border: none; background: #c9a0dc; color: white; font-size: 0.8rem; cursor: pointer; }
+    /* DAY PANEL */
+    .day-panel { background: white; border-radius: 20px; padding: 28px; border: 2px solid #EDE9FE; margin-top: 8px; }
+    .day-panel-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; text-transform: capitalize; }
+    .day-panel-sub { font-size: 0.83rem; color: var(--gray); margin-bottom: 20px; }
+    .block-day-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #EDE9FE; }
+    .btn-block { background: #FEE2E2; color: var(--red); border: 2px solid #FECACA; padding: 9px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+    .btn-block:hover { background: #FECACA; }
+    .btn-unblock { background: #D1FAE5; color: #065F46; border: 2px solid #A7F3D0; padding: 9px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+    .btn-unblock:hover { background: #A7F3D0; }
+    .preset-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); margin-bottom: 10px; }
+    .preset-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .preset-btn { padding: 8px 18px; border-radius: 50px; border: 2px solid #E5E7EB; background: white; color: var(--dark); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .preset-btn:hover, .preset-btn.active { background: var(--violet); border-color: var(--violet); color: white; }
+    .custom-slot-row { display: flex; gap: 10px; margin-bottom: 18px; }
+    .custom-slot-row input { flex: 1; padding: 10px 14px; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 0.9rem; color: var(--dark); }
+    .custom-slot-row input:focus { outline: none; border-color: var(--violet); }
+    .btn-add-slot { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 10px 20px; border-radius: 50px; font-weight: 700; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+    .current-slots { display: flex; flex-wrap: wrap; gap: 8px; }
+    .slot-tag { display: flex; align-items: center; gap: 6px; background: var(--violet-pale); color: var(--violet); font-size: 0.83rem; font-weight: 700; padding: 7px 14px; border-radius: 50px; }
+    .slot-tag button { background: none; border: none; cursor: pointer; color: var(--violet); opacity: 0.5; font-size: 0.9rem; padding: 0; }
+    .slot-tag button:hover { opacity: 1; color: var(--red); }
+    .no-slots { color: var(--gray); font-size: 0.88rem; font-style: italic; }
 
-    /* DISPO — calendrier annuel */
-    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
-    .cal-nav-btn {
-      width: 36px; height: 36px; border-radius: 50%; border: none; background: white;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.08); color: #8b5e8f; font-size: 1rem; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .cal-nav-month { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 600; color: #8b5e8f; text-align: center; flex: 1; }
-    .legend-row { display: flex; gap: 14px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
-    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #999; }
-    .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+    /* TARIFS ADMIN */
+    .tarif-cat { background: white; border-radius: 18px; padding: 24px 28px; margin-bottom: 16px; border: 1px solid #EDE9FE; }
+    .tarif-cat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .tarif-cat-title { font-size: 1rem; font-weight: 800; }
+    .tarif-items { display: flex; flex-direction: column; gap: 10px; }
+    .tarif-row { display: flex; align-items: center; gap: 12px; }
+    .tarif-nom { flex: 1; padding: 10px 14px; border: 2px solid #E5E7EB; border-radius: 10px; font-size: 0.9rem; color: var(--dark); background: white; }
+    .tarif-nom:focus { outline: none; border-color: var(--violet); }
+    .tarif-prix { width: 110px; padding: 10px 14px; border: 2px solid #E5E7EB; border-radius: 10px; font-size: 0.9rem; font-weight: 700; color: var(--violet); background: white; text-align: center; }
+    .tarif-prix:focus { outline: none; border-color: var(--violet); }
+    .btn-del-row { background: none; border: none; cursor: pointer; color: #D1D5DB; font-size: 1.1rem; padding: 4px; transition: color .2s; }
+    .btn-del-row:hover { color: var(--red); }
+    .btn-add-item { background: transparent; border: 2px dashed #C4B5FD; color: var(--violet); padding: 8px 18px; border-radius: 50px; font-size: 0.82rem; font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%; transition: all .2s; }
+    .btn-add-item:hover { background: var(--violet-pale); }
 
-    .month-grid { background: white; border-radius: 16px; padding: 14px; box-shadow: 0 1px 8px rgba(0,0,0,0.05); margin-bottom: 16px; }
-    .wk-header { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; }
-    .wk-dname { font-size: 0.62rem; color: #bbb; text-align: center; text-transform: uppercase; letter-spacing: 0.03em; }
-    .wk-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-    .day-cell {
-      aspect-ratio: 1; border-radius: 10px; padding: 4px 3px; cursor: pointer;
-      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-      border: 2px solid transparent; background: #faf7fb; position: relative;
-    }
-    .day-cell.empty { background: none; cursor: default; }
-    .day-cell.sel { border-color: #c9a0dc; background: #fdf3ff; }
-    .day-cell .dn { font-size: 0.78rem; font-weight: 500; color: #555; margin-bottom: 2px; }
-    .day-cell.closed .dn { color: #ccc; text-decoration: line-through; }
-    .dot-row { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
-    .mini-dot { width: 5px; height: 5px; border-radius: 50%; background: #c9a0dc; }
-    .mini-dot.off { background: #e8e0ec; }
+    /* SAVE BAR */
+    .save-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: white; border-top: 2px solid #EDE9FE; padding: 16px 28px; display: none; align-items: center; justify-content: space-between; box-shadow: 0 -4px 20px rgba(124,58,237,0.1); gap: 16px; }
+    .save-bar p { font-size: 0.85rem; color: var(--gray); }
+    .save-bar p strong { color: var(--dark); }
+    .save-bar-btns { display: flex; gap: 10px; align-items: center; }
+    .btn-save { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 12px 32px; border-radius: 50px; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .save-ok { color: var(--green); font-size: 0.85rem; font-weight: 700; display: none; }
 
-    .day-editor { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
-    .day-editor-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 600; color: #8b5e8f; margin-bottom: 4px; }
-    .day-editor-sub { font-size: 0.75rem; color: #aaa; margin-bottom: 14px; }
-    .slot-toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 14px; }
-    .slot-toggle {
-      padding: 13px 10px; border-radius: 12px; border: 2px solid #eee; background: #fafafa;
-      text-align: center; cursor: pointer; font-size: 0.92rem; font-weight: 500; color: #999;
-      transition: all 0.15s;
-    }
-    .slot-toggle.on { border-color: #c9a0dc; background: #fdf3ff; color: #7c3aed; font-weight: 600; }
-    .close-day-btn {
-      width: 100%; padding: 11px; border-radius: 12px; border: 1.5px solid #eee; background: white;
-      color: #999; font-size: 0.82rem; cursor: pointer; font-family: 'DM Sans', sans-serif; margin-bottom: 8px;
-    }
-    .close-day-btn.is-closed { border-color: #e08a8a; color: #b03939; background: #fdf2f2; }
-    .apply-week-btn {
-      width: 100%; padding: 11px; border-radius: 12px; border: none;
-      background: linear-gradient(135deg, #c9a0dc, #f4a7b9); color: white;
-      font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif;
-    }
-    .editor-hint { font-size: 0.72rem; color: #bbb; text-align: center; margin-top: 10px; line-height: 1.5; }
-
-    .toast {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      background: #2d2d2d; color: white; padding: 10px 20px; border-radius: 30px;
-      font-size: 0.82rem; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 100;
+    @media (max-width: 768px) {
+      .rdv-card { grid-template-columns: auto 1fr; }
+      .rdv-status-badge { display: none; }
+      .rdv-actions { grid-column: 1/-1; }
+      .bar-name { width: 110px; min-width: 110px; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .tarif-row { flex-wrap: wrap; }
     }
   </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect } = React;
 
-const ADMIN_PASSWORD = "linstantk2026";
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">L'Instant K</div>
+    <p class="login-sub">🕷️ Espace administrateur</p>
+    <input type="password" id="pwdInput" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')login()" />
+    <button onclick="login()">Se connecter</button>
+    <p class="login-error" id="loginErr">Mot de passe incorrect.</p>
+  </div>
+</div>
 
-const DEFAULT_CATS = [
-  { id:"manucure", label:"Manucure", icon:"💅", items:[
-    {id:"m1",label:"Gainage sur ongle naturel",prix:35},
-    {id:"m2",label:"Pose Gel X",prix:40},
-    {id:"m3",label:"Pose chablon",prix:50},
-    {id:"m4",label:"Remplissage",prix:35},
-    {id:"m5",label:"Remplissage pose extérieur",prix:40},
-    {id:"m6",label:"Dépose Acrylique",prix:20},
-    {id:"m7",label:"Dépose",prix:15},
-    {id:"m8",label:"Nail art",prix:null},
+<div id="adminUI">
+  <div class="topbar">
+    <div class="topbar-logo">L'Instant K · Admin</div>
+    <div class="topbar-right">
+      <a href="index.html">← Voir le site</a>
+      <button class="btn-sm btn-outline" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-nav-btn active" onclick="showPage('stats',this)">📊 Statistiques</button>
+    <button class="tab-nav-btn" onclick="showPage('rdvs',this)">📋 Rendez-vous</button>
+    <button class="tab-nav-btn" onclick="showPage('dispo',this)">📅 Disponibilités</button>
+    <button class="tab-nav-btn" onclick="showPage('tarifs',this)">💰 Tarifs</button>
+  </div>
+
+  <main>
+
+    <!-- STATS -->
+    <div id="page-stats" class="page active">
+      <div class="page-title">Statistiques</div>
+      <div class="page-sub">Vue d'ensemble de votre activité</div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-emoji">📋</div><div class="stat-num c-violet" id="s-total">–</div><div class="stat-label">Total demandes</div></div>
+        <div class="stat-box"><div class="stat-emoji">✅</div><div class="stat-num c-green" id="s-accepte">–</div><div class="stat-label">RDV acceptés</div></div>
+        <div class="stat-box"><div class="stat-emoji">⏳</div><div class="stat-num c-orange" id="s-attente">–</div><div class="stat-label">En attente</div></div>
+        <div class="stat-box"><div class="stat-emoji">❌</div><div class="stat-num c-red" id="s-refuse">–</div><div class="stat-label">Refusés</div></div>
+      </div>
+      <div class="chart-box">
+        <h3>🏆 Prestations les plus demandées</h3>
+        <div id="chartContent"><div class="loading-msg"><div class="spinner"></div>Chargement...</div></div>
+      </div>
+    </div>
+
+    <!-- RDV -->
+    <div id="page-rdvs" class="page">
+      <div class="page-title">Rendez-vous</div>
+      <div class="page-sub" id="rdv-sub">Gérez les demandes de vos clientes</div>
+      <div class="filters">
+        <button class="filter-chip active" onclick="setFilter('tous',this)">Tous</button>
+        <button class="filter-chip" onclick="setFilter('En attente',this)">⏳ En attente</button>
+        <button class="filter-chip" onclick="setFilter('Accepté',this)">✅ Acceptés</button>
+        <button class="filter-chip" onclick="setFilter('Refusé',this)">❌ Refusés</button>
+        <button class="refresh" onclick="loadAll()">🔄 Actualiser</button>
+      </div>
+      <div class="rdv-list" id="rdvList"><div class="loading-msg"><div class="spinner"></div>Chargement...</div></div>
+    </div>
+
+    <!-- DISPO -->
+    <div id="page-dispo" class="page">
+      <div class="page-title">Disponibilités</div>
+      <div class="page-sub">Cliquez sur un jour pour gérer vos créneaux — puis cliquez <strong>Enregistrer</strong></div>
+
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="cal-month-label" id="calMonthLabel"></div>
+        <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="cal-week-header">
+        <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
+      </div>
+      <div class="cal-month-grid" id="calMonthGrid"></div>
+
+      <div class="day-panel" id="dayPanel" style="display:none">
+        <div class="day-panel-title" id="dayPanelTitle"></div>
+        <div class="day-panel-sub">Gérez les créneaux pour cette journée</div>
+        <div class="block-day-row">
+          <button class="btn-block" id="btnBlockDay" onclick="toggleBlockDay()">🚫 Bloquer cette journée</button>
+          <span style="font-size:0.82rem;color:var(--gray)">Bloque toute la journée (congé, indisponibilité)</span>
+        </div>
+        <div id="slotsEditor">
+          <div class="preset-label">Créneaux rapides :</div>
+          <div class="preset-btns">
+            <button class="preset-btn" onclick="toggleSlot('8h00')">8h00</button>
+            <button class="preset-btn" onclick="toggleSlot('11h00')">11h00</button>
+            <button class="preset-btn" onclick="toggleSlot('14h00')">14h00</button>
+            <button class="preset-btn" onclick="toggleSlot('17h00')">17h00</button>
+            <button class="preset-btn" onclick="toggleSlot('20h00')">20h00</button>
+          </div>
+          <div class="custom-slot-row">
+            <input type="text" id="customSlot" placeholder="Créneau libre ex: 7h30, 9h00-12h00..." onkeydown="if(event.key==='Enter')addCustomSlot()" />
+            <button class="btn-add-slot" onclick="addCustomSlot()">+ Ajouter</button>
+          </div>
+          <div class="current-slots" id="currentSlots"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARIFS -->
+    <div id="page-tarifs" class="page">
+      <div class="page-title">Tarifs</div>
+      <div class="page-sub">Modifiez vos prestations et prix — puis cliquez <strong>Enregistrer</strong></div>
+      <div id="tarifsEditor"></div>
+    </div>
+
+  </main>
+
+  <!-- SAVE BAR DISPO -->
+  <div class="save-bar" id="saveBarDispo">
+    <p>Modifications non enregistrées — cliquez <strong>Enregistrer</strong> pour mettre à jour le site</p>
+    <div class="save-bar-btns">
+      <span class="save-ok" id="saveOkDispo">✅ Enregistré !</span>
+      <button class="btn-save" id="btnSaveDispo" onclick="saveDispo()">💾 Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- SAVE BAR TARIFS -->
+  <div class="save-bar" id="saveBarTarifs">
+    <p>Modifications non enregistrées — cliquez <strong>Enregistrer</strong> pour mettre à jour le site</p>
+    <div class="save-bar-btns">
+      <span class="save-ok" id="saveOkTarifs">✅ Enregistré !</span>
+      <button class="btn-save" id="btnSaveTarifs" onclick="saveTarifs()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const JOURS_LONG = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+
+const DEFAULT_TARIFS = [
+  { id:'manucure', emoji:'💅', nom:'Manucure', items:[
+    {nom:'Gainage sur ongle naturel',prix:'35€'},{nom:'Pose Gel X',prix:'40€'},
+    {nom:'Pose chablon',prix:'50€'},{nom:'Remplissage',prix:'35€'},
+    {nom:'Remplissage pose extérieur',prix:'40€'},{nom:'Dépose Acrylique',prix:'20€'},
+    {nom:'Dépose',prix:'15€'},{nom:'Nail art',prix:'Sur devis'},
   ]},
-  { id:"pedicure", label:"Pédicure", icon:"🦶", items:[
-    {id:"p1",label:"Vernis semi-perm simple",prix:20},
-    {id:"p2",label:"Semi-Perm avec extension gros orteil",prix:35},
-    {id:"p3",label:"Dépose + Repose vernis simple",prix:25},
-    {id:"p4",label:"Remplissage",prix:30},
-    {id:"p5",label:"Dépose acrylique",prix:20},
-    {id:"p6",label:"Dépose",prix:15},
-    {id:"p7",label:"Déco (strass, dessin, french élaboré)",prix:5},
+  { id:'pedicure', emoji:'🦶', nom:'Pédicure', items:[
+    {nom:'Vernis semi-perm simple',prix:'20€'},{nom:'Semi-Perm avec extension gros orteil',prix:'35€'},
+    {nom:'Dépose + Repose vernis simple',prix:'25€'},{nom:'Remplissage',prix:'30€'},
+    {nom:'Dépose acrylique',prix:'20€'},{nom:'Dépose',prix:'15€'},
+    {nom:'Deco (strass, dessin, French élaboré)',prix:'5€'},
   ]},
-  { id:"soins-pieds", label:"Soins des pieds", icon:"✨", items:[
-    {id:"sp1",label:"Talon express",prix:25},
-    {id:"sp2",label:"Soins des pieds",prix:40},
-    {id:"sp3",label:"Soins + vernis semi-perm simple",prix:50},
-    {id:"sp4",label:"Soins dépose + repose + vernis semi-perm",prix:60},
-    {id:"sp5",label:"Soins + remplissage",prix:65},
-    {id:"sp6",label:"Soins + vernis semi-perm + extension gros orteil",prix:70},
+  { id:'soins-pieds', emoji:'✨', nom:'Soins des pieds', items:[
+    {nom:'Talon express',prix:'25€'},{nom:'Soins des Pieds',prix:'40€'},
+    {nom:'Soins + vernis semi-perm simple',prix:'50€'},{nom:'Soins dépose + repose + vernis sp',prix:'60€'},
+    {nom:'Soins + remplissage',prix:'65€'},{nom:'Soins + vernis sp + extension gros orteil',prix:'70€'},
   ]},
-  { id:"visage", label:"Soins du visage", icon:"🌸", items:[
-    {id:"v1",label:"Soins du visage",prix:45},
+  { id:'soins-visage', emoji:'🌸', nom:'Soins du visage', items:[{nom:'Soins du visage',prix:'45€'}]},
+  { id:'epilation', emoji:'🌿', nom:'Épilations', items:[
+    {nom:'Sourcils',prix:'10€'},{nom:'Lèvre',prix:'10€'},{nom:'Aiselles',prix:'10€'},
+    {nom:'Interfessier',prix:'5€'},{nom:'Demi-jambe',prix:'15€'},{nom:'Jambe entière',prix:'28€'},
+    {nom:'Maillot échancré',prix:'25€'},{nom:'Maillot intégral',prix:'30€'},
+    {nom:'Vajacial seul',prix:'40€'},{nom:'Épilation intégral + Vajacial',prix:'60€'},
+    {nom:'Pack Aiselle + Demi-jambes + Maillot intégral',prix:'50€',badge:'NEW'},
   ]},
-  { id:"epilations", label:"Épilations", icon:"🌿", items:[
-    {id:"e1",label:"Sourcils",prix:10},
-    {id:"e2",label:"Lèvre",prix:10},
-    {id:"e3",label:"Aiselles",prix:10},
-    {id:"e4",label:"Demi-jambe",prix:15},
-    {id:"e5",label:"Jambes entières",prix:28},
-    {id:"e6",label:"Maillot échancré",prix:25},
-    {id:"e7",label:"Maillot intégral",prix:30},
-    {id:"e8",label:"Vajacial seul",prix:40},
-    {id:"e9",label:"Interfessier",prix:5},
-    {id:"e10",label:"Épilation intégral + vajacial",prix:60},
-    {id:"e11",label:"PACK Aiselle + Demi-jambes + Maillot intégral 🆕",prix:50},
-  ]},
-  { id:"massage", label:"Massage", icon:"💆", items:[
-    {id:"mg1",label:"Massage relaxant corps entier (45min–1h)",prix:60},
-  ]},
+  { id:'massage', emoji:'💆', nom:'Massage', items:[{nom:'Massage relaxant corps entier (45min – 1h)',prix:'60€'}]},
 ];
 
-// Les 4 créneaux fixes du planning de base
-const SLOTS_BASE = ["8h00","11h00","14h00","17h00"];
-
-const MOIS_NOMS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-const WK_NOMS = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
-
-function dateKey(y,m,d) {
-  return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+/* ══ AUTH ══ */
+function login() {
+  if (document.getElementById('pwdInput').value === ADMIN_PASSWORD) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminUI').style.display = 'block';
+    loadAll();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+  }
 }
-function daysInMonth(y,m) { return new Date(y, m+1, 0).getDate(); }
-function firstWeekdayOfMonth(y,m) {
-  // 0 = lundi ... 6 = dimanche
-  const jsDay = new Date(y, m, 1).getDay(); // 0=dimanche
-  return (jsDay + 6) % 7;
+function logout() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminUI').style.display = 'none';
+  document.getElementById('pwdInput').value = '';
 }
-function load(key, fallback) {
+
+/* ══ PAGES ══ */
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('saveBarDispo').style.display = id === 'dispo' ? 'flex' : 'none';
+  document.getElementById('saveBarTarifs').style.display = id === 'tarifs' ? 'flex' : 'none';
+}
+
+/* ══ CHARGEMENT ══ */
+let allBookings = [], currentFilter = 'tous';
+let dispo = {}, tarifsData = null;
+let calYear, calMonth, selectedDate = null;
+
+async function loadAll() {
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch (e) { return fallback; }
-}
-function save(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
-}
-
-function Toast({ msg }) {
-  if (!msg) return null;
-  return <div className="toast">{msg}</div>;
-}
-
-function LoginScreen({ onLogin }) {
-  const [pwd, setPwd] = useState("");
-  const [err, setErr] = useState("");
-
-  function tryLogin() {
-    if (pwd === ADMIN_PASSWORD) { onLogin(); }
-    else { setErr("Mot de passe incorrect"); }
+    const r = await fetch(SCRIPT_URL + '?type=all&t=' + Date.now());
+    const data = await r.json();
+    allBookings = (data.bookings || []).reverse();
+    if (data.disponibilites) dispo = data.disponibilites;
+    if (data.tarifs) tarifsData = data.tarifs;
+    renderBookings();
+    renderStats();
+    renderCal();
+    buildTarifsEditor(tarifsData || DEFAULT_TARIFS);
+  } catch(e) {
+    document.getElementById('rdvList').innerHTML = '<div class="empty-msg">Impossible de charger les données.</div>';
+    buildTarifsEditor(DEFAULT_TARIFS);
+    renderCal();
   }
-
-  return (
-    <div className="login-screen">
-      <div className="login-box">
-        <div className="login-emoji">🔐</div>
-        <div className="login-title">Espace pro</div>
-        <input
-          className="login-input" type="password" placeholder="Mot de passe"
-          value={pwd}
-          onChange={e=>{setPwd(e.target.value); setErr("");}}
-          onKeyDown={e=>{if(e.key==="Enter") tryLogin();}}
-          autoFocus
-        />
-        <div className="login-error">{err}</div>
-        <button className="login-btn" onClick={tryLogin}>Se connecter</button>
-      </div>
-    </div>
-  );
 }
 
-function RdvTab({ showToast }) {
-  const [list, setList] = useState(()=>load("rdv_beaute_liste", []));
-  const [filter, setFilter] = useState("tous");
-
-  function update(id, patch) {
-    const next = list.map(r=> r.id===id ? {...r, ...patch} : r);
-    setList(next); save("rdv_beaute_liste", next);
-  }
-  function remove(id) {
-    const next = list.filter(r=>r.id!==id);
-    setList(next); save("rdv_beaute_liste", next);
-    showToast("Rendez-vous supprimé");
-  }
-
-  const filtered = list
-    .filter(r => filter==="tous" || r.statut===filter)
-    .sort((a,b)=> (a.jour||0)-(b.jour||0));
-
-  return (
-    <div>
-      <div className="section-title">Rendez-vous</div>
-      <div className="tabs" style={{padding:0, marginBottom:12}}>
-        {["tous","en_attente","confirme","annule"].map(f=>(
-          <div key={f} className={`tab ${filter===f?"active":""}`} onClick={()=>setFilter(f)} style={{fontSize:"0.7rem"}}>
-            {f==="tous"?"Tous":f==="en_attente"?"En attente":f==="confirme"?"Confirmés":"Annulés"}
-          </div>
-        ))}
-      </div>
-
-      {filtered.length===0 && <div className="empty-msg">Aucun rendez-vous pour le moment.</div>}
-
-      {filtered.map(r=>(
-        <div key={r.id} className={`rdv-card ${r.statut}`}>
-          <div className="rdv-top">
-            <div>
-              <div className="rdv-name">{r.prenom} {r.nom}</div>
-              <div className="rdv-when">{r.jour} juillet · {r.creneau}</div>
-            </div>
-            <span className={`rdv-statut ${r.statut}`}>
-              {r.statut==="en_attente"?"En attente":r.statut==="confirme"?"Confirmé":"Annulé"}
-            </span>
-          </div>
-          <div className="rdv-detail">💅 {r.prestation} — {r.prix}</div>
-          <div className="rdv-detail">📞 {r.tel}</div>
-          <div className="rdv-actions">
-            {r.statut!=="confirme" && <button className="btn-valider" onClick={()=>update(r.id,{statut:"confirme"})}>✓ Valider</button>}
-            {r.statut!=="annule" && <button className="btn-annuler" onClick={()=>update(r.id,{statut:"annule"})}>✕ Annuler</button>}
-            <button className="btn-suppr" onClick={()=>remove(r.id)}>🗑</button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ServicesTab({ showToast }) {
-  const [cats, setCats] = useState(()=>load("rdv_beaute_services", DEFAULT_CATS));
-  const [newNames, setNewNames] = useState({});
-
-  function persist(next) { setCats(next); save("rdv_beaute_services", next); }
-
-  function updatePrice(catId, itemId, val) {
-    const next = cats.map(c=>{
-      if (c.id!==catId) return c;
-      return {...c, items: c.items.map(it=> it.id===itemId ? {...it, prix: val===""?null:val} : it)};
-    });
-    persist(next);
-  }
-  function removeItem(catId, itemId) {
-    const next = cats.map(c=>{
-      if (c.id!==catId) return c;
-      return {...c, items: c.items.filter(it=>it.id!==itemId)};
-    });
-    persist(next);
-    showToast("Prestation supprimée");
-  }
-  function addItem(catId) {
-    const name = (newNames[catId]||"").trim();
-    if (!name) return;
-    const next = cats.map(c=>{
-      if (c.id!==catId) return c;
-      const id = catId+"_"+Date.now();
-      return {...c, items: [...c.items, {id, label:name, prix:null}]};
-    });
-    persist(next);
-    setNewNames({...newNames, [catId]: ""});
-    showToast("Prestation ajoutée");
-  }
-
-  return (
-    <div>
-      <div className="section-title">Services & tarifs</div>
-      {cats.map(cat=>(
-        <div key={cat.id} className="cat-block">
-          <div className="cat-block-title"><span>{cat.icon}</span><span>{cat.label}</span></div>
-          {cat.items.map(it=>(
-            <div key={it.id} className="svc-row">
-              <span className="svc-name">{it.label}</span>
-              <input
-                className="svc-price-input" type="text" placeholder="Prix"
-                value={it.prix===null?"":it.prix}
-                onChange={e=>updatePrice(cat.id, it.id, e.target.value)}
-              />
-              <button className="svc-del" onClick={()=>removeItem(cat.id, it.id)}>✕</button>
-            </div>
-          ))}
-          <div className="add-svc-row">
-            <input
-              type="text" placeholder="Nouvelle prestation..."
-              value={newNames[cat.id]||""}
-              onChange={e=>setNewNames({...newNames, [cat.id]: e.target.value})}
-              onKeyDown={e=>{if(e.key==="Enter") addItem(cat.id);}}
-            />
-            <button onClick={()=>addItem(cat.id)}>Ajouter</button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DispoTab({ showToast }) {
-  // dispo: { "2026-07-15": ["8h00","14h00"], ... } — clé absente = jour ouvert avec planning de base, [] = jour fermé
-  const [dispo, setDispo] = useState(()=>load("rdv_beaute_dispo_v2", {}));
-  const today = new Date();
-  const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
-  const [selDate, setSelDate] = useState(null);
-
-  function persist(next) { setDispo(next); save("rdv_beaute_dispo_v2", next); }
-
-  function getSlotsFor(key) {
-    if (dispo.hasOwnProperty(key)) return dispo[key];
-    return SLOTS_BASE.slice(); // planning de base par défaut
-  }
-
-  function toggleSlot(key, slot) {
-    const current = getSlotsFor(key);
-    const next = current.includes(slot) ? current.filter(s=>s!==slot) : [...current, slot];
-    persist({...dispo, [key]: next});
-  }
-  function toggleClosed(key) {
-    const isClosed = getSlotsFor(key).length === 0;
-    persist({...dispo, [key]: isClosed ? SLOTS_BASE.slice() : []});
-    showToast(isClosed ? "Jour rouvert" : "Jour fermé");
-  }
-  function applyToWeek(key) {
-    const slots = getSlotsFor(key);
-    const d = new Date(key);
-    const wd = (d.getDay()+6)%7; // 0=lundi
-    const monday = new Date(d);
-    monday.setDate(d.getDate()-wd);
-    const next = {...dispo};
-    for (let i=0;i<7;i++){
-      const dd = new Date(monday);
-      dd.setDate(monday.getDate()+i);
-      next[dateKey(dd.getFullYear(),dd.getMonth(),dd.getDate())] = slots.slice();
-    }
-    persist(next);
-    showToast("Appliqué à toute la semaine");
-  }
-
-  function prevMonth() {
-    if (viewMonth===0) { setViewMonth(11); setViewYear(viewYear-1); }
-    else setViewMonth(viewMonth-1);
-  }
-  function nextMonth() {
-    if (viewMonth===11) { setViewMonth(0); setViewYear(viewYear+1); }
-    else setViewMonth(viewMonth+1);
-  }
-
-  const nbDays = daysInMonth(viewYear, viewMonth);
-  const firstWd = firstWeekdayOfMonth(viewYear, viewMonth);
-  const cells = [];
-  for (let i=0;i<firstWd;i++) cells.push(null);
-  for (let d=1; d<=nbDays; d++) cells.push(d);
-
-  const selKey = selDate ? dateKey(viewYear, viewMonth, selDate) : null;
-  const selSlots = selKey ? getSlotsFor(selKey) : [];
-  const selClosed = selSlots.length === 0;
-
-  return (
-    <div>
-      <div className="section-title">Disponibilités</div>
-
-      <div className="cal-nav">
-        <button className="cal-nav-btn" onClick={prevMonth}>‹</button>
-        <div className="cal-nav-month">{MOIS_NOMS[viewMonth]} {viewYear}</div>
-        <button className="cal-nav-btn" onClick={nextMonth}>›</button>
-      </div>
-
-      <div className="legend-row">
-        <div className="legend-item"><span className="legend-dot" style={{background:"#c9a0dc"}}></span>Créneau ouvert</div>
-        <div className="legend-item"><span className="legend-dot" style={{background:"#e8e0ec"}}></span>Créneau fermé</div>
-      </div>
-
-      <div className="month-grid">
-        <div className="wk-header">{WK_NOMS.map(w=><div key={w} className="wk-dname">{w}</div>)}</div>
-        <div className="wk-grid">
-          {cells.map((d,idx)=>{
-            if (!d) return <div key={idx} className="day-cell empty"/>;
-            const key = dateKey(viewYear, viewMonth, d);
-            const slots = getSlotsFor(key);
-            const closed = slots.length===0;
-            return (
-              <div key={d}
-                className={`day-cell ${selKey===key?"sel":""} ${closed?"closed":""}`}
-                onClick={()=>setSelDate(d)}
-              >
-                <span className="dn">{d}</span>
-                <div className="dot-row">
-                  {SLOTS_BASE.map(s=>(
-                    <span key={s} className={`mini-dot ${slots.includes(s)?"":"off"}`}/>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+/* ══ BOOKINGS ══ */
+function renderBookings() {
+  const list = document.getElementById('rdvList');
+  const items = currentFilter === 'tous' ? allBookings : allBookings.filter(b => b.status === currentFilter);
+  document.getElementById('rdv-sub').textContent = items.length + ' rendez-vous';
+  if (!items.length) { list.innerHTML = '<div class="empty-msg">Aucun rendez-vous dans cette catégorie.</div>'; return; }
+  list.innerHTML = items.map(b => {
+    const cls = b.status === 'Accepté' ? 'accepte' : b.status === 'Refusé' ? 'refuse' : 'attente';
+    const bCls = b.status === 'Accepté' ? 'badge-accepte' : b.status === 'Refusé' ? 'badge-refuse' : 'badge-attente';
+    const ini = (b.prenom || '?')[0].toUpperCase();
+    const actions = b.status === 'En attente' ? `<div class="rdv-actions"><button class="btn-accept" onclick="updateStatus(${b.row},'Accepté')">✓ Accepter</button><button class="btn-refuse" onclick="updateStatus(${b.row},'Refusé')">✕ Refuser</button></div>` : '';
+    return `<div class="rdv-card ${cls}" id="card-${b.row}">
+      <div class="rdv-avatar">${ini}</div>
+      <div class="rdv-info">
+        <div class="rdv-name">${b.prenom} ${b.nom}</div>
+        <div class="rdv-prestation">${b.prestation}</div>
+        <div class="rdv-meta">
+          ${b.telephone ? `<span>📞 ${b.telephone}</span>` : ''}
+          ${b.date ? `<span>📅 ${b.date}</span>` : ''}
+          ${b.creneau ? `<span>🕐 ${b.creneau}</span>` : ''}
         </div>
       </div>
-
-      {selDate && (
-        <div className="day-editor">
-          <div className="day-editor-title">{selDate} {MOIS_NOMS[viewMonth]} {viewYear}</div>
-          <div className="day-editor-sub">{selClosed ? "Jour fermé" : `${selSlots.length} créneau${selSlots.length>1?"x":""} ouvert${selSlots.length>1?"s":""}`}</div>
-
-          <div className="slot-toggle-grid">
-            {SLOTS_BASE.map(s=>(
-              <div key={s}
-                className={`slot-toggle ${selSlots.includes(s)?"on":""}`}
-                onClick={()=>toggleSlot(selKey, s)}
-              >
-                {s}
-              </div>
-            ))}
-          </div>
-
-          <button className={`close-day-btn ${selClosed?"is-closed":""}`} onClick={()=>toggleClosed(selKey)}>
-            {selClosed ? "↺ Rouvrir ce jour" : "Fermer ce jour"}
-          </button>
-          <button className="apply-week-btn" onClick={()=>applyToWeek(selKey)}>Appliquer ces horaires à toute la semaine</button>
-
-          <div className="editor-hint">Touchez un créneau pour l'activer ou le désactiver. Les changements sont enregistrés automatiquement.</div>
-        </div>
-      )}
-    </div>
-  );
+      <span class="rdv-status-badge ${bCls}">${b.status}</span>
+      ${actions}
+    </div>`;
+  }).join('');
 }
 
-function Dashboard({ onLogout }) {
-  const [tab, setTab] = useState("rdv");
-  const [toast, setToast] = useState("");
-
-  function showToast(msg) {
-    setToast(msg);
-    setTimeout(()=>setToast(""), 2200);
-  }
-
-  return (
-    <div className="wrap">
-      <div className="header" style={{position:"relative"}}>
-        <div className="header-title">💅 Espace pro</div>
-        <div className="header-sub">RDV Beauté · Gestion</div>
-        <button className="logout-btn" onClick={onLogout}>Déconnexion</button>
-      </div>
-      <div className="tabs">
-        <div className={`tab ${tab==="rdv"?"active":""}`} onClick={()=>setTab("rdv")}>📅 Rendez-vous</div>
-        <div className={`tab ${tab==="services"?"active":""}`} onClick={()=>setTab("services")}>💅 Services</div>
-        <div className={`tab ${tab==="dispo"?"active":""}`} onClick={()=>setTab("dispo")}>🗓 Disponibilités</div>
-      </div>
-      <div className="content">
-        {tab==="rdv" && <RdvTab showToast={showToast} />}
-        {tab==="services" && <ServicesTab showToast={showToast} />}
-        {tab==="dispo" && <DispoTab showToast={showToast} />}
-      </div>
-      <Toast msg={toast} />
-    </div>
-  );
+async function updateStatus(row, status) {
+  const card = document.getElementById('card-' + row);
+  if (card) card.style.opacity = '0.4';
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'update', row, status}) });
+    const b = allBookings.find(x => x.row === row);
+    if (b) b.status = status;
+    renderBookings(); renderStats();
+  } catch(e) { if (card) card.style.opacity = '1'; alert('Erreur.'); }
 }
 
-function App() {
-  const [authed, setAuthed] = useState(()=> sessionStorage.getItem("rdv_admin_auth")==="1");
-
-  function handleLogin() {
-    sessionStorage.setItem("rdv_admin_auth","1");
-    setAuthed(true);
-  }
-  function handleLogout() {
-    sessionStorage.removeItem("rdv_admin_auth");
-    setAuthed(false);
-  }
-
-  if (!authed) return <LoginScreen onLogin={handleLogin} />;
-  return <Dashboard onLogout={handleLogout} />;
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); renderBookings();
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+/* ══ STATS ══ */
+function renderStats() {
+  const total = allBookings.length;
+  const accepte = allBookings.filter(b => b.status === 'Accepté').length;
+  const attente = allBookings.filter(b => b.status === 'En attente').length;
+  const refuse = allBookings.filter(b => b.status === 'Refusé').length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-accepte').textContent = accepte;
+  document.getElementById('s-attente').textContent = attente;
+  document.getElementById('s-refuse').textContent = refuse;
+  const counts = {};
+  allBookings.forEach(b => { const k = (b.prestation||'').split('–')[0].trim(); if(k) counts[k]=(counts[k]||0)+1; });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const max = sorted[0]?.[1] || 1;
+  const chart = document.getElementById('chartContent');
+  if (!sorted.length) { chart.innerHTML = '<div class="empty-msg">Aucune donnée pour le moment.</div>'; return; }
+  chart.innerHTML = sorted.map(([name,count]) => `<div class="bar-row"><div class="bar-name" title="${name}">${name}</div><div class="bar-track"><div class="bar-fill" style="width:${count/max*100}%"></div></div><div class="bar-val">${count}</div></div>`).join('');
+}
+
+/* ══ CALENDRIER DISPO ══ */
+function initCal() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  selectedDate = null;
+  document.getElementById('dayPanel').style.display = 'none';
+  renderCal();
+}
+
+function renderCal() {
+  if (!calYear) initCal();
+  const label = new Date(calYear, calMonth, 1).toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+  document.getElementById('calMonthLabel').textContent = label;
+
+  const grid = document.getElementById('calMonthGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const offset = firstDay === 0 ? 6 : firstDay - 1;
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  for (let i = 0; i < offset; i++) {
+    const e = document.createElement('div'); e.className = 'cal-cell empty'; grid.appendChild(e);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cellDate = new Date(calYear, calMonth, d);
+    const isPast = cellDate < today;
+    const slots = dispo[dateStr];
+    const isBlocked = slots && slots[0] === '__blocked__';
+    const hasSlots = slots && slots.length > 0 && !isBlocked;
+    const isSelected = selectedDate === dateStr;
+
+    const cell = document.createElement('div');
+    let cls = 'cal-cell';
+    if (isPast) cls += ' past';
+    else if (isBlocked) cls += ' blocked';
+    else if (hasSlots) cls += ' has-slots';
+    if (isSelected) cls += ' selected';
+    cell.className = cls;
+
+    const labelTxt = isBlocked ? 'Bloqué' : hasSlots ? slots.length + ' cr.' : '';
+    cell.innerHTML = `<div class="cal-cell-num">${d}</div>${labelTxt ? `<div class="cal-cell-label">${labelTxt}</div>` : ''}`;
+    if (!isPast) cell.onclick = () => selectDay(dateStr);
+    grid.appendChild(cell);
+  }
+}
+
+function selectDay(dateStr) {
+  selectedDate = dateStr;
+  if (!dispo[dateStr]) dispo[dateStr] = [];
+  renderCal();
+
+  const d = new Date(dateStr + 'T00:00:00');
+  const label = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+  document.getElementById('dayPanelTitle').textContent = '📅 ' + label.charAt(0).toUpperCase() + label.slice(1);
+
+  const isBlocked = dispo[dateStr][0] === '__blocked__';
+  const btn = document.getElementById('btnBlockDay');
+  btn.textContent = isBlocked ? '✅ Débloquer cette journée' : '🚫 Bloquer cette journée';
+  btn.className = isBlocked ? 'btn-unblock' : 'btn-block';
+  document.getElementById('slotsEditor').style.display = isBlocked ? 'none' : 'block';
+
+  document.getElementById('dayPanel').style.display = 'block';
+  document.getElementById('dayPanel').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  renderCurrentSlots();
+  updatePresetBtns();
+}
+
+function toggleBlockDay() {
+  if (!selectedDate) return;
+  const isBlocked = dispo[selectedDate] && dispo[selectedDate][0] === '__blocked__';
+  if (isBlocked) {
+    dispo[selectedDate] = [];
+    document.getElementById('btnBlockDay').textContent = '🚫 Bloquer cette journée';
+    document.getElementById('btnBlockDay').className = 'btn-block';
+    document.getElementById('slotsEditor').style.display = 'block';
+  } else {
+    dispo[selectedDate] = ['__blocked__'];
+    document.getElementById('btnBlockDay').textContent = '✅ Débloquer cette journée';
+    document.getElementById('btnBlockDay').className = 'btn-unblock';
+    document.getElementById('slotsEditor').style.display = 'none';
+  }
+  renderCal();
+  renderCurrentSlots();
+}
+
+function renderCurrentSlots() {
+  const slots = (dispo[selectedDate] || []).filter(s => s !== '__blocked__');
+  const container = document.getElementById('currentSlots');
+  if (!slots.length) { container.innerHTML = '<div class="no-slots">Aucun créneau — ajoutez-en ci-dessus.</div>'; return; }
+  container.innerHTML = slots.map((s,i) => `<div class="slot-tag">${s}<button onclick="removeSlot(${i})">✕</button></div>`).join('');
+}
+
+function updatePresetBtns() {
+  const slots = dispo[selectedDate] || [];
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.classList.toggle('active', slots.includes(btn.textContent));
+  });
+}
+
+function toggleSlot(slot) {
+  if (!selectedDate) return;
+  if (!dispo[selectedDate]) dispo[selectedDate] = [];
+  const idx = dispo[selectedDate].indexOf(slot);
+  if (idx >= 0) dispo[selectedDate].splice(idx, 1);
+  else dispo[selectedDate].push(slot);
+  renderCurrentSlots(); updatePresetBtns(); renderCal();
+}
+
+function addCustomSlot() {
+  const val = document.getElementById('customSlot').value.trim();
+  if (!val || !selectedDate) return;
+  if (!dispo[selectedDate]) dispo[selectedDate] = [];
+  if (!dispo[selectedDate].includes(val)) dispo[selectedDate].push(val);
+  document.getElementById('customSlot').value = '';
+  renderCurrentSlots(); updatePresetBtns(); renderCal();
+}
+
+function removeSlot(i) {
+  const realSlots = (dispo[selectedDate] || []).filter(s => s !== '__blocked__');
+  const slot = realSlots[i];
+  const idx = dispo[selectedDate].indexOf(slot);
+  if (idx >= 0) dispo[selectedDate].splice(idx, 1);
+  if (dispo[selectedDate].length === 0) delete dispo[selectedDate];
+  renderCurrentSlots(); updatePresetBtns(); renderCal();
+}
+
+async function saveDispo() {
+  const btn = document.getElementById('btnSaveDispo');
+  btn.disabled = true; btn.textContent = 'Enregistrement...';
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'save_disponibilites', disponibilites: dispo}) });
+    document.getElementById('saveOkDispo').style.display = 'inline';
+    setTimeout(() => { document.getElementById('saveOkDispo').style.display = 'none'; }, 3000);
+  } catch(e) { alert('Erreur lors de la sauvegarde.'); }
+  btn.disabled = false; btn.textContent = '💾 Enregistrer';
+}
+
+/* ══ TARIFS EDITOR ══ */
+function buildTarifsEditor(tarifs) {
+  tarifsData = JSON.parse(JSON.stringify(tarifs));
+  const container = document.getElementById('tarifsEditor');
+  container.innerHTML = '';
+  tarifsData.forEach((cat, ci) => {
+    const box = document.createElement('div');
+    box.className = 'tarif-cat';
+    box.innerHTML = `
+      <div class="tarif-cat-header">
+        <span style="font-size:1.4rem">${cat.emoji}</span>
+        <span class="tarif-cat-title">${cat.nom}</span>
+      </div>
+      <div class="tarif-items" id="tarif-items-${ci}">
+        ${cat.items.map((item,ii) => renderTarifRow(ci,ii,item)).join('')}
+      </div>
+      <button class="btn-add-item" onclick="addTarifItem(${ci})">+ Ajouter une prestation</button>
+    `;
+    container.appendChild(box);
+  });
+}
+
+function renderTarifRow(ci, ii, item) {
+  return `<div class="tarif-row" id="tarif-row-${ci}-${ii}">
+    <input class="tarif-nom" value="${item.nom}" oninput="updateTarif(${ci},${ii},'nom',this.value)" placeholder="Nom de la prestation" />
+    <input class="tarif-prix" value="${item.prix}" oninput="updateTarif(${ci},${ii},'prix',this.value)" placeholder="Prix" />
+    <button class="btn-del-row" onclick="delTarifItem(${ci},${ii})" title="Supprimer">✕</button>
+  </div>`;
+}
+
+function updateTarif(ci, ii, field, val) {
+  tarifsData[ci].items[ii][field] = val;
+}
+
+function addTarifItem(ci) {
+  tarifsData[ci].items.push({ nom: '', prix: '' });
+  buildTarifsEditor(tarifsData);
+}
+
+function delTarifItem(ci, ii) {
+  tarifsData[ci].items.splice(ii, 1);
+  buildTarifsEditor(tarifsData);
+}
+
+async function saveTarifs() {
+  const btn = document.getElementById('btnSaveTarifs');
+  btn.disabled = true; btn.textContent = 'Enregistrement...';
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'save_tarifs', tarifs: tarifsData}) });
+    document.getElementById('saveOkTarifs').style.display = 'inline';
+    setTimeout(() => { document.getElementById('saveOkTarifs').style.display = 'none'; }, 3000);
+  } catch(e) { alert('Erreur lors de la sauvegarde.'); }
+  btn.disabled = false; btn.textContent = '💾 Enregistrer';
+}
 </script>
 </body>
 </html>

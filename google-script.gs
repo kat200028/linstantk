@@ -1,25 +1,48 @@
+function getSheet(name) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let s = ss.getSheetByName(name);
+  if (!s) s = ss.insertSheet(name);
+  return s;
+}
+
 function doPost(e) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     const data = JSON.parse(e.postData.contents);
 
-    if (data.action === 'update') {
-      sheet.getRange(parseInt(data.row), 7).setValue(data.status);
+    if (data.action === 'new') {
+      const s = getSheet('RDV');
+      s.appendRow([
+        new Date().toLocaleString('fr-FR'),
+        data.prenom || '',
+        data.nom || '',
+        data.telephone || '',
+        data.prestation || '',
+        data.date || '',
+        data.creneau || '',
+        'En attente'
+      ]);
       return jsonResponse({ success: true });
     }
 
-    sheet.appendRow([
-      new Date().toLocaleString('fr-FR'),
-      data.prenom || '',
-      data.nom || '',
-      data.telephone || '',
-      data.prestation || '',
-      data.date || '',
-      data.creneau || '',
-      'En attente'
-    ]);
+    if (data.action === 'update') {
+      const s = getSheet('RDV');
+      s.getRange(parseInt(data.row), 8).setValue(data.status);
+      return jsonResponse({ success: true });
+    }
 
-    return jsonResponse({ success: true });
+    if (data.action === 'save_disponibilites') {
+      const s = getSheet('Config');
+      s.getRange('A1').setValue(JSON.stringify(data.disponibilites));
+      return jsonResponse({ success: true });
+    }
+
+    if (data.action === 'save_tarifs') {
+      const s = getSheet('Config');
+      s.getRange('B1').setValue(JSON.stringify(data.tarifs));
+      return jsonResponse({ success: true });
+    }
+
+    return jsonResponse({ success: false, error: 'Action inconnue' });
 
   } catch (err) {
     return jsonResponse({ success: false, error: err.toString() });
@@ -28,8 +51,21 @@ function doPost(e) {
 
 function doGet(e) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    const rows = sheet.getDataRange().getValues();
+    const type = (e.parameter && e.parameter.type) || 'all';
+    const config = getSheet('Config');
+    const dispoVal = config.getRange('A1').getValue();
+    const tarifsVal = config.getRange('B1').getValue();
+
+    if (type === 'disponibilites') {
+      return jsonResponse({ success: true, disponibilites: dispoVal ? JSON.parse(dispoVal) : {} });
+    }
+
+    if (type === 'tarifs') {
+      return jsonResponse({ success: true, tarifs: tarifsVal ? JSON.parse(tarifsVal) : null });
+    }
+
+    const rdvSheet = getSheet('RDV');
+    const rows = rdvSheet.getDataRange().getValues();
     const bookings = [];
     for (let i = 1; i < rows.length; i++) {
       bookings.push({
@@ -44,7 +80,14 @@ function doGet(e) {
         status: rows[i][7] || 'En attente'
       });
     }
-    return jsonResponse({ success: true, bookings: bookings });
+
+    return jsonResponse({
+      success: true,
+      bookings: bookings,
+      disponibilites: dispoVal ? JSON.parse(dispoVal) : {},
+      tarifs: tarifsVal ? JSON.parse(tarifsVal) : null
+    });
+
   } catch (err) {
     return jsonResponse({ success: false, error: err.toString() });
   }
@@ -57,10 +100,12 @@ function jsonResponse(data) {
 }
 
 function setup() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  sheet.getRange(1, 1, 1, 8).setValues([[
-    'Date soumission', 'Prénom', 'Nom', 'Téléphone', 'Prestation', 'Date RDV', 'Créneau', 'Statut'
-  ]]);
-  sheet.getRange(1, 1, 1, 8).setFontWeight('bold');
-  sheet.setFrozenRows(1);
+  const rdv = getSheet('RDV');
+  if (rdv.getLastRow() === 0) {
+    rdv.getRange(1, 1, 1, 8).setValues([['Date soumission', 'Prénom', 'Nom', 'Téléphone', 'Prestation', 'Date RDV', 'Créneau', 'Statut']]);
+    rdv.getRange(1, 1, 1, 8).setFontWeight('bold');
+    rdv.setFrozenRows(1);
+  }
+  getSheet('Config');
+  Logger.log('Setup terminé !');
 }

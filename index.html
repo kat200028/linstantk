@@ -2,576 +2,623 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="RDV Beauté" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#c9a0dc" />
-  <title>RDV Beauté</title>
-  <link rel="manifest" href="manifest.json" />
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L'Instant K – Beauté & Bien-être</title>
+  <script src="config.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; overflow: hidden; }
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: #fdf6f0;
-      color: #2d2d2d;
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
+    :root {
+      --violet: #7C3AED; --violet-dark: #5B21B6; --violet-pale: #EDE9FE;
+      --pink: #EC4899; --pink-pale: #FCE7F3; --blue: #06B6D4;
+      --dark: #1E1B4B; --gray: #6B7280; --bg: #FAF5FF;
+      --green: #10B981; --red: #EF4444;
     }
-    #root { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--dark); }
+    a { text-decoration: none; }
 
-    /* APP SHELL */
-    .app { display: flex; flex-direction: column; height: 100dvh; max-width: 430px; margin: 0 auto; width: 100%; }
+    /* NAV */
+    nav { background: rgba(255,255,255,0.96); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 64px; box-shadow: 0 2px 16px rgba(124,58,237,0.08); }
+    .nav-logo { font-size: 1.4rem; font-weight: 900; background: linear-gradient(135deg, var(--violet), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a { color: var(--dark); font-size: 0.9rem; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover { color: var(--violet); }
+    .nav-cta { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white !important; padding: 8px 22px; border-radius: 50px; font-weight: 700 !important; }
+    .nav-burger { display: none; cursor: pointer; font-size: 1.4rem; background: none; border: none; color: var(--dark); }
+    .mobile-menu { display: none; flex-direction: column; background: white; border-top: 1px solid #EDE9FE; position: absolute; top: 64px; left: 0; right: 0; z-index: 99; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { padding: 14px 24px; color: var(--dark); font-weight: 500; border-bottom: 1px solid #F3F4F6; }
 
-    /* HEADER fixe */
-    .header {
-      background: linear-gradient(135deg, #c9a0dc 0%, #f4a7b9 60%, #ffd6c0 100%);
-      padding: 48px 20px 16px;
-      flex-shrink: 0;
-    }
-    .header-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.6rem;
-      font-weight: 600;
-      color: white;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.12);
-    }
-    .header-sub {
-      font-size: 0.78rem;
-      color: rgba(255,255,255,0.88);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-weight: 300;
-      margin-top: 2px;
-    }
-    .steps-row {
-      display: flex;
-      gap: 6px;
-      margin-top: 14px;
-    }
-    .step-pill {
-      flex: 1;
-      height: 4px;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.3);
-      transition: background 0.3s;
-    }
-    .step-pill.active { background: white; }
-    .step-pill.done { background: rgba(255,255,255,0.7); }
-    .step-label-row {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 6px;
-    }
-    .step-lbl {
-      font-size: 0.6rem;
-      color: rgba(255,255,255,0.7);
-      letter-spacing: 0.04em;
-      flex: 1;
-      text-align: center;
-    }
-    .step-lbl.active { color: white; font-weight: 500; }
+    /* HERO */
+    .hero { min-height: 90vh; background: linear-gradient(135deg, #1E1B4B 0%, #4C1D95 45%, #831843 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 24px; position: relative; overflow: hidden; }
+    .hero-orb-1 { position: absolute; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(236,72,153,0.2) 0%, transparent 70%); top: -150px; right: -150px; pointer-events: none; }
+    .hero-orb-2 { position: absolute; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 70%); bottom: -100px; left: -100px; pointer-events: none; }
+    .hero-badge { display: inline-block; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #67E8F9; padding: 6px 20px; border-radius: 50px; font-size: 0.78rem; letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 28px; position: relative; z-index: 1; }
+    .hero h1 { font-size: clamp(3.5rem, 9vw, 6rem); font-weight: 900; color: white; line-height: 1; margin-bottom: 24px; position: relative; z-index: 1; }
+    .hero h1 em { font-style: normal; background: linear-gradient(135deg, #F9A8D4, #67E8F9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-sub { color: rgba(255,255,255,0.65); font-size: 1.1rem; max-width: 500px; line-height: 1.75; margin-bottom: 44px; position: relative; z-index: 1; }
+    .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 1; }
+    .btn-primary { background: linear-gradient(135deg, var(--pink), var(--violet)); color: white; padding: 15px 38px; border-radius: 50px; font-size: 1rem; font-weight: 700; box-shadow: 0 8px 32px rgba(236,72,153,0.4); transition: transform .2s, box-shadow .2s; display: inline-block; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(236,72,153,0.5); }
+    .btn-ghost { background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.25); color: white; padding: 15px 38px; border-radius: 50px; font-size: 1rem; font-weight: 600; transition: background .2s; display: inline-block; }
+    .btn-ghost:hover { background: rgba(255,255,255,0.18); }
 
-    /* SCROLL AREA */
-    .scroll-area {
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 16px 14px 0;
-    }
+    /* SECTIONS */
+    .section { padding: 90px 24px; }
+    .section-alt { background: white; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-header { text-align: center; margin-bottom: 56px; }
+    .section-header h2 { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 900; margin-bottom: 12px; }
+    .section-header p { color: var(--gray); font-size: 1.05rem; }
+    .gradient { background: linear-gradient(135deg, var(--violet), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-    /* BOTTOM BAR fixe */
-    .bottom-bar {
-      flex-shrink: 0;
-      padding: 12px 14px;
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
-      background: #fdf6f0;
-      border-top: 1px solid #f0e8f5;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .section-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.3rem;
-      font-weight: 600;
-      color: #8b5e8f;
-      margin-bottom: 14px;
-    }
-
-    /* CATÉGORIES */
-    .cat-card {
-      background: white;
-      border-radius: 14px;
-      border: 2px solid transparent;
-      padding: 13px 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-      margin-bottom: 8px;
-    }
-    .cat-card.selected { border-color: #c9a0dc; background: #fdf3ff; }
-    .cat-header { display: flex; align-items: center; gap: 10px; }
-    .cat-icon { font-size: 1.3rem; }
-    .cat-name { font-weight: 500; font-size: 0.95rem; flex: 1; }
-    .cat-chevron { color: #ccc; font-size: 0.8rem; transition: transform 0.2s; }
-    .cat-card.open .cat-chevron { transform: rotate(90deg); }
-
-    .prestation-list { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
-    .prestation-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 9px 11px;
-      border-radius: 10px;
-      background: #f9f3ff;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.15s;
-      gap: 8px;
-    }
-    .prestation-item.selected { border-color: #c9a0dc; background: #efe1ff; }
-    .prestation-label { font-size: 0.85rem; flex: 1; }
-    .prestation-prix { font-size: 0.82rem; font-weight: 600; color: #9b59b6; white-space: nowrap; }
+    /* PRESTATIONS */
+    .tabs { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 40px; }
+    .tab-btn { padding: 10px 22px; border-radius: 50px; border: 2px solid #E5E7EB; background: white; color: var(--gray); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .tab-btn.active, .tab-btn:hover { border-color: var(--violet); background: var(--violet); color: white; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+    .service-item { background: var(--bg); border-radius: 14px; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #EDE9FE; transition: all .2s; }
+    .service-item:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(124,58,237,0.1); }
+    .service-name { font-weight: 600; font-size: 0.93rem; color: var(--dark); }
+    .service-price { font-weight: 800; font-size: 1.05rem; margin-left: 12px; white-space: nowrap; background: linear-gradient(135deg, var(--violet), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .badge { display: inline-block; background: linear-gradient(135deg, var(--pink), var(--violet)); color: white; font-size: 0.6rem; font-weight: 800; padding: 2px 8px; border-radius: 50px; margin-left: 6px; vertical-align: middle; }
 
     /* CALENDRIER */
-    .cal-wrap { background: white; border-radius: 16px; padding: 14px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
-    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
-    .cal-nav-btn {
-      width: 30px; height: 30px; border-radius: 50%; border: none; background: #f9f3ff;
-      color: #8b5e8f; font-size: 0.95rem; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    .cal-nav { display: flex; align-items: center; justify-content: center; gap: 24px; margin-bottom: 20px; }
+    .cal-nav-btn { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #EDE9FE; background: white; font-size: 1.4rem; cursor: pointer; color: var(--violet); display: flex; align-items: center; justify-content: center; transition: all .2s; }
+    .cal-nav-btn:hover { background: var(--violet); color: white; border-color: var(--violet); }
+    .cal-month-label { font-size: 1.3rem; font-weight: 800; color: var(--dark); min-width: 220px; text-align: center; text-transform: capitalize; }
+    .cal-week-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+    .cal-week-header div { text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--gray); text-transform: uppercase; padding: 8px 0; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 28px; }
+    .cal-cell { aspect-ratio: 1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; border: 2px solid transparent; transition: all .2s; background: white; min-height: 52px; }
+    .cal-cell.empty { background: transparent; }
+    .cal-cell.closed { background: #F9FAFB; border-color: transparent; cursor: default; }
+    .cal-cell.closed .cal-num { color: #D1D5DB; }
+    .cal-cell.past { opacity: 0.35; cursor: not-allowed !important; pointer-events: none; }
+    .cal-cell.dispo { background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); border-color: #C4B5FD; cursor: pointer; }
+    .cal-cell.dispo:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(124,58,237,0.2); border-color: var(--violet); }
+    .cal-cell.dispo .cal-num { color: var(--violet); }
+    .cal-cell.complet { background: #FEF2F2; border-color: #FECACA; cursor: default; }
+    .cal-cell.complet .cal-num { color: #EF4444; }
+    .cal-cell.selected { background: linear-gradient(135deg, var(--violet), var(--pink)); border-color: transparent; }
+    .cal-cell.selected .cal-num { color: white; }
+    .cal-cell.selected .cal-label { color: rgba(255,255,255,0.85); }
+    .cal-num { font-weight: 800; font-size: 1rem; color: var(--dark); }
+    .cal-label { font-size: 0.6rem; font-weight: 700; color: var(--gray); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .cal-cell.dispo .cal-label { color: var(--violet); }
+    .cal-cell.complet .cal-label { color: var(--red); }
+    .cal-loading { text-align: center; padding: 60px; color: var(--gray); grid-column: 1/-1; }
+    .spinner-sm { width: 28px; height: 28px; border: 3px solid #EDE9FE; border-top-color: var(--violet); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* SLOTS PANEL */
+    .slots-panel { background: white; border-radius: 20px; padding: 28px; border: 2px solid #EDE9FE; margin-bottom: 28px; display: none; }
+    .slots-panel.show { display: block; }
+    .slots-panel-title { font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 16px; text-transform: capitalize; }
+    .slots-list { display: flex; flex-wrap: wrap; gap: 10px; }
+    .slot-btn { padding: 10px 24px; border-radius: 50px; border: 2px solid #EDE9FE; background: white; color: var(--dark); font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all .2s; }
+    .slot-btn:hover { border-color: var(--violet); color: var(--violet); }
+    .slot-btn.selected { background: linear-gradient(135deg, var(--violet), var(--pink)); border-color: transparent; color: white; }
+    .slot-btn.pris { background: #F3F4F6; color: #9CA3AF; border-color: #E5E7EB; cursor: not-allowed; text-decoration: line-through; }
+    .cal-notice { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 14px; padding: 14px 22px; font-size: 0.88rem; color: #92400E; text-align: center; }
+
+    /* FORMULAIRE */
+    .reservation-section { background: linear-gradient(135deg, #1E1B4B 0%, #4C1D95 60%, #831843 100%); padding: 90px 24px; }
+    .form-card { background: white; border-radius: 28px; padding: 48px 44px; max-width: 600px; margin: 0 auto; box-shadow: 0 40px 100px rgba(0,0,0,0.35); }
+    .form-rdv-recap { background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); border-radius: 16px; padding: 16px 22px; margin-bottom: 24px; display: none; }
+    .form-rdv-recap.show { display: block; }
+    .form-rdv-recap p { font-size: 0.88rem; color: var(--dark); font-weight: 600; }
+    .form-rdv-recap strong { color: var(--violet); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .form-group { margin-bottom: 4px; }
+    .form-group.full { grid-column: 1/-1; }
+    .form-group label { display: block; font-size: 0.82rem; font-weight: 700; color: var(--dark); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group input, .form-group select { width: 100%; padding: 13px 16px; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 0.95rem; color: var(--dark); background: white; transition: border-color .2s; appearance: auto; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--violet); }
+    .form-group select:disabled { background: #F9FAFB; color: var(--gray); }
+    .btn-submit { width: 100%; padding: 16px; border: none; border-radius: 50px; background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; font-size: 1.05rem; font-weight: 800; cursor: pointer; box-shadow: 0 8px 28px rgba(124,58,237,0.35); transition: transform .2s, box-shadow .2s; margin-top: 12px; }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(124,58,237,0.45); }
+    .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .form-notice { text-align: center; color: var(--gray); font-size: 0.82rem; margin-top: 14px; }
+
+    /* INSTAGRAM */
+    .instagram-section { padding: 90px 24px; background: white; }
+    .insta-wrap { max-width: 420px; margin: 0 auto 36px; }
+    .insta-card { aspect-ratio: 1; background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); border-radius: 18px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer; }
+    .insta-card img { width: 100%; height: 100%; object-fit: cover; }
+    .insta-overlay { position: absolute; inset: 0; background: rgba(124,58,237,0.7); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; border-radius: 18px; }
+    .insta-card:hover .insta-overlay { opacity: 1; }
+    .insta-overlay span { color: white; font-size: 2rem; }
+    .insta-placeholder { font-size: 4rem; color: var(--violet); opacity: 0.3; }
+    .insta-cta { text-align: center; }
+    .btn-insta { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #833AB4, #E1306C, #F77737); color: white; padding: 14px 32px; border-radius: 50px; font-weight: 700; font-size: 0.95rem; transition: transform .2s, box-shadow .2s; box-shadow: 0 6px 20px rgba(225,48,108,0.35); }
+    .btn-insta:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(225,48,108,0.45); }
+
+    /* FOOTER */
+    footer { background: var(--dark); color: rgba(255,255,255,0.45); text-align: center; padding: 40px 24px; font-size: 0.85rem; }
+    footer .footer-logo { font-size: 1.6rem; font-weight: 900; background: linear-gradient(135deg, var(--violet), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: block; margin-bottom: 10px; }
+    footer a { color: rgba(255,255,255,0.2); font-size: 0.72rem; }
+    footer a:hover { color: rgba(255,255,255,0.5); }
+
+    /* SPIDER */
+    .spider-btn { position: fixed; bottom: 24px; right: 24px; z-index: 200; width: 44px; height: 44px; border-radius: 50%; background: rgba(30,27,75,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3); transition: transform .2s, background .2s; }
+    .spider-btn:hover { transform: scale(1.15); background: var(--violet); }
+
+    /* MODALS */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; padding: 20px; }
+    .modal-bg.show { display: flex; }
+    .modal-box { background: white; border-radius: 24px; padding: 48px 36px; text-align: center; max-width: 380px; width: 100%; }
+    .modal-icon { font-size: 3.5rem; margin-bottom: 16px; display: block; }
+    .modal-box h3 { font-size: 1.4rem; font-weight: 800; margin-bottom: 12px; }
+    .modal-box p { color: var(--gray); line-height: 1.65; margin-bottom: 28px; font-size: 0.95rem; }
+    .modal-box button { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 12px 34px; border-radius: 50px; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-burger { display: block; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      .form-card { padding: 32px 22px; }
+      .cal-num { font-size: 0.85rem; }
+      .cal-label { font-size: 0.55rem; }
     }
-    .cal-month { text-align: center; font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 600; color: #8b5e8f; flex: 1; }
-    .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
-    .cal-dname { font-size: 0.65rem; color: #bbb; text-align: center; text-transform: uppercase; letter-spacing: 0.04em; }
-    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-    .cal-cell {
-      aspect-ratio: 1;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.82rem;
-    }
-    .cal-cell.off { color: #e0e0e0; text-decoration: line-through; }
-    .cal-cell.on {
-      background: #f3e8ff;
-      color: #7c3aed;
-      cursor: pointer;
-      font-weight: 500;
-      border: 2px solid transparent;
-    }
-    .cal-cell.on:active { background: #e9d5ff; }
-    .cal-cell.sel { background: #c9a0dc !important; color: white !important; }
-
-    .divider { height: 1px; background: linear-gradient(to right, transparent, #e8b4d4, transparent); margin: 12px 0; }
-
-    .slots-wrap { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
-    .slot-btn {
-      padding: 7px 16px;
-      border-radius: 30px;
-      border: 2px solid #e0c8f0;
-      background: white;
-      color: #7c3aed;
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .slot-btn.sel { background: #c9a0dc; border-color: #c9a0dc; color: white; }
-    .slot-note { font-size: 0.72rem; color: #bbb; margin-top: 8px; font-style: italic; }
-
-    /* FORM */
-    .form-group { margin-bottom: 14px; }
-    .form-label { font-size: 0.75rem; color: #999; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; display: block; margin-bottom: 5px; }
-    .form-input {
-      width: 100%;
-      padding: 11px 13px;
-      border-radius: 10px;
-      border: 2px solid #eee;
-      font-size: 0.95rem;
-      font-family: 'DM Sans', sans-serif;
-      outline: none;
-      background: white;
-      -webkit-appearance: none;
-    }
-    .form-input:focus { border-color: #c9a0dc; }
-
-    /* RECAP */
-    .recap-box { background: #fdf3ff; border: 2px solid #e0c8f0; border-radius: 14px; padding: 14px; margin-bottom: 14px; }
-    .recap-row { display: flex; gap: 8px; margin-bottom: 8px; font-size: 0.88rem; }
-    .recap-icon { flex-shrink: 0; }
-    .recap-label { color: #bbb; font-size: 0.72rem; display: block; }
-    .recap-val { color: #2d2d2d; }
-
-    .warn-box { background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; padding: 11px 13px; font-size: 0.78rem; color: #7c5e00; margin-bottom: 14px; line-height: 1.5; }
-
-    /* BOUTONS */
-    .btn-main {
-      flex: 1;
-      padding: 13px;
-      border-radius: 30px;
-      background: linear-gradient(135deg, #c9a0dc, #f4a7b9);
-      color: white;
-      font-size: 0.95rem;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .btn-main:disabled { opacity: 0.35; }
-    .btn-back {
-      padding: 13px 18px;
-      border-radius: 30px;
-      border: 2px solid #e0c8f0;
-      background: none;
-      color: #9b59b6;
-      font-size: 0.9rem;
-      font-family: 'DM Sans', sans-serif;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    /* SUCCÈS */
-    .success { text-align: center; padding: 30px 10px 20px; }
-    .success-emoji { font-size: 3.2rem; margin-bottom: 12px; }
-    .success-title { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; font-weight: 600; color: #8b5e8f; margin-bottom: 8px; }
-    .success-msg { color: #888; font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px; }
-
-    .sel-summary { background: white; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; border: 1px solid #eee; font-size: 0.82rem; color: #666; display: flex; align-items: center; gap: 7px; }
-    .sel-summary strong { color: #8b5e8f; }
-
-    .spacer { height: 20px; }
-
-    .admin-link { text-align: center; padding: 10px 0 4px; }
-    .admin-link a { font-size: 0.68rem; color: #ccc; text-decoration: none; letter-spacing: 0.04em; }
   </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState } = React;
 
-const CATS = [
-  { id:"manucure", label:"Manucure", icon:"💅", items:[
-    {id:"m1",label:"Gainage sur ongle naturel",prix:"35€"},
-    {id:"m2",label:"Pose Gel X",prix:"40€"},
-    {id:"m3",label:"Pose chablon",prix:"50€"},
-    {id:"m4",label:"Remplissage",prix:"35€"},
-    {id:"m5",label:"Remplissage pose extérieur",prix:"40€"},
-    {id:"m6",label:"Dépose Acrylique",prix:"20€"},
-    {id:"m7",label:"Dépose",prix:"15€"},
-    {id:"m8",label:"Nail art",prix:"Sur devis"},
+<nav>
+  <div class="nav-logo">L'Instant K</div>
+  <ul class="nav-links">
+    <li><a href="#prestations">Prestations</a></li>
+    <li><a href="#disponibilites">Disponibilités</a></li>
+    <li><a href="#reservation">Contact</a></li>
+    <li><a href="#reservation" class="nav-cta">Prendre RDV</a></li>
+  </ul>
+  <button class="nav-burger" onclick="toggleMenu()">☰</button>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#prestations" onclick="toggleMenu()">Prestations</a>
+  <a href="#disponibilites" onclick="toggleMenu()">Disponibilités</a>
+  <a href="#reservation" onclick="toggleMenu()">Prendre RDV</a>
+</div>
+
+<section class="hero">
+  <div class="hero-orb-1"></div>
+  <div class="hero-orb-2"></div>
+  <div class="hero-badge">✨ Beauté &amp; Bien-être</div>
+  <h1>L'Instant <em>K</em></h1>
+  <p class="hero-sub">Manucure · Pédicure · Épilations · Soins du visage · Massage<br>Prenez soin de vous dans un moment rien que pour vous.</p>
+  <div class="hero-btns">
+    <a href="#reservation" class="btn-primary">Prendre rendez-vous</a>
+    <a href="#prestations" class="btn-ghost">Voir les prestations</a>
+  </div>
+</section>
+
+<!-- PRESTATIONS -->
+<section class="section section-alt" id="prestations">
+  <div class="container">
+    <div class="section-header">
+      <h2>Nos <span class="gradient">Prestations</span></h2>
+      <p>Découvrez l'ensemble de nos soins et tarifs</p>
+    </div>
+    <div class="tabs" id="prestaTabs"></div>
+    <div id="prestaContent"></div>
+  </div>
+</section>
+
+<!-- DISPONIBILITÉS -->
+<section class="section" id="disponibilites">
+  <div class="container">
+    <div class="section-header">
+      <h2>Mes <span class="gradient">Disponibilités</span></h2>
+      <p>Cliquez sur un jour disponible pour choisir votre créneau</p>
+    </div>
+
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="cal-month-label" id="calMonthLabel"></div>
+      <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+
+    <div class="cal-week-header">
+      <div>Lun</div><div>Mar</div><div>Mer</div>
+      <div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
+    </div>
+
+    <div class="cal-grid" id="calGrid">
+      <div class="cal-loading"><div class="spinner-sm"></div>Chargement...</div>
+    </div>
+
+    <!-- Panel créneaux -->
+    <div class="slots-panel" id="slotsPanel">
+      <div class="slots-panel-title" id="slotsPanelTitle"></div>
+      <div class="slots-list" id="slotsList"></div>
+    </div>
+
+    <div class="cal-notice">
+      ⚠️ <strong>Les réservations sont impossibles à moins de 24h.</strong> Je vous recontacte pour confirmer votre créneau.
+    </div>
+  </div>
+</section>
+
+<!-- RÉSERVATION -->
+<section class="reservation-section" id="reservation">
+  <div class="section-header">
+    <h2 style="color:white">Prendre <span style="background:linear-gradient(135deg,#F9A8D4,#67E8F9);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Rendez-vous</span></h2>
+    <p style="color:rgba(255,255,255,0.55)">Remplissez le formulaire — je vous recontacte pour confirmer ⭐</p>
+  </div>
+  <div class="form-card">
+    <div class="form-rdv-recap" id="formRecap">
+      <p>📅 <strong id="recapDate"></strong> &nbsp;·&nbsp; 🕐 <strong id="recapCreneau"></strong></p>
+    </div>
+    <form id="rdvForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Prénom *</label>
+          <input type="text" id="f-prenom" placeholder="Votre prénom" required />
+        </div>
+        <div class="form-group">
+          <label>Nom *</label>
+          <input type="text" id="f-nom" placeholder="Votre nom" required />
+        </div>
+        <div class="form-group full">
+          <label>Téléphone *</label>
+          <input type="tel" id="f-tel" placeholder="06 XX XX XX XX" required />
+        </div>
+        <div class="form-group full">
+          <label>Prestation souhaitée *</label>
+          <select id="f-service" required>
+            <option value="">-- Choisir une prestation --</option>
+          </select>
+        </div>
+      </div>
+      <input type="hidden" id="f-date" />
+      <input type="hidden" id="f-creneau" />
+      <button type="submit" class="btn-submit" id="submitBtn">Envoyer ma demande ✨</button>
+      <p class="form-notice">Je vous recontacte rapidement pour confirmer votre créneau. ⭐</p>
+    </form>
+  </div>
+</section>
+
+<!-- INSTAGRAM -->
+<section class="instagram-section" id="instagram">
+  <div class="container">
+    <div class="section-header">
+      <h2>Retrouvez-moi sur <span class="gradient">Instagram</span></h2>
+      <p>Mes dernières réalisations • @l.instant_k</p>
+    </div>
+    <div class="insta-wrap">
+      <a href="https://www.instagram.com/l.instant_k" target="_blank" class="insta-card">
+        <div class="insta-placeholder">💅</div>
+        <div class="insta-overlay"><span>📷</span></div>
+      </a>
+    </div>
+    <div class="insta-cta">
+      <a href="https://www.instagram.com/l.instant_k" target="_blank" class="btn-insta">
+        <span>📸</span> Voir toutes mes réalisations
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="footer-logo">L'Instant K</span>
+  <p>Beauté &amp; Bien-être · Manucure · Pédicure · Épilations · Massage</p>
+  <p style="margin-top:16px"><a href="admin.html">Espace administrateur</a></p>
+</footer>
+
+<a href="admin.html" class="spider-btn" title="Espace admin">🕷️</a>
+
+<div class="modal-bg" id="modalOK">
+  <div class="modal-box">
+    <span class="modal-icon">💌</span>
+    <h3>Demande envoyée !</h3>
+    <p>Votre demande de rendez-vous a bien été reçue. Je vous recontacte très vite pour confirmer. ⭐</p>
+    <button onclick="document.getElementById('modalOK').classList.remove('show')">Parfait !</button>
+  </div>
+</div>
+<div class="modal-bg" id="modalErr">
+  <div class="modal-box">
+    <span class="modal-icon">😕</span>
+    <h3>Oups !</h3>
+    <p>Impossible d'envoyer votre demande. Veuillez réessayer dans quelques instants.</p>
+    <button onclick="document.getElementById('modalErr').classList.remove('show')">Fermer</button>
+  </div>
+</div>
+
+<script>
+const JOURS_COURT = ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const JOURS_LONG = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+
+const DEFAULT_TARIFS = [
+  { id:'manucure', emoji:'💅', nom:'Manucure', items:[
+    {nom:'Gainage sur ongle naturel',prix:'35€'},
+    {nom:'Pose Gel X',prix:'40€'},
+    {nom:'Pose chablon',prix:'50€'},
+    {nom:'Remplissage',prix:'35€'},
+    {nom:'Remplissage pose extérieur',prix:'40€'},
+    {nom:'Dépose Acrylique',prix:'20€'},
+    {nom:'Dépose',prix:'15€'},
+    {nom:'Nail art',prix:'Sur devis'},
   ]},
-  { id:"pedicure", label:"Pédicure", icon:"🦶", items:[
-    {id:"p1",label:"Vernis semi-perm simple",prix:"20€"},
-    {id:"p2",label:"Semi-Perm avec extension gros orteil",prix:"35€"},
-    {id:"p3",label:"Dépose + Repose vernis simple",prix:"25€"},
-    {id:"p4",label:"Remplissage",prix:"30€"},
-    {id:"p5",label:"Dépose acrylique",prix:"20€"},
-    {id:"p6",label:"Dépose",prix:"15€"},
-    {id:"p7",label:"Déco (strass, dessin, french élaboré)",prix:"+5€"},
+  { id:'pedicure', emoji:'🦶', nom:'Pédicure', items:[
+    {nom:'Vernis semi-perm simple',prix:'20€'},
+    {nom:'Semi-Perm avec extension gros orteil',prix:'35€'},
+    {nom:'Dépose + Repose vernis simple',prix:'25€'},
+    {nom:'Remplissage',prix:'30€'},
+    {nom:'Dépose acrylique',prix:'20€'},
+    {nom:'Dépose',prix:'15€'},
+    {nom:'Deco (strass, dessin, French élaboré)',prix:'5€'},
   ]},
-  { id:"soins-pieds", label:"Soins des pieds", icon:"✨", items:[
-    {id:"sp1",label:"Talon express",prix:"25€"},
-    {id:"sp2",label:"Soins des pieds",prix:"40€"},
-    {id:"sp3",label:"Soins + vernis semi-perm simple",prix:"50€"},
-    {id:"sp4",label:"Soins dépose + repose + vernis semi-perm",prix:"60€"},
-    {id:"sp5",label:"Soins + remplissage",prix:"65€"},
-    {id:"sp6",label:"Soins + vernis semi-perm + extension gros orteil",prix:"70€"},
+  { id:'soins-pieds', emoji:'✨', nom:'Soins des pieds', items:[
+    {nom:'Talon express',prix:'25€'},
+    {nom:'Soins des Pieds',prix:'40€'},
+    {nom:'Soins + vernis semi-perm simple',prix:'50€'},
+    {nom:'Soins dépose + repose + vernis sp',prix:'60€'},
+    {nom:'Soins + remplissage',prix:'65€'},
+    {nom:'Soins + vernis sp + extension gros orteil',prix:'70€'},
   ]},
-  { id:"visage", label:"Soins du visage", icon:"🌸", items:[
-    {id:"v1",label:"Soins du visage",prix:"45€"},
+  { id:'soins-visage', emoji:'🌸', nom:'Soins du visage', items:[
+    {nom:'Soins du visage',prix:'45€'},
   ]},
-  { id:"epilations", label:"Épilations", icon:"🌿", items:[
-    {id:"e1",label:"Sourcils",prix:"10€"},
-    {id:"e2",label:"Lèvre",prix:"10€"},
-    {id:"e3",label:"Aiselles",prix:"10€"},
-    {id:"e4",label:"Demi-jambe",prix:"15€"},
-    {id:"e5",label:"Jambes entières",prix:"28€"},
-    {id:"e6",label:"Maillot échancré",prix:"25€"},
-    {id:"e7",label:"Maillot intégral",prix:"30€"},
-    {id:"e8",label:"Vajacial seul",prix:"40€"},
-    {id:"e9",label:"Interfessier",prix:"5€"},
-    {id:"e10",label:"Épilation intégral + vajacial",prix:"60€"},
-    {id:"e11",label:"PACK Aiselle + Demi-jambes + Maillot intégral 🆕",prix:"50€"},
+  { id:'epilation', emoji:'🌿', nom:'Épilations', items:[
+    {nom:'Sourcils',prix:'10€'},
+    {nom:'Lèvre',prix:'10€'},
+    {nom:'Aiselles',prix:'10€'},
+    {nom:'Interfessier',prix:'5€'},
+    {nom:'Demi-jambe',prix:'15€'},
+    {nom:'Jambe entière',prix:'28€'},
+    {nom:'Maillot échancré',prix:'25€'},
+    {nom:'Maillot intégral',prix:'30€'},
+    {nom:'Vajacial seul',prix:'40€'},
+    {nom:'Épilation intégral + Vajacial',prix:'60€'},
+    {nom:'Pack Aiselle + Demi-jambes + Maillot intégral',prix:'50€',badge:'NEW'},
   ]},
-  { id:"massage", label:"Massage", icon:"💆", items:[
-    {id:"mg1",label:"Massage relaxant corps entier (45min–1h)",prix:"60€"},
+  { id:'massage', emoji:'💆', nom:'Massage', items:[
+    {nom:'Massage relaxant corps entier (45min – 1h)',prix:'60€'},
   ]},
 ];
 
-const SLOTS_BASE = ["8h00","11h00","14h00","17h00"];
-const MOIS_NOMS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-const JOURS = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+let TARIFS = DEFAULT_TARIFS;
+let DISPONIBILITES = {};
+let BOOKINGS = [];
+let calYear, calMonth, selectedDate = null, selectedSlot = null;
 
-function dateKey(y,m,d) {
-  return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+/* ══ NAV ══ */
+function toggleMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
+
+/* ══ TARIFS ══ */
+function buildPrestations(tarifs) {
+  const tabs = document.getElementById('prestaTabs');
+  const content = document.getElementById('prestaContent');
+  tabs.innerHTML = '';
+  content.innerHTML = '';
+  tarifs.forEach((cat, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = cat.emoji + ' ' + cat.nom;
+    btn.onclick = function() {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById('tab-' + cat.id).classList.add('active');
+    };
+    tabs.appendChild(btn);
+
+    const pane = document.createElement('div');
+    pane.id = 'tab-' + cat.id;
+    pane.className = 'tab-pane' + (i === 0 ? ' active' : '');
+    pane.innerHTML = '<div class="services-grid">' + cat.items.map(item =>
+      `<div class="service-item">
+        <span class="service-name">${item.nom}${item.badge ? `<span class="badge">${item.badge}</span>` : ''}</span>
+        <span class="service-price">${item.prix}</span>
+      </div>`
+    ).join('') + '</div>';
+    content.appendChild(pane);
+  });
+
+  // Remplir le select du formulaire
+  const sel = document.getElementById('f-service');
+  sel.innerHTML = '<option value="">-- Choisir une prestation --</option>';
+  tarifs.forEach(cat => {
+    const grp = document.createElement('optgroup');
+    grp.label = cat.emoji + ' ' + cat.nom;
+    cat.items.forEach(item => {
+      const o = document.createElement('option');
+      o.value = item.nom + ' – ' + item.prix;
+      o.textContent = item.nom + ' – ' + item.prix;
+      grp.appendChild(o);
+    });
+    sel.appendChild(grp);
+  });
 }
-function daysInMonth(y,m) { return new Date(y, m+1, 0).getDate(); }
-function firstWeekdayOfMonth(y,m) {
-  const jsDay = new Date(y, m, 1).getDay();
-  return (jsDay + 6) % 7;
+
+/* ══ CALENDRIER ══ */
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  selectedDate = null; selectedSlot = null;
+  document.getElementById('slotsPanel').classList.remove('show');
+  renderCal();
 }
-function loadDispo() {
+
+function renderCal() {
+  const label = new Date(calYear, calMonth, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  document.getElementById('calMonthLabel').textContent = label;
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const offset = firstDay === 0 ? 6 : firstDay - 1;
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  const now = new Date();
+  const limit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  limit.setHours(0, 0, 0, 0);
+
+  for (let i = 0; i < offset; i++) {
+    const e = document.createElement('div');
+    e.className = 'cal-cell empty';
+    grid.appendChild(e);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cellDate = new Date(calYear, calMonth, d);
+    const isPast = cellDate < limit;
+    const slots = DISPONIBILITES[dateStr] || [];
+
+    // Créneaux déjà pris (En attente ou Accepté)
+    const pris = BOOKINGS
+      .filter(b => b.date_str === dateStr && (b.status === 'En attente' || b.status === 'Accepté'))
+      .map(b => b.creneau);
+    const dispo = slots.filter(s => !pris.includes(s));
+    const isComplet = slots.length > 0 && dispo.length === 0;
+    const hasDispo = dispo.length > 0;
+    const isSelected = selectedDate === dateStr;
+
+    const cell = document.createElement('div');
+    let cls = 'cal-cell';
+    if (isPast) cls += ' past';
+    else if (isComplet) cls += ' complet';
+    else if (hasDispo) cls += ' dispo';
+    else cls += ' closed';
+    if (isSelected) cls += ' selected';
+    cell.className = cls;
+
+    let labelTxt = '';
+    if (isComplet) labelTxt = 'Complet';
+    else if (hasDispo) labelTxt = dispo.length + ' créneau' + (dispo.length > 1 ? 'x' : '');
+
+    cell.innerHTML = `<div class="cal-num">${d}</div>${labelTxt ? `<div class="cal-label">${labelTxt}</div>` : ''}`;
+
+    if (!isPast && hasDispo) {
+      cell.onclick = () => selectDay(dateStr, dispo);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function selectDay(dateStr, dispo) {
+  selectedDate = dateStr;
+  selectedSlot = null;
+  document.getElementById('f-date').value = '';
+  document.getElementById('f-creneau').value = '';
+  document.getElementById('formRecap').classList.remove('show');
+  renderCal();
+
+  const d = new Date(dateStr + 'T00:00:00');
+  const label = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+
+  document.getElementById('slotsPanelTitle').textContent = '📅 ' + label.charAt(0).toUpperCase() + label.slice(1);
+  document.getElementById('slotsList').innerHTML = dispo.map(s =>
+    `<button class="slot-btn" onclick="selectSlot('${dateStr}','${s}','${label}')">${s}</button>`
+  ).join('');
+
+  const panel = document.getElementById('slotsPanel');
+  panel.classList.add('show');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function selectSlot(dateStr, slot, label) {
+  selectedSlot = slot;
+  document.querySelectorAll('.slot-btn').forEach(b => {
+    b.classList.toggle('selected', b.textContent === slot);
+  });
+
+  document.getElementById('f-date').value = dateStr;
+  document.getElementById('f-creneau').value = slot;
+  document.getElementById('recapDate').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+  document.getElementById('recapCreneau').textContent = slot;
+  document.getElementById('formRecap').classList.add('show');
+
+  setTimeout(() => {
+    document.getElementById('reservation').scrollIntoView({ behavior: 'smooth' });
+  }, 200);
+}
+
+/* ══ FORMULAIRE ══ */
+document.getElementById('rdvForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const creneau = document.getElementById('f-creneau').value;
+  if (!creneau) { alert('Veuillez choisir un créneau dans le calendrier ci-dessus.'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Envoi en cours...';
+
+  const dateVal = document.getElementById('f-date').value;
+  const d = dateVal ? new Date(dateVal + 'T00:00:00') : null;
+  const dateLabel = d ? JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()] : '';
+
   try {
-    const raw = localStorage.getItem("rdv_beaute_dispo_v2");
-    return raw ? JSON.parse(raw) : {};
-  } catch(e) { return {}; }
-}
-function slotsForDate(dispo, key) {
-  if (dispo.hasOwnProperty(key)) return dispo[key];
-  return SLOTS_BASE.slice();
-}
-const STEP_LABELS = ["Prestation","Date","Infos","Confirmation"];
-
-function App() {
-  const [step, setStep] = useState(1);
-  const [openCat, setOpenCat] = useState(null);
-  const [selPrest, setSelPrest] = useState(null);
-  const today = new Date();
-  const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
-  const [selDay, setSelDay] = useState(null);
-  const [selSlot, setSelSlot] = useState(null);
-  const [form, setForm] = useState({prenom:"",nom:"",tel:""});
-  const [loading, setLoading] = useState(false);
-  const [dispo, setDispo] = useState(()=>loadDispo());
-
-  const pInfo = selPrest ? CATS.flatMap(c=>c.items).find(p=>p.id===selPrest) : null;
-  const cInfo = selPrest ? CATS.find(c=>c.items.some(p=>p.id===selPrest)) : null;
-  const selKey = selDay ? dateKey(viewYear, viewMonth, selDay) : null;
-  const slots = selKey ? slotsForDate(dispo, selKey) : [];
-
-  const canStep2 = !!selPrest;
-  const canStep3 = !!selDay && !!selSlot;
-  const canStep4 = form.prenom.trim() && form.nom.trim() && form.tel.trim();
-
-  const nbDays = daysInMonth(viewYear, viewMonth);
-  const firstWd = firstWeekdayOfMonth(viewYear, viewMonth);
-  const calCells = [];
-  for(let i=0;i<firstWd;i++) calCells.push(null);
-  for(let d=1;d<=nbDays;d++) calCells.push(d);
-
-  function prevMonth() {
-    setSelDay(null); setSelSlot(null);
-    if (viewMonth===0) { setViewMonth(11); setViewYear(viewYear-1); }
-    else setViewMonth(viewMonth-1);
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'new',
+        prenom: document.getElementById('f-prenom').value.trim(),
+        nom: document.getElementById('f-nom').value.trim(),
+        telephone: document.getElementById('f-tel').value.trim(),
+        prestation: document.getElementById('f-service').value,
+        date: dateLabel,
+        date_str: dateVal,
+        creneau: creneau
+      })
+    });
+    this.reset();
+    document.getElementById('f-date').value = '';
+    document.getElementById('f-creneau').value = '';
+    document.getElementById('formRecap').classList.remove('show');
+    document.getElementById('slotsPanel').classList.remove('show');
+    selectedDate = null; selectedSlot = null;
+    renderCal();
+    document.getElementById('modalOK').classList.add('show');
+  } catch(err) {
+    document.getElementById('modalErr').classList.add('show');
   }
-  function nextMonth() {
-    setSelDay(null); setSelSlot(null);
-    if (viewMonth===11) { setViewMonth(0); setViewYear(viewYear+1); }
-    else setViewMonth(viewMonth+1);
-  }
+  btn.disabled = false; btn.textContent = 'Envoyer ma demande ✨';
+});
 
-  function confirm() {
-    setLoading(true);
+/* ══ CHARGEMENT ══ */
+async function init() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
 
-    // Sauvegarde locale du RDV pour la partie admin
-    try {
-      const rdv = {
-        id: Date.now(),
-        prestation: pInfo?.label,
-        categorie: cInfo?.label,
-        prix: pInfo?.prix,
-        jour: selDay,
-        mois: `${MOIS_NOMS[viewMonth]} ${viewYear}`,
-        creneau: selSlot,
-        prenom: form.prenom,
-        nom: form.nom,
-        tel: form.tel,
-        statut: "en_attente",
-        creeLe: new Date().toISOString(),
-      };
-      const existants = JSON.parse(localStorage.getItem("rdv_beaute_liste") || "[]");
-      existants.push(rdv);
-      localStorage.setItem("rdv_beaute_liste", JSON.stringify(existants));
-    } catch (e) {}
+  buildPrestations(TARIFS);
 
-    setTimeout(()=>{setLoading(false);setStep(5);},900);
-  }
-  function reset() {
-    setStep(1);setOpenCat(null);setSelPrest(null);
-    setSelDay(null);setSelSlot(null);setForm({prenom:"",nom:"",tel:""});
+  try {
+    const r = await fetch(SCRIPT_URL + '?type=all&t=' + Date.now());
+    const data = await r.json();
+
+    if (data.disponibilites) DISPONIBILITES = data.disponibilites;
+
+    if (data.tarifs) {
+      TARIFS = data.tarifs;
+      buildPrestations(TARIFS);
+    }
+
+    if (data.bookings) {
+      // Enrichir avec date_str pour comparaison
+      BOOKINGS = data.bookings.map(b => {
+        // date_str peut être stocké séparément ou reconstruit
+        return { ...b, date_str: b.date_str || b.date };
+      });
+    }
+  } catch(e) {
+    // Fallback silencieux — calendrier vide
   }
 
-  return (
-    <div className="app">
-      {/* HEADER */}
-      <div className="header">
-        <div className="header-title">💅 RDV Beauté</div>
-        <div className="header-sub">Esthéticienne · Martinique</div>
-        {step < 5 && <>
-          <div className="steps-row">
-            {[1,2,3,4].map(s=>(
-              <div key={s} className={`step-pill ${step===s?"active":step>s?"done":""}`} />
-            ))}
-          </div>
-          <div className="step-label-row">
-            {STEP_LABELS.map((l,i)=>(
-              <div key={i} className={`step-lbl ${step===i+1?"active":""}`}>{l}</div>
-            ))}
-          </div>
-        </>}
-      </div>
-
-      {/* CONTENU SCROLLABLE */}
-      <div className="scroll-area">
-
-        {/* ÉTAPE 1 */}
-        {step===1 && <>
-          <div className="section-title">Quelle prestation ?</div>
-          {CATS.map(cat=>(
-            <div key={cat.id}
-              className={`cat-card ${openCat===cat.id?"open":""} ${cInfo?.id===cat.id?"selected":""}`}
-              onClick={()=>setOpenCat(openCat===cat.id?null:cat.id)}
-            >
-              <div className="cat-header">
-                <span className="cat-icon">{cat.icon}</span>
-                <span className="cat-name">{cat.label}</span>
-                <span className="cat-chevron">▶️</span>
-              </div>
-              {openCat===cat.id && (
-                <div className="prestation-list" onClick={e=>e.stopPropagation()}>
-                  {cat.items.map(p=>(
-                    <div key={p.id}
-                      className={`prestation-item ${selPrest===p.id?"selected":""}`}
-                      onClick={()=>setSelPrest(selPrest===p.id?null:p.id)}
-                    >
-                      <span className="prestation-label">{p.label}</span>
-                      <span className="prestation-prix">{p.prix}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-          <div className="spacer"/>
-        </>}
-
-        {/* ÉTAPE 2 */}
-        {step===2 && <>
-          <div className="section-title">Choisissez une date</div>
-          {pInfo && <div className="sel-summary"><span>{cInfo?.icon}</span><span>{pInfo.label} — <strong>{pInfo.prix}</strong></span></div>}
-          <div className="cal-wrap">
-            <div className="cal-nav">
-              <button className="cal-nav-btn" onClick={prevMonth}>‹</button>
-              <div className="cal-month">{MOIS_NOMS[viewMonth]} {viewYear}</div>
-              <button className="cal-nav-btn" onClick={nextMonth}>›</button>
-            </div>
-            <div className="cal-header">{JOURS.map(d=><div key={d} className="cal-dname">{d}</div>)}</div>
-            <div className="cal-grid">
-              {calCells.map((day,idx)=>{
-                if(!day) return <div key={idx} className="cal-cell"/>;
-                const key = dateKey(viewYear, viewMonth, day);
-                const ok = slotsForDate(dispo, key).length>0;
-                return <div key={day} className={`cal-cell ${ok?"on":"off"} ${selDay===day?"sel":""}`}
-                  onClick={()=>{if(ok){setSelDay(day);setSelSlot(null);}}}>
-                  {day}
-                </div>;
-              })}
-            </div>
-            {selDay && <>
-              <div className="divider"/>
-              <div style={{fontSize:"0.8rem",color:"#999",marginBottom:6}}>
-                Créneaux le <strong style={{color:"#8b5e8f"}}>{selDay} {MOIS_NOMS[viewMonth]}</strong> :
-              </div>
-              <div className="slots-wrap">
-                {slots.map(s=>(
-                  <button key={s} className={`slot-btn ${selSlot===s?"sel":""}`} onClick={()=>setSelSlot(s)}>{s}</button>
-                ))}
-              </div>
-            </>}
-          </div>
-          <div className="spacer"/>
-        </>}
-
-        {/* ÉTAPE 3 */}
-        {step===3 && <>
-          <div className="section-title">Vos coordonnées</div>
-          <div className="sel-summary"><span>📅</span><span>Le <strong>{selDay} {MOIS_NOMS[viewMonth]}</strong> à <strong>{selSlot}</strong></span></div>
-          <div className="form-group">
-            <label className="form-label">Prénom</label>
-            <input className="form-input" type="text" placeholder="Votre prénom"
-              value={form.prenom} onChange={e=>setForm({...form,prenom:e.target.value})}/>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Nom</label>
-            <input className="form-input" type="text" placeholder="Votre nom"
-              value={form.nom} onChange={e=>setForm({...form,nom:e.target.value})}/>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Téléphone</label>
-            <input className="form-input" type="tel" placeholder="06 96 XX XX XX"
-              value={form.tel} onChange={e=>setForm({...form,tel:e.target.value})}/>
-          </div>
-          <div className="spacer"/>
-        </>}
-
-        {/* ÉTAPE 4 */}
-        {step===4 && <>
-          <div className="section-title">Récapitulatif</div>
-          <div className="recap-box">
-            <div className="recap-row"><span className="recap-icon">{cInfo?.icon}</span><div><span className="recap-label">Prestation</span><span className="recap-val">{pInfo?.label} — {pInfo?.prix}</span></div></div>
-            <div className="recap-row"><span className="recap-icon">📅</span><div><span className="recap-label">Date & heure</span><span className="recap-val">{selDay} {MOIS_NOMS[viewMonth]} {viewYear} à {selSlot}</span></div></div>
-            <div className="recap-row"><span className="recap-icon">👤</span><div><span className="recap-label">Nom</span><span className="recap-val">{form.prenom} {form.nom}</span></div></div>
-            <div className="recap-row"><span className="recap-icon">📞</span><div><span className="recap-label">Téléphone</span><span className="recap-val">{form.tel}</span></div></div>
-          </div>
-          <div className="warn-box">⚠️ Merci de confirmer votre présence <strong>24h à l'avance</strong>. En cas d'annulation tardive, le créneau sera proposé à quelqu'un d'autre.</div>
-          <div className="spacer"/>
-        </>}
-
-        {/* ÉTAPE 5 */}
-        {step===5 && <div className="success">
-          <div className="success-emoji">🌸</div>
-          <div className="success-title">Demande envoyée !</div>
-          <div className="success-msg">Merci <strong>{form.prenom}</strong> !<br/>Votre demande pour le <strong>{selDay} {MOIS_NOMS[viewMonth]} à {selSlot}</strong> a bien été reçue.</div>
-          <div className="warn-box" style={{textAlign:"left",marginBottom:20}}>
-            📞 Votre esthéticienne vous contactera au <strong>{form.tel}</strong> pour confirmer.<br/><br/>
-            ⚠️ <strong>Rappel :</strong> Confirmez 24h à l'avance. Merci !
-          </div>
-        </div>}
-
-      </div>
-
-      {/* BARRE DU BAS */}
-      <div className="bottom-bar">
-        {step===1 && <>
-          <div style={{flex:1}}/>
-          <button className="btn-main" disabled={!canStep2} onClick={()=>setStep(2)}>Choisir une date →</button>
-        </>}
-        {step===2 && <>
-          <button className="btn-back" onClick={()=>setStep(1)}>← Retour</button>
-          <button className="btn-main" disabled={!canStep3} onClick={()=>setStep(3)}>Continuer →</button>
-        </>}
-        {step===3 && <>
-          <button className="btn-back" onClick={()=>setStep(2)}>← Retour</button>
-          <button className="btn-main" disabled={!canStep4} onClick={()=>setStep(4)}>Vérifier →</button>
-        </>}
-        {step===4 && <>
-          <button className="btn-back" onClick={()=>setStep(3)}>← Modifier</button>
-          <button className="btn-main" disabled={loading} onClick={confirm}>{loading?"Envoi...":"✅ Confirmer"}</button>
-        </>}
-        {step===5 && <>
-          <button className="btn-main" onClick={reset}>Prendre un autre RDV</button>
-        </>}
-      </div>
-
-      {step===1 && <div className="admin-link"><a href="admin.html">Espace pro</a></div>}
-    </div>
-  );
+  renderCal();
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+init();
 </script>
 </body>
 </html>

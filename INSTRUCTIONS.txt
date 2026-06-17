@@ -1,0 +1,74 @@
+============================================================
+  INSTRUCTIONS – MISE EN PLACE DU SITE L'INSTANT K
+============================================================
+
+ÉTAPE 1 — Créer le Google Sheet (tableau des RDV)
+---------------------------------------------------
+1. Allez sur https://sheets.google.com
+2. Cliquez sur "+ Nouveau" pour créer un tableau vide
+3. Nommez-le "RDV L'Instant K" (en haut à gauche)
+4. Laissez-le ouvert, on va y revenir
+
+
+ÉTAPE 2 — Installer le script automatique
+---------------------------------------------------
+1. Dans votre Google Sheet, cliquez sur "Extensions" (menu en haut)
+2. Cliquez sur "Apps Script"
+3. Une nouvelle page s'ouvre → supprimez tout ce qui est écrit dedans
+4. Ouvrez le fichier "google-script.gs" avec le Bloc-notes
+5. Copiez TOUT le contenu (Ctrl+A puis Ctrl+C)
+6. Collez-le dans Apps Script (Ctrl+V)
+7. Cliquez sur l'icône 💾 (Enregistrer) en haut
+8. Cliquez sur "Exécuter" → choisissez la fonction "setup" → cliquez "Exécuter"
+   (cela crée automatiquement les en-têtes du tableau)
+9. Acceptez les autorisations si on vous le demande
+
+
+ÉTAPE 3 — Déployer le script en ligne
+---------------------------------------------------
+1. Cliquez sur "Déployer" (bouton bleu en haut à droite)
+2. Choisissez "Nouveau déploiement"
+3. Cliquez sur l'icône ⚙️ à côté de "Type" → choisissez "Application Web"
+4. Remplissez :
+   - Description : "L'Instant K RDV"
+   - Exécuter en tant que : "Moi"
+   - Qui a accès : "Tout le monde"
+5. Cliquez "Déployer"
+6. Acceptez les autorisations
+7. COPIEZ l'URL qui apparaît (elle ressemble à https://script.google.com/macros/s/XXXXX/exec)
+
+
+ÉTAPE 4 — Connecter le site au script
+---------------------------------------------------
+1. Ouvrez le fichier "config.js" avec le Bloc-notes
+2. Remplacez COLLER_URL_ICI par l'URL copiée à l'étape 3
+   Exemple : const SCRIPT_URL = "https://script.google.com/macros/s/XXXXX/exec";
+3. Enregistrez le fichier
+
+
+ÉTAPE 5 — Mettre le site en ligne (Netlify)
+---------------------------------------------------
+1. Allez sur https://netlify.com
+2. Créez un compte gratuit (ou connectez-vous)
+3. Sur votre tableau de bord, faites glisser le dossier "linstantk"
+   directement dans la page → le site sera en ligne en 1 minute !
+4. Netlify vous donnera une adresse du type : https://linstantk.netlify.app
+   Vous pouvez partager cette adresse à vos clientes !
+
+
+ACCÈS ADMIN
+---------------------------------------------------
+- Adresse admin : votresite.netlify.app/admin.html
+- Mot de passe : linstantk2026
+  (vous pouvez le changer dans config.js)
+
+
+POUR CHANGER VOS DISPONIBILITÉS
+---------------------------------------------------
+1. Allez sur admin.html → onglet "Disponibilités"
+2. Ajoutez ou supprimez vos créneaux
+3. Cliquez "Exporter le code"
+4. Copiez le code → collez dans disponibilites.js → enregistrez
+5. Redéposez le dossier sur Netlify (même manipulation qu'étape 5)
+
+============================================================
