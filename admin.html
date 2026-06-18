@@ -452,6 +452,7 @@ function renderBookings() {
           ${b.telephone ? `<span>📞 ${b.telephone}</span>` : ''}
           ${b.date ? `<span>📅 ${b.date}</span>` : ''}
           ${b.creneau ? `<span>🕐 ${b.creneau}</span>` : ''}
+          ${b.message ? `<span style="color:var(--violet);font-weight:600">💬 ${b.message}</span>` : ''}
         </div>
       </div>
       <span class="rdv-status-badge ${bCls}">${b.status}</span>
