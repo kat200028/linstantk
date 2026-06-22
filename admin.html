@@ -68,25 +68,56 @@
     .filter-chip.active { background: var(--violet); border-color: var(--violet); color: white; }
     .refresh { margin-left: auto; padding: 8px 18px; border-radius: 50px; border: 2px solid var(--violet); color: var(--violet); background: white; font-size: 0.83rem; font-weight: 600; cursor: pointer; }
     .refresh:hover { background: var(--violet-pale); }
-    .rdv-list { display: flex; flex-direction: column; gap: 12px; }
-    .rdv-card { background: white; border-radius: 18px; padding: 20px 24px; border: 1px solid #EDE9FE; border-left: 4px solid #E5E7EB; display: grid; grid-template-columns: auto 1fr auto auto; gap: 16px; align-items: center; transition: box-shadow .2s; }
-    .rdv-card:hover { box-shadow: 0 4px 20px rgba(124,58,237,0.1); }
+
+    /* Groupes par date */
+    .rdv-list { display: flex; flex-direction: column; gap: 24px; }
+    .rdv-group { display: flex; flex-direction: column; gap: 10px; }
+    .rdv-group-header { display: flex; align-items: center; gap: 12px; padding: 0 4px; }
+    .rdv-group-date { font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--violet); background: var(--violet-pale); padding: 5px 14px; border-radius: 50px; white-space: nowrap; }
+    .rdv-group-line { flex: 1; height: 1px; background: #EDE9FE; }
+    .rdv-group-count { font-size: 0.75rem; color: var(--gray); font-weight: 600; white-space: nowrap; }
+
+    /* Carte RDV redessinée */
+    .rdv-card { background: white; border-radius: 20px; border: 1px solid #EDE9FE; border-left: 5px solid #E5E7EB; overflow: hidden; transition: box-shadow .2s, transform .15s; }
+    .rdv-card:hover { box-shadow: 0 6px 24px rgba(124,58,237,0.12); transform: translateY(-1px); }
     .rdv-card.attente { border-left-color: var(--orange); }
     .rdv-card.accepte { border-left-color: var(--green); }
-    .rdv-card.refuse  { border-left-color: var(--red); opacity: 0.6; }
-    .rdv-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; color: var(--violet); }
-    .rdv-info .rdv-name { font-weight: 800; font-size: 1rem; }
-    .rdv-info .rdv-prestation { font-size: 0.83rem; color: var(--gray); margin-top: 2px; }
-    .rdv-info .rdv-meta { font-size: 0.78rem; color: #9CA3AF; margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
-    .rdv-status-badge { padding: 5px 14px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+    .rdv-card.refuse  { border-left-color: var(--red); opacity: 0.55; }
+
+    /* Bandeau date/heure en tête de carte */
+    .rdv-datebar { display: flex; align-items: center; gap: 10px; padding: 12px 22px; background: var(--violet-pale); }
+    .rdv-card.accepte .rdv-datebar { background: #D1FAE5; }
+    .rdv-card.refuse  .rdv-datebar { background: #FEE2E2; }
+    .rdv-datebar-date { font-size: 1.05rem; font-weight: 900; color: var(--violet-dark); text-transform: capitalize; }
+    .rdv-card.accepte .rdv-datebar-date { color: #065F46; }
+    .rdv-card.refuse  .rdv-datebar-date { color: #991B1B; }
+    .rdv-datebar-heure { font-size: 0.95rem; font-weight: 800; color: var(--dark); background: white; padding: 3px 14px; border-radius: 50px; }
+    .rdv-status-badge { margin-left: auto; padding: 5px 14px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
     .badge-attente { background: #FEF3C7; color: #92400E; }
-    .badge-accepte { background: #D1FAE5; color: #065F46; }
-    .badge-refuse  { background: #FEE2E2; color: #991B1B; }
-    .rdv-actions { display: flex; gap: 8px; }
-    .btn-accept { background: var(--green); color: white; border: none; padding: 8px 16px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
-    .btn-accept:hover { opacity: 0.85; }
-    .btn-refuse { background: white; color: var(--red); border: 2px solid #FECACA; padding: 7px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
-    .btn-refuse:hover { background: #FEF2F2; }
+    .badge-accepte { background: #A7F3D0; color: #065F46; }
+    .badge-refuse  { background: #FECACA; color: #991B1B; }
+
+    /* Corps de la carte */
+    .rdv-card-body { padding: 18px 22px; display: flex; align-items: center; gap: 16px; }
+    .rdv-avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; color: var(--violet); flex-shrink: 0; }
+    .rdv-main { flex: 1; min-width: 0; }
+    .rdv-name { font-weight: 800; font-size: 1.05rem; color: var(--dark); }
+    .rdv-prestation { font-size: 0.9rem; color: var(--violet-dark); font-weight: 600; margin-top: 3px; }
+    .rdv-contact { font-size: 0.78rem; color: #9CA3AF; margin-top: 5px; display: flex; gap: 14px; flex-wrap: wrap; }
+    .rdv-message { font-size: 0.8rem; color: var(--violet); font-weight: 600; margin-top: 4px; }
+
+    /* Pied de carte : actions */
+    .rdv-card-footer { display: none; border-top: 1px solid #FEF3C7; background: #FFFBEB; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .rdv-card.attente .rdv-card-footer { display: flex; }
+    .rdv-card.accepte .rdv-card-footer,
+    .rdv-card.refuse  .rdv-card-footer { display: none; }
+    .rdv-footer-hint { font-size: 0.82rem; color: #92400E; font-weight: 700; }
+    .rdv-actions { display: flex; gap: 12px; }
+    .btn-accept { background: linear-gradient(135deg, #10B981, #34D399); color: white; border: none; padding: 13px 28px; border-radius: 50px; font-size: 0.95rem; font-weight: 800; cursor: pointer; box-shadow: 0 3px 10px rgba(16,185,129,0.35); transition: opacity .2s, transform .15s; }
+    .btn-accept:hover { opacity: 0.85; transform: scale(1.04); }
+    .btn-refuse { background: white; color: var(--red); border: 2px solid #FECACA; padding: 12px 26px; border-radius: 50px; font-size: 0.95rem; font-weight: 800; cursor: pointer; transition: background .15s, transform .15s; }
+    .btn-refuse:hover { background: #FEF2F2; transform: scale(1.04); }
+
     .empty-msg { text-align: center; padding: 60px; color: var(--gray); font-size: 0.95rem; }
     .loading-msg { text-align: center; padding: 60px; color: var(--gray); }
     .spinner { width: 32px; height: 32px; border: 3px solid #EDE9FE; border-top-color: var(--violet); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
@@ -191,9 +222,11 @@
     .save-ok { color: var(--green); font-size: 0.85rem; font-weight: 700; display: none; }
 
     @media (max-width: 768px) {
-      .rdv-card { grid-template-columns: auto 1fr; }
-      .rdv-status-badge { display: none; }
-      .rdv-actions { grid-column: 1/-1; }
+      .rdv-card-body { flex-wrap: wrap; }
+      .rdv-datebar { flex-wrap: wrap; }
+      .rdv-card-footer { flex-direction: column; align-items: stretch; }
+      .rdv-actions { justify-content: stretch; }
+      .rdv-actions button { flex: 1; }
       .bar-name { width: 110px; min-width: 110px; }
       .stats-row { grid-template-columns: 1fr 1fr; }
       .tarif-row { flex-wrap: wrap; }
@@ -433,30 +466,88 @@ async function loadAll() {
 }
 
 /* ══ BOOKINGS ══ */
+function formatDateFr(dateStr) {
+  if (!dateStr) return '';
+  // Supporte "2026-07-15" ou "15/07/2026"
+  let d;
+  if (dateStr.includes('-')) {
+    const [y, m, day] = dateStr.split('-');
+    d = new Date(+y, +m - 1, +day);
+  } else if (dateStr.includes('/')) {
+    const [day, m, y] = dateStr.split('/');
+    d = new Date(+y, +m - 1, +day);
+  } else return dateStr;
+  const jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const moisFr = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  return `${jours[d.getDay()]} ${d.getDate()} ${moisFr[d.getMonth()]}`;
+}
+
+function getSortKey(dateStr) {
+  if (!dateStr) return '9999-99-99';
+  if (dateStr.includes('-')) return dateStr;
+  if (dateStr.includes('/')) { const [d,m,y] = dateStr.split('/'); return `${y}-${m}-${d}`; }
+  return dateStr;
+}
+
 function renderBookings() {
   const list = document.getElementById('rdvList');
   const items = currentFilter === 'tous' ? allBookings : allBookings.filter(b => b.status === currentFilter);
   document.getElementById('rdv-sub').textContent = items.length + ' rendez-vous';
   if (!items.length) { list.innerHTML = '<div class="empty-msg">Aucun rendez-vous dans cette catégorie.</div>'; return; }
-  list.innerHTML = items.map(b => {
-    const cls = b.status === 'Accepté' ? 'accepte' : b.status === 'Refusé' ? 'refuse' : 'attente';
-    const bCls = b.status === 'Accepté' ? 'badge-accepte' : b.status === 'Refusé' ? 'badge-refuse' : 'badge-attente';
-    const ini = (b.prenom || '?')[0].toUpperCase();
-    const actions = b.status === 'En attente' ? `<div class="rdv-actions"><button class="btn-accept" onclick="updateStatus(${b.row},'Accepté')">✓ Accepter</button><button class="btn-refuse" onclick="updateStatus(${b.row},'Refusé')">✕ Refuser</button></div>` : '';
-    return `<div class="rdv-card ${cls}" id="card-${b.row}">
-      <div class="rdv-avatar">${ini}</div>
-      <div class="rdv-info">
-        <div class="rdv-name">${b.prenom} ${b.nom}</div>
-        <div class="rdv-prestation">${b.prestation}</div>
-        <div class="rdv-meta">
-          ${b.telephone ? `<span>📞 ${b.telephone}</span>` : ''}
-          ${b.date ? `<span>📅 ${b.date}</span>` : ''}
-          ${b.creneau ? `<span>🕐 ${b.creneau}</span>` : ''}
-          ${b.message ? `<span style="color:var(--violet);font-weight:600">💬 ${b.message}</span>` : ''}
+
+  // Grouper par date (tri chronologique)
+  const grouped = {};
+  items.forEach(b => {
+    const key = getSortKey(b.date) || 'Sans date';
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(b);
+  });
+  const sortedKeys = Object.keys(grouped).sort();
+
+  list.innerHTML = sortedKeys.map(key => {
+    const group = grouped[key];
+    const dateLabel = group[0].date ? formatDateFr(group[0].date) : 'Sans date';
+    const count = group.length;
+    const cardsHtml = group.map(b => {
+      const cls = b.status === 'Accepté' ? 'accepte' : b.status === 'Refusé' ? 'refuse' : 'attente';
+      const bCls = b.status === 'Accepté' ? 'badge-accepte' : b.status === 'Refusé' ? 'badge-refuse' : 'badge-attente';
+      const ini = (b.prenom || '?')[0].toUpperCase();
+      const footerHtml = b.status === 'En attente' ? `
+        <div class="rdv-card-footer">
+          <span class="rdv-footer-hint">⏳ En attente de votre réponse</span>
+          <div class="rdv-actions">
+            <button class="btn-accept" onclick="updateStatus(${b.row},'Accepté')">✓ Accepter</button>
+            <button class="btn-refuse" onclick="updateStatus(${b.row},'Refusé')">✕ Refuser</button>
+          </div>
+        </div>` : '';
+      return `<div class="rdv-card ${cls}" id="card-${b.row}">
+        <div class="rdv-datebar">
+          <span class="rdv-datebar-date">📅 ${b.date ? formatDateFr(b.date) : 'Sans date'}</span>
+          ${b.creneau ? `<span class="rdv-datebar-heure">🕐 ${b.creneau}</span>` : ''}
+          <span class="rdv-status-badge ${bCls}">${b.status}</span>
         </div>
+        <div class="rdv-card-body">
+          <div class="rdv-avatar">${ini}</div>
+          <div class="rdv-main">
+            <div class="rdv-name">${b.prenom} ${b.nom}</div>
+            <div class="rdv-prestation">${b.prestation}</div>
+            <div class="rdv-contact">
+              ${b.telephone ? `<span>📞 ${b.telephone}</span>` : ''}
+            </div>
+            ${b.message ? `<div class="rdv-message">💬 ${b.message}</div>` : ''}
+          </div>
+        </div>
+        ${footerHtml}
+      </div>`;
+    }).join('');
+
+    return `<div class="rdv-group">
+      <div class="rdv-group-header">
+        <span class="rdv-group-date">📅 ${dateLabel}</span>
+        <div class="rdv-group-line"></div>
+        <span class="rdv-group-count">${count} RDV</span>
       </div>
-      <span class="rdv-status-badge ${bCls}">${b.status}</span>
-      ${actions}
+      ${cardsHtml}
     </div>`;
   }).join('');
 }
