@@ -84,37 +84,39 @@
     .rdv-card.accepte { border-left-color: var(--green); }
     .rdv-card.refuse  { border-left-color: var(--red); opacity: 0.55; }
 
+    /* Bandeau date/heure en tête de carte */
+    .rdv-datebar { display: flex; align-items: center; gap: 10px; padding: 12px 22px; background: var(--violet-pale); }
+    .rdv-card.accepte .rdv-datebar { background: #D1FAE5; }
+    .rdv-card.refuse  .rdv-datebar { background: #FEE2E2; }
+    .rdv-datebar-date { font-size: 1.05rem; font-weight: 900; color: var(--violet-dark); text-transform: capitalize; }
+    .rdv-card.accepte .rdv-datebar-date { color: #065F46; }
+    .rdv-card.refuse  .rdv-datebar-date { color: #991B1B; }
+    .rdv-datebar-heure { font-size: 0.95rem; font-weight: 800; color: var(--dark); background: white; padding: 3px 14px; border-radius: 50px; }
+    .rdv-status-badge { margin-left: auto; padding: 5px 14px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+    .badge-attente { background: #FEF3C7; color: #92400E; }
+    .badge-accepte { background: #A7F3D0; color: #065F46; }
+    .badge-refuse  { background: #FECACA; color: #991B1B; }
+
     /* Corps de la carte */
     .rdv-card-body { padding: 18px 22px; display: flex; align-items: center; gap: 16px; }
     .rdv-avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; color: var(--violet); flex-shrink: 0; }
     .rdv-main { flex: 1; min-width: 0; }
     .rdv-name { font-weight: 800; font-size: 1.05rem; color: var(--dark); }
-    .rdv-prestation { font-size: 0.85rem; color: var(--gray); margin-top: 3px; }
+    .rdv-prestation { font-size: 0.9rem; color: var(--violet-dark); font-weight: 600; margin-top: 3px; }
     .rdv-contact { font-size: 0.78rem; color: #9CA3AF; margin-top: 5px; display: flex; gap: 14px; flex-wrap: wrap; }
     .rdv-message { font-size: 0.8rem; color: var(--violet); font-weight: 600; margin-top: 4px; }
-    .rdv-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
-
-    /* Bloc date/heure mis en avant */
-    .rdv-datetime { text-align: right; }
-    .rdv-datetime-date { font-size: 0.9rem; font-weight: 800; color: var(--dark); }
-    .rdv-datetime-heure { font-size: 0.82rem; font-weight: 700; color: var(--violet); margin-top: 2px; }
-
-    .rdv-status-badge { padding: 5px 14px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
-    .badge-attente { background: #FEF3C7; color: #92400E; }
-    .badge-accepte { background: #D1FAE5; color: #065F46; }
-    .badge-refuse  { background: #FEE2E2; color: #991B1B; }
 
     /* Pied de carte : actions */
-    .rdv-card-footer { display: none; border-top: 1px solid #FEF3C7; background: #FFFBEB; padding: 12px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .rdv-card-footer { display: none; border-top: 1px solid #FEF3C7; background: #FFFBEB; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .rdv-card.attente .rdv-card-footer { display: flex; }
     .rdv-card.accepte .rdv-card-footer,
     .rdv-card.refuse  .rdv-card-footer { display: none; }
-    .rdv-footer-hint { font-size: 0.78rem; color: #92400E; font-weight: 600; }
-    .rdv-actions { display: flex; gap: 10px; }
-    .btn-accept { background: linear-gradient(135deg, #10B981, #34D399); color: white; border: none; padding: 10px 22px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(16,185,129,0.3); transition: opacity .2s; }
-    .btn-accept:hover { opacity: 0.85; }
-    .btn-refuse { background: white; color: var(--red); border: 2px solid #FECACA; padding: 9px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: background .15s; }
-    .btn-refuse:hover { background: #FEF2F2; }
+    .rdv-footer-hint { font-size: 0.82rem; color: #92400E; font-weight: 700; }
+    .rdv-actions { display: flex; gap: 12px; }
+    .btn-accept { background: linear-gradient(135deg, #10B981, #34D399); color: white; border: none; padding: 13px 28px; border-radius: 50px; font-size: 0.95rem; font-weight: 800; cursor: pointer; box-shadow: 0 3px 10px rgba(16,185,129,0.35); transition: opacity .2s, transform .15s; }
+    .btn-accept:hover { opacity: 0.85; transform: scale(1.04); }
+    .btn-refuse { background: white; color: var(--red); border: 2px solid #FECACA; padding: 12px 26px; border-radius: 50px; font-size: 0.95rem; font-weight: 800; cursor: pointer; transition: background .15s, transform .15s; }
+    .btn-refuse:hover { background: #FEF2F2; transform: scale(1.04); }
 
     .empty-msg { text-align: center; padding: 60px; color: var(--gray); font-size: 0.95rem; }
     .loading-msg { text-align: center; padding: 60px; color: var(--gray); }
@@ -221,8 +223,10 @@
 
     @media (max-width: 768px) {
       .rdv-card-body { flex-wrap: wrap; }
-      .rdv-side { flex-direction: row; align-items: center; width: 100%; justify-content: space-between; }
-      .rdv-datetime { text-align: left; }
+      .rdv-datebar { flex-wrap: wrap; }
+      .rdv-card-footer { flex-direction: column; align-items: stretch; }
+      .rdv-actions { justify-content: stretch; }
+      .rdv-actions button { flex: 1; }
       .bar-name { width: 110px; min-width: 110px; }
       .stats-row { grid-template-columns: 1fr 1fr; }
       .tarif-row { flex-wrap: wrap; }
@@ -517,6 +521,11 @@ function renderBookings() {
           </div>
         </div>` : '';
       return `<div class="rdv-card ${cls}" id="card-${b.row}">
+        <div class="rdv-datebar">
+          <span class="rdv-datebar-date">📅 ${b.date ? formatDateFr(b.date) : 'Sans date'}</span>
+          ${b.creneau ? `<span class="rdv-datebar-heure">🕐 ${b.creneau}</span>` : ''}
+          <span class="rdv-status-badge ${bCls}">${b.status}</span>
+        </div>
         <div class="rdv-card-body">
           <div class="rdv-avatar">${ini}</div>
           <div class="rdv-main">
@@ -526,13 +535,6 @@ function renderBookings() {
               ${b.telephone ? `<span>📞 ${b.telephone}</span>` : ''}
             </div>
             ${b.message ? `<div class="rdv-message">💬 ${b.message}</div>` : ''}
-          </div>
-          <div class="rdv-side">
-            <div class="rdv-datetime">
-              <div class="rdv-datetime-date">${b.date ? formatDateFr(b.date) : '–'}</div>
-              ${b.creneau ? `<div class="rdv-datetime-heure">🕐 ${b.creneau}</div>` : ''}
-            </div>
-            <span class="rdv-status-badge ${bCls}">${b.status}</span>
           </div>
         </div>
         ${footerHtml}
