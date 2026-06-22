@@ -468,15 +468,17 @@ async function loadAll() {
 /* ══ BOOKINGS ══ */
 function formatDateFr(dateStr) {
   if (!dateStr) return '';
-  // Supporte "2026-07-15" ou "15/07/2026"
+  // Supporte "2026-07-15", "15/07/2026" ou un timestamp ISO complet ("2026-07-15T00:00:00.000Z")
+  const datePart = dateStr.split('T')[0];
   let d;
-  if (dateStr.includes('-')) {
-    const [y, m, day] = dateStr.split('-');
+  if (datePart.includes('-')) {
+    const [y, m, day] = datePart.split('-');
     d = new Date(+y, +m - 1, +day);
-  } else if (dateStr.includes('/')) {
-    const [day, m, y] = dateStr.split('/');
+  } else if (datePart.includes('/')) {
+    const [day, m, y] = datePart.split('/');
     d = new Date(+y, +m - 1, +day);
   } else return dateStr;
+  if (isNaN(d.getTime())) return dateStr;
   const jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
   const moisFr = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
   return `${jours[d.getDay()]} ${d.getDate()} ${moisFr[d.getMonth()]}`;
@@ -484,9 +486,10 @@ function formatDateFr(dateStr) {
 
 function getSortKey(dateStr) {
   if (!dateStr) return '9999-99-99';
-  if (dateStr.includes('-')) return dateStr;
-  if (dateStr.includes('/')) { const [d,m,y] = dateStr.split('/'); return `${y}-${m}-${d}`; }
-  return dateStr;
+  const datePart = dateStr.split('T')[0];
+  if (datePart.includes('-')) return datePart;
+  if (datePart.includes('/')) { const [d,m,y] = datePart.split('/'); return `${y}-${m}-${d}`; }
+  return datePart;
 }
 
 function renderBookings() {
