@@ -22,6 +22,7 @@ function doPost(e) {
         'En attente',
         data.message || ''
       ]);
+      notifyTelegramNewRdv(data);
       return jsonResponse({ success: true });
     }
 
@@ -92,6 +93,34 @@ function doGet(e) {
 
   } catch (err) {
     return jsonResponse({ success: false, error: err.toString() });
+  }
+}
+
+function notifyTelegramNewRdv(data) {
+  const props = PropertiesService.getScriptProperties();
+  const token = props.getProperty('TELEGRAM_BOT_TOKEN');
+  const chatId = props.getProperty('TELEGRAM_CHAT_ID');
+  if (!token || !chatId) return; // Notifications non configurées
+
+  const lines = [
+    '📅 Nouvelle demande de RDV',
+    `${data.prenom || ''} ${data.nom || ''}`.trim(),
+    data.prestation ? `Prestation : ${data.prestation}` : '',
+    data.date ? `Date : ${data.date}` : '',
+    data.creneau ? `Créneau : ${data.creneau}` : '',
+    data.telephone ? `Téléphone : ${data.telephone}` : '',
+    data.message ? `Message : ${data.message}` : ''
+  ].filter(Boolean);
+
+  try {
+    UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({ chat_id: chatId, text: lines.join('\n') }),
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    Logger.log('Erreur notification Telegram: ' + err);
   }
 }
 
