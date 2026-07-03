@@ -262,6 +262,7 @@
     <div class="topbar-logo">L'Instant K · Admin</div>
     <div class="topbar-right">
       <a href="index.html">← Voir le site</a>
+      <button class="btn-sm btn-outline" onclick="changerMotDePasse()" title="Changer le mot de passe">🔑</button>
       <button class="btn-sm btn-outline" onclick="logout()">Déconnexion</button>
     </div>
   </div>
@@ -456,13 +457,50 @@ const DEFAULT_TARIFS = [
 ];
 
 /* ══ AUTH ══ */
-function login() {
-  if (document.getElementById('pwdInput').value === ADMIN_PASSWORD) {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('adminUI').style.display = 'block';
-    loadAll();
-  } else {
-    document.getElementById('loginErr').style.display = 'block';
+function entrerAdmin() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminUI').style.display = 'block';
+  loadAll();
+}
+
+async function login() {
+  const pwd = document.getElementById('pwdInput').value;
+  document.getElementById('loginErr').style.display = 'none';
+  try {
+    // Vérification côté serveur (mot de passe haché dans Apps Script, jamais dans le code du site)
+    const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'login', password: pwd }) });
+    const res = await r.json();
+    if (res.success) { entrerAdmin(); return; }
+    if (res.setup || res.error === 'Action inconnue') {
+      // Pas encore de mot de passe défini côté serveur (ou script pas à jour) : ancien fonctionnement
+      if (typeof ADMIN_PASSWORD !== 'undefined' && pwd === ADMIN_PASSWORD) {
+        entrerAdmin();
+        if (res.setup) setTimeout(() => alert('💡 Pense à définir ton mot de passe sécurisé avec le bouton 🔑 en haut de la page.'), 800);
+        return;
+      }
+    }
+  } catch(e) {
+    // Serveur injoignable : ancien fonctionnement pour ne pas te bloquer
+    if (typeof ADMIN_PASSWORD !== 'undefined' && pwd === ADMIN_PASSWORD) { entrerAdmin(); return; }
+  }
+  document.getElementById('loginErr').style.display = 'block';
+}
+
+async function changerMotDePasse() {
+  const ancien = prompt('Mot de passe actuel :');
+  if (ancien === null) return;
+  const nouveau = prompt('Nouveau mot de passe (6 caractères minimum) :');
+  if (nouveau === null) return;
+  if (!nouveau || nouveau.length < 6) { alert('Le nouveau mot de passe doit faire au moins 6 caractères.'); return; }
+  const confirme = prompt('Confirme le nouveau mot de passe :');
+  if (confirme !== nouveau) { alert('Les deux mots de passe ne correspondent pas.'); return; }
+  try {
+    const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'change_password', oldPassword: ancien, newPassword: nouveau }) });
+    const res = await r.json();
+    if (res.success) alert('✅ Mot de passe changé ! Utilise-le à ta prochaine connexion.');
+    else alert('❌ ' + (res.error || 'Erreur — vérifie ton mot de passe actuel. Si le script Apps Script n\'est pas à jour, recopie-le et redéploie.'));
+  } catch(e) {
+    alert('❌ Impossible de contacter le serveur. Vérifie que le script Apps Script est à jour et redéployé.');
   }
 }
 function logout() {

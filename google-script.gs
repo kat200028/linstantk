@@ -34,6 +34,25 @@ function doPost(e) {
       return jsonResponse({ success: true });
     }
 
+    if (data.action === 'login') {
+      const hash = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD_HASH');
+      if (!hash) return jsonResponse({ success: false, setup: true });
+      return jsonResponse({ success: sha256(data.password || '') === hash });
+    }
+
+    if (data.action === 'change_password') {
+      const props = PropertiesService.getScriptProperties();
+      const hash = props.getProperty('ADMIN_PASSWORD_HASH');
+      if (hash && sha256(data.oldPassword || '') !== hash) {
+        return jsonResponse({ success: false, error: 'Ancien mot de passe incorrect' });
+      }
+      if (!data.newPassword || String(data.newPassword).length < 6) {
+        return jsonResponse({ success: false, error: 'Le nouveau mot de passe doit faire au moins 6 caractères' });
+      }
+      props.setProperty('ADMIN_PASSWORD_HASH', sha256(String(data.newPassword)));
+      return jsonResponse({ success: true });
+    }
+
     if (data.action === 'update') {
       const s = getSheet('RDV');
       const row = parseInt(data.row);
@@ -137,6 +156,11 @@ function notifyTelegramAnnulation(data) {
     data.telephone ? `Téléphone : ${data.telephone}` : ''
   ].filter(Boolean);
   sendTelegramMessage(lines.join('\n'));
+}
+
+function sha256(txt) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(txt), Utilities.Charset.UTF_8);
+  return bytes.map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join('');
 }
 
 function normaliserTelServeur(tel) {
