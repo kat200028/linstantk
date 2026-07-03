@@ -254,6 +254,7 @@
     <input type="password" id="pwdInput" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')login()" />
     <button onclick="login()">Se connecter</button>
     <p class="login-error" id="loginErr">Mot de passe incorrect.</p>
+    <p style="margin-top:16px"><a href="#" onclick="motDePasseOublie();return false" style="color:var(--gray);font-size:0.8rem;text-decoration:underline">Mot de passe oublié ?</a></p>
   </div>
 </div>
 
@@ -484,6 +485,33 @@ async function login() {
     if (typeof ADMIN_PASSWORD !== 'undefined' && pwd === ADMIN_PASSWORD) { entrerAdmin(); return; }
   }
   document.getElementById('loginErr').style.display = 'block';
+}
+
+async function motDePasseOublie() {
+  if (!confirm('Un code de réinitialisation va être envoyé à ton adresse email. Continuer ?')) return;
+  try {
+    const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'reset_request' }) });
+    const res = await r.json();
+    if (!res.success) { alert('❌ ' + (res.error || 'Erreur lors de l\'envoi du code.')); return; }
+  } catch(e) {
+    alert('❌ Impossible de contacter le serveur. Vérifie que le script Apps Script est à jour.');
+    return;
+  }
+  alert('📧 Code envoyé ! Regarde ta boîte mail (et les spams). Il est valable 15 minutes.');
+  const code = prompt('Code reçu par email :');
+  if (code === null) return;
+  const nouveau = prompt('Nouveau mot de passe (6 caractères minimum) :');
+  if (nouveau === null) return;
+  const confirme = prompt('Confirme le nouveau mot de passe :');
+  if (confirme !== nouveau) { alert('Les deux mots de passe ne correspondent pas.'); return; }
+  try {
+    const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'reset_confirm', code: code, newPassword: nouveau }) });
+    const res = await r.json();
+    if (res.success) alert('✅ Mot de passe réinitialisé ! Connecte-toi avec le nouveau.');
+    else alert('❌ ' + (res.error || 'Erreur.'));
+  } catch(e) {
+    alert('❌ Impossible de contacter le serveur.');
+  }
 }
 
 async function changerMotDePasse() {

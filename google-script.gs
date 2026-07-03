@@ -40,6 +40,33 @@ function doPost(e) {
       return jsonResponse({ success: sha256(data.password || '') === hash });
     }
 
+    if (data.action === 'reset_request') {
+      const props = PropertiesService.getScriptProperties();
+      const email = props.getProperty('ADMIN_EMAIL') || Session.getEffectiveUser().getEmail();
+      if (!email) return jsonResponse({ success: false, error: 'Aucune adresse email configurée' });
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      props.setProperty('RESET_CODE_HASH', sha256(code));
+      props.setProperty('RESET_CODE_EXPIRES', String(Date.now() + 15 * 60 * 1000));
+      MailApp.sendEmail(email, "L'Instant K — Réinitialisation du mot de passe admin",
+        'Votre code de réinitialisation : ' + code + '\n\nIl est valable 15 minutes.\nSi vous n\'êtes pas à l\'origine de cette demande, ignorez ce message.');
+      return jsonResponse({ success: true });
+    }
+
+    if (data.action === 'reset_confirm') {
+      const props = PropertiesService.getScriptProperties();
+      const codeHash = props.getProperty('RESET_CODE_HASH');
+      const expires = parseInt(props.getProperty('RESET_CODE_EXPIRES') || '0', 10);
+      if (!codeHash || Date.now() > expires) return jsonResponse({ success: false, error: 'Code expiré — redemandez un code' });
+      if (sha256(String(data.code || '').trim()) !== codeHash) return jsonResponse({ success: false, error: 'Code incorrect' });
+      if (!data.newPassword || String(data.newPassword).length < 6) {
+        return jsonResponse({ success: false, error: 'Le nouveau mot de passe doit faire au moins 6 caractères' });
+      }
+      props.setProperty('ADMIN_PASSWORD_HASH', sha256(String(data.newPassword)));
+      props.deleteProperty('RESET_CODE_HASH');
+      props.deleteProperty('RESET_CODE_EXPIRES');
+      return jsonResponse({ success: true });
+    }
+
     if (data.action === 'change_password') {
       const props = PropertiesService.getScriptProperties();
       const hash = props.getProperty('ADMIN_PASSWORD_HASH');
