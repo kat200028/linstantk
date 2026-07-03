@@ -173,7 +173,12 @@ function peutAnnuler(dateStr) {
 }
 
 function normaliserTel(tel) {
-  return tel.replace(/\s+/g, '').replace(/[.\-]/g, '');
+  // Le téléphone peut arriver en nombre depuis Sheets (perd le 0 initial) — on normalise tout en chaîne
+  let t = String(tel == null ? '' : tel).replace(/\s+/g, '').replace(/[.\-()]/g, '');
+  if (/^\d{9}$/.test(t)) t = '0' + t; // "612345678" (0 perdu) → "0612345678"
+  if (t.startsWith('+33')) t = '0' + t.slice(3);
+  else if (t.startsWith('33') && t.length === 11) t = '0' + t.slice(2);
+  return t;
 }
 
 async function rechercher() {
