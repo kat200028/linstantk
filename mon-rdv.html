@@ -107,10 +107,10 @@
 
   <div class="search-card">
     <h2>🔍 Rechercher mon rendez-vous</h2>
-    <p>Entrez le téléphone utilisé lors de votre réservation et votre référence client (reçue à la réservation)</p>
+    <p>Entrez le téléphone utilisé lors de votre réservation et votre référence client (reçue à la réservation — laissez vide si vous n'en avez pas encore)</p>
     <div class="search-row" style="flex-wrap:wrap">
       <input type="tel" class="search-input" id="telInput" placeholder="06 XX XX XX XX" onkeydown="if(event.key==='Enter')rechercher()" />
-      <input type="text" class="search-input" id="refInput" placeholder="Référence ex: K-AB27" style="max-width:180px;text-transform:uppercase" onkeydown="if(event.key==='Enter')rechercher()" />
+      <input type="text" class="search-input" id="refInput" placeholder="Référence ex: K-AB27 (optionnel)" style="max-width:200px;text-transform:uppercase" onkeydown="if(event.key==='Enter')rechercher()" />
       <button class="btn-search" id="searchBtn" onclick="rechercher()">Rechercher</button>
     </div>
   </div>
@@ -192,7 +192,6 @@ async function rechercher() {
   const tel = document.getElementById('telInput').value.trim();
   const ref = normaliserRef(document.getElementById('refInput').value);
   if (!tel) return;
-  if (!ref) { alert('Veuillez entrer votre référence client (ex: K-AB27).'); return; }
 
   const btn = document.getElementById('searchBtn');
   btn.disabled = true; btn.textContent = '...';
