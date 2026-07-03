@@ -28,7 +28,13 @@ function doPost(e) {
 
     if (data.action === 'update') {
       const s = getSheet('RDV');
-      s.getRange(parseInt(data.row), 8).setValue(data.status);
+      const row = parseInt(data.row);
+      s.getRange(row, 8).setValue(data.status);
+      if (data.status === 'Annulé par cliente') {
+        const rows = s.getDataRange().getValues();
+        const r = rows[row - 1];
+        notifyTelegramAnnulation({ prenom: r[1], nom: r[2], telephone: r[3], prestation: r[4], date: r[5], creneau: r[6] });
+      }
       return jsonResponse({ success: true });
     }
 
@@ -105,6 +111,18 @@ function notifyTelegramNewRdv(data) {
     data.creneau ? `Créneau : ${data.creneau}` : '',
     data.telephone ? `Téléphone : ${data.telephone}` : '',
     data.message ? `Message : ${data.message}` : ''
+  ].filter(Boolean);
+  sendTelegramMessage(lines.join('\n'));
+}
+
+function notifyTelegramAnnulation(data) {
+  const lines = [
+    '❌ Annulation RDV par cliente',
+    `${data.prenom || ''} ${data.nom || ''}`.trim(),
+    data.prestation ? `Prestation : ${data.prestation}` : '',
+    data.date ? `Date : ${data.date}` : '',
+    data.creneau ? `Créneau : ${data.creneau}` : '',
+    data.telephone ? `Téléphone : ${data.telephone}` : ''
   ].filter(Boolean);
   sendTelegramMessage(lines.join('\n'));
 }

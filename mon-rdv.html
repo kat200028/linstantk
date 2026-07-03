@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mon RDV – L'Instant K</title>
+  <script src="config.js"></script>
+  <style>
+    :root {
+      --violet: #7C3AED; --violet-dark: #5B21B6; --violet-pale: #EDE9FE;
+      --pink: #EC4899; --pink-pale: #FCE7F3; --dark: #1E1B4B; --gray: #6B7280;
+      --bg: #FAF5FF; --green: #10B981; --red: #EF4444; --orange: #F59E0B;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
+
+    nav { background: rgba(255,255,255,0.96); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 64px; box-shadow: 0 2px 16px rgba(124,58,237,0.08); }
+    .nav-logo { font-size: 1.4rem; font-weight: 900; background: linear-gradient(135deg, var(--violet), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+    .nav-back { color: var(--gray); font-size: 0.9rem; font-weight: 500; text-decoration: none; }
+    .nav-back:hover { color: var(--violet); }
+
+    .hero { background: linear-gradient(135deg, #1E1B4B 0%, #4C1D95 60%, #831843 100%); padding: 60px 24px 50px; text-align: center; }
+    .hero h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 900; color: white; margin-bottom: 10px; }
+    .hero h1 em { font-style: normal; background: linear-gradient(135deg, #F9A8D4, #67E8F9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { color: rgba(255,255,255,0.6); font-size: 1rem; }
+
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    .search-card { background: white; border-radius: 24px; padding: 36px 32px; box-shadow: 0 8px 40px rgba(124,58,237,0.12); border: 1px solid #EDE9FE; margin-bottom: 32px; }
+    .search-card h2 { font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; }
+    .search-card p { color: var(--gray); font-size: 0.88rem; margin-bottom: 22px; }
+    .search-row { display: flex; gap: 10px; }
+    .search-input { flex: 1; padding: 13px 16px; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 0.95rem; color: var(--dark); transition: border-color .2s; }
+    .search-input:focus { outline: none; border-color: var(--violet); }
+    .btn-search { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 13px 24px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; white-space: nowrap; transition: opacity .2s; }
+    .btn-search:hover { opacity: 0.88; }
+    .btn-search:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .results { display: none; }
+    .results.show { display: block; }
+
+    .empty-msg { text-align: center; padding: 48px 24px; color: var(--gray); }
+    .empty-msg .empty-icon { font-size: 3rem; margin-bottom: 14px; }
+    .empty-msg p { font-size: 0.95rem; }
+
+    .rdv-card { background: white; border-radius: 20px; border: 1px solid #EDE9FE; border-left: 5px solid #E5E7EB; overflow: hidden; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(124,58,237,0.07); }
+    .rdv-card.attente { border-left-color: var(--orange); }
+    .rdv-card.accepte { border-left-color: var(--green); }
+    .rdv-card.annule  { border-left-color: var(--red); opacity: 0.65; }
+
+    .rdv-datebar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: var(--violet-pale); flex-wrap: wrap; }
+    .rdv-card.accepte .rdv-datebar { background: #D1FAE5; }
+    .rdv-card.annule  .rdv-datebar { background: #FEE2E2; }
+    .rdv-datebar-date { font-size: 1rem; font-weight: 900; color: var(--violet-dark); text-transform: capitalize; }
+    .rdv-card.accepte .rdv-datebar-date { color: #065F46; }
+    .rdv-card.annule  .rdv-datebar-date { color: #991B1B; }
+    .rdv-datebar-heure { font-size: 0.9rem; font-weight: 800; color: var(--dark); background: white; padding: 3px 12px; border-radius: 50px; }
+    .rdv-status-badge { margin-left: auto; padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+    .badge-attente { background: #FEF3C7; color: #92400E; }
+    .badge-accepte { background: #A7F3D0; color: #065F46; }
+    .badge-annule  { background: #FECACA; color: #991B1B; }
+
+    .rdv-body { padding: 16px 20px; }
+    .rdv-prestation { font-weight: 700; font-size: 1rem; color: var(--dark); margin-bottom: 4px; }
+    .rdv-sub { font-size: 0.82rem; color: var(--gray); }
+
+    .rdv-footer { padding: 14px 20px; border-top: 1px solid #F3F4F6; }
+    .cancel-info { font-size: 0.8rem; color: var(--gray); font-style: italic; }
+    .btn-cancel { background: white; color: var(--red); border: 2px solid #FECACA; padding: 10px 22px; border-radius: 50px; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background .15s; }
+    .btn-cancel:hover { background: #FEF2F2; }
+    .btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .section-title { font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #EDE9FE; }
+
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; padding: 20px; }
+    .modal-bg.show { display: flex; }
+    .modal-box { background: white; border-radius: 24px; padding: 40px 32px; text-align: center; max-width: 360px; width: 100%; }
+    .modal-icon { font-size: 3rem; margin-bottom: 14px; display: block; }
+    .modal-box h3 { font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+    .modal-box p { color: var(--gray); line-height: 1.6; margin-bottom: 24px; font-size: 0.92rem; }
+    .modal-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .btn-confirm-cancel { background: var(--red); color: white; border: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 0.92rem; cursor: pointer; }
+    .btn-confirm-cancel:hover { opacity: 0.85; }
+    .btn-go-back { background: white; color: var(--gray); border: 2px solid #E5E7EB; padding: 11px 24px; border-radius: 50px; font-weight: 600; font-size: 0.92rem; cursor: pointer; }
+    .btn-go-back:hover { border-color: var(--dark); color: var(--dark); }
+
+    .spinner { width: 28px; height: 28px; border: 3px solid #EDE9FE; border-top-color: var(--violet); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading { text-align: center; padding: 40px; color: var(--gray); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">L'Instant K</a>
+  <a href="index.html" class="nav-back">← Retour au site</a>
+</nav>
+
+<div class="hero">
+  <h1>Mon <em>RDV</em></h1>
+  <p>Retrouvez et gérez vos rendez-vous</p>
+</div>
+
+<div class="container">
+
+  <div class="search-card">
+    <h2>🔍 Rechercher mon rendez-vous</h2>
+    <p>Entrez le numéro de téléphone utilisé lors de votre réservation</p>
+    <div class="search-row">
+      <input type="tel" class="search-input" id="telInput" placeholder="06 XX XX XX XX" onkeydown="if(event.key==='Enter')rechercher()" />
+      <button class="btn-search" id="searchBtn" onclick="rechercher()">Rechercher</button>
+    </div>
+  </div>
+
+  <div class="results" id="results"></div>
+
+</div>
+
+<!-- Modal confirmation annulation -->
+<div class="modal-bg" id="modalCancel">
+  <div class="modal-box">
+    <span class="modal-icon">⚠️</span>
+    <h3>Annuler ce RDV ?</h3>
+    <p id="modalCancelText">Êtes-vous sûre de vouloir annuler votre rendez-vous ?</p>
+    <div class="modal-btns">
+      <button class="btn-go-back" onclick="closeModal()">Non, garder</button>
+      <button class="btn-confirm-cancel" id="btnConfirmCancel" onclick="confirmerAnnulation()">Oui, annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const MOIS  = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+let rowAnnuler = null;
+let allRdvs = [];
+
+function formatDateFr(dateStr) {
+  if (!dateStr) return '';
+  const datePart = dateStr.split('T')[0];
+  let d;
+  if (datePart.includes('-')) {
+    const [y, m, day] = datePart.split('-');
+    d = new Date(+y, +m - 1, +day);
+  } else if (datePart.includes('/')) {
+    const [day, m, y] = datePart.split('/');
+    d = new Date(+y, +m - 1, +day);
+  } else return dateStr;
+  if (isNaN(d.getTime())) return dateStr;
+  return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]}`;
+}
+
+function getDateObj(dateStr) {
+  if (!dateStr) return null;
+  const datePart = dateStr.split('T')[0];
+  if (datePart.includes('-')) {
+    const [y, m, day] = datePart.split('-');
+    return new Date(+y, +m - 1, +day);
+  } else if (datePart.includes('/')) {
+    const [day, m, y] = datePart.split('/');
+    return new Date(+y, +m - 1, +day);
+  }
+  return null;
+}
+
+function peutAnnuler(dateStr) {
+  const d = getDateObj(dateStr);
+  if (!d) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = (d - today) / (1000 * 60 * 60 * 24);
+  return diff > 3;
+}
+
+function normaliserTel(tel) {
+  return tel.replace(/\s+/g, '').replace(/[.\-]/g, '');
+}
+
+async function rechercher() {
+  const tel = document.getElementById('telInput').value.trim();
+  if (!tel) return;
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.textContent = '...';
+
+  const results = document.getElementById('results');
+  results.innerHTML = '<div class="loading"><div class="spinner"></div>Recherche en cours...</div>';
+  results.classList.add('show');
+
+  try {
+    const r = await fetch(SCRIPT_URL + '?type=all&t=' + Date.now());
+    const data = await r.json();
+
+    const telNorm = normaliserTel(tel);
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    allRdvs = (data.bookings || []).filter(b => {
+      const bTel = normaliserTel(b.telephone || '');
+      if (bTel !== telNorm) return false;
+      if (b.status === 'Refusé') return false;
+      const d = getDateObj(b.date || '');
+      if (!d) return true;
+      return d >= today;
+    });
+
+    afficherResultats();
+  } catch(e) {
+    results.innerHTML = '<div class="empty-msg"><div class="empty-icon">😕</div><p>Impossible de charger les données. Veuillez réessayer.</p></div>';
+  }
+
+  btn.disabled = false; btn.textContent = 'Rechercher';
+}
+
+function afficherResultats() {
+  const results = document.getElementById('results');
+
+  if (!allRdvs.length) {
+    results.innerHTML = `<div class="empty-msg">
+      <div class="empty-icon">🔍</div>
+      <p>Aucun rendez-vous trouvé pour ce numéro.<br><br>Vérifiez le numéro utilisé lors de votre réservation.</p>
+    </div>`;
+    return;
+  }
+
+  const cartes = allRdvs.map(b => {
+    const cls = b.status === 'Accepté' ? 'accepte' : b.status === 'Annulé par cliente' ? 'annule' : 'attente';
+    const badgeCls = b.status === 'Accepté' ? 'badge-accepte' : b.status === 'Annulé par cliente' ? 'badge-annule' : 'badge-attente';
+    const dateLabel = b.date ? formatDateFr(b.date) : 'Date à confirmer';
+    const peutAnn = b.status !== 'Annulé par cliente' && peutAnnuler(b.date || '');
+    const footer = b.status !== 'Annulé par cliente' ? `
+      <div class="rdv-footer">
+        ${peutAnn
+          ? `<button class="btn-cancel" onclick="demanderAnnulation(${b.row},'${dateLabel}','${b.creneau || ''}')">Annuler ce RDV</button>`
+          : `<p class="cancel-info">⚠️ L'annulation n'est plus possible à moins de 3 jours du RDV. Contactez-nous sur Instagram.</p>`
+        }
+      </div>` : '';
+
+    return `<div class="rdv-card ${cls}">
+      <div class="rdv-datebar">
+        <span class="rdv-datebar-date">📅 ${dateLabel}</span>
+        ${b.creneau ? `<span class="rdv-datebar-heure">🕐 ${b.creneau}</span>` : ''}
+        <span class="rdv-status-badge ${badgeCls}">${b.status}</span>
+      </div>
+      <div class="rdv-body">
+        <div class="rdv-prestation">${b.prestation || ''}</div>
+        ${b.message ? `<div class="rdv-sub">💬 ${b.message}</div>` : ''}
+      </div>
+      ${footer}
+    </div>`;
+  }).join('');
+
+  results.innerHTML = `<div class="section-title">Vos prochains rendez-vous (${allRdvs.length})</div>${cartes}`;
+}
+
+function demanderAnnulation(row, dateLabel, creneau) {
+  rowAnnuler = row;
+  document.getElementById('modalCancelText').textContent =
+    `Voulez-vous annuler votre rendez-vous du ${dateLabel}${creneau ? ' à ' + creneau : ''} ?`;
+  document.getElementById('modalCancel').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalCancel').classList.remove('show');
+  rowAnnuler = null;
+}
+
+async function confirmerAnnulation() {
+  if (!rowAnnuler) return;
+  const btn = document.getElementById('btnConfirmCancel');
+  btn.disabled = true; btn.textContent = 'Annulation...';
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', row: rowAnnuler, status: 'Annulé par cliente' })
+    });
+
+    const b = allRdvs.find(x => x.row === rowAnnuler);
+    if (b) b.status = 'Annulé par cliente';
+    closeModal();
+    afficherResultats();
+  } catch(e) {
+    alert('Erreur lors de l\'annulation. Veuillez réessayer.');
+  }
+
+  btn.disabled = false; btn.textContent = 'Oui, annuler';
+}
+</script>
+</body>
+</html>
