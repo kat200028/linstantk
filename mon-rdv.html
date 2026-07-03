@@ -259,6 +259,7 @@ function afficherResultats() {
       <div class="rdv-body">
         <div class="rdv-prestation">${b.prestation || ''}</div>
         ${b.message ? `<div class="rdv-sub">💬 ${b.message}</div>` : ''}
+        ${b.reference ? `<div class="rdv-sub">🎟 Référence : ${b.reference}</div>` : ''}
       </div>
       ${footer}
     </div>`;
