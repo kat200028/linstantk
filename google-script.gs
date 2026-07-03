@@ -11,6 +11,7 @@ function doPost(e) {
 
     if (data.action === 'new') {
       const s = getSheet('RDV');
+      const bloque = estDansListeNoire(data.telephone);
       s.appendRow([
         new Date().toLocaleString('fr-FR'),
         data.prenom || '',
@@ -19,11 +20,17 @@ function doPost(e) {
         data.prestation || '',
         data.date || '',
         data.creneau || '',
-        'En attente',
+        bloque ? 'Refusé' : 'En attente',
         data.message || '',
         data.reference || ''
       ]);
-      notifyTelegramNewRdv(data);
+      if (!bloque) notifyTelegramNewRdv(data);
+      return jsonResponse({ success: true });
+    }
+
+    if (data.action === 'save_blacklist') {
+      const s = getSheet('Config');
+      s.getRange('C1').setValue(JSON.stringify(data.blacklist || []));
       return jsonResponse({ success: true });
     }
 
@@ -64,6 +71,7 @@ function doGet(e) {
     const config = getSheet('Config');
     const dispoVal = config.getRange('A1').getValue();
     const tarifsVal = config.getRange('B1').getValue();
+    const blacklistVal = config.getRange('C1').getValue();
 
     if (type === 'disponibilites') {
       return jsonResponse({ success: true, disponibilites: dispoVal ? JSON.parse(dispoVal) : {} });
@@ -96,7 +104,8 @@ function doGet(e) {
       success: true,
       bookings: bookings,
       disponibilites: dispoVal ? JSON.parse(dispoVal) : {},
-      tarifs: tarifsVal ? JSON.parse(tarifsVal) : null
+      tarifs: tarifsVal ? JSON.parse(tarifsVal) : null,
+      blacklist: blacklistVal ? JSON.parse(blacklistVal) : []
     });
 
   } catch (err) {
@@ -128,6 +137,23 @@ function notifyTelegramAnnulation(data) {
     data.telephone ? `Téléphone : ${data.telephone}` : ''
   ].filter(Boolean);
   sendTelegramMessage(lines.join('\n'));
+}
+
+function normaliserTelServeur(tel) {
+  const digits = String(tel == null ? '' : tel).replace(/\D/g, '');
+  return digits.slice(-9); // les 9 derniers chiffres (ignore le 0 initial ou +33)
+}
+
+function estDansListeNoire(tel) {
+  try {
+    const val = getSheet('Config').getRange('C1').getValue();
+    const liste = val ? JSON.parse(val) : [];
+    const t = normaliserTelServeur(tel);
+    if (!t) return false;
+    return liste.some(function(n) { return normaliserTelServeur(n) === t; });
+  } catch (err) {
+    return false;
+  }
 }
 
 function getDateKey(value) {

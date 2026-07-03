@@ -66,6 +66,8 @@
 
     .rdv-footer { padding: 14px 20px; border-top: 1px solid #F3F4F6; }
     .cancel-info { font-size: 0.8rem; color: var(--gray); font-style: italic; }
+    .btn-calendar { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 10px 22px; border-radius: 50px; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+    .btn-calendar:hover { opacity: 0.85; }
     .btn-cancel { background: white; color: var(--red); border: 2px solid #FECACA; padding: 10px 22px; border-radius: 50px; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background .15s; }
     .btn-cancel:hover { background: #FEF2F2; }
     .btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -242,8 +244,11 @@ function afficherResultats() {
     const badgeCls = b.status === 'Accepté' ? 'badge-accepte' : b.status === 'Annulé par cliente' ? 'badge-annule' : 'badge-attente';
     const dateLabel = b.date ? formatDateFr(b.date) : 'Date à confirmer';
     const peutAnn = b.status !== 'Annulé par cliente' && peutAnnuler(b.date || '');
+    const btnCalendrier = b.status === 'Accepté'
+      ? `<button class="btn-calendar" onclick="ajouterAuCalendrier(${b.row})">📅 Ajouter au calendrier</button>` : '';
     const footer = b.status !== 'Annulé par cliente' ? `
-      <div class="rdv-footer">
+      <div class="rdv-footer" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        ${btnCalendrier}
         ${peutAnn
           ? `<button class="btn-cancel" onclick="demanderAnnulation(${b.row},'${dateLabel}','${b.creneau || ''}')">Annuler ce RDV</button>`
           : `<p class="cancel-info">⚠️ L'annulation n'est plus possible à moins de 3 jours du RDV. Contactez-nous sur Instagram.</p>`
@@ -266,6 +271,60 @@ function afficherResultats() {
   }).join('');
 
   results.innerHTML = `<div class="section-title">Vos prochains rendez-vous (${allRdvs.length})</div>${cartes}`;
+}
+
+/* ══ AJOUT AU CALENDRIER (.ics) ══ */
+function parseCreneauHeure(creneau) {
+  // "8h00", "14h30", "9h00-12h00" → { h, min } (premier horaire trouvé)
+  const m = String(creneau || '').match(/(\d{1,2})\s*h\s*(\d{0,2})/i);
+  if (!m) return { h: 9, min: 0 };
+  return { h: parseInt(m[1]), min: m[2] ? parseInt(m[2]) : 0 };
+}
+
+function icsEscape(txt) {
+  return String(txt || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+}
+
+function ajouterAuCalendrier(row) {
+  const b = allRdvs.find(x => x.row === row);
+  if (!b) return;
+  const d = getDateObj(b.date || '');
+  if (!d) { alert('Date du RDV introuvable.'); return; }
+  const { h, min } = parseCreneauHeure(b.creneau);
+  const debut = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, min);
+  const fin = new Date(debut.getTime() + 60 * 60 * 1000); // durée 1h par défaut
+
+  const fmt = dt => dt.getFullYear() + String(dt.getMonth()+1).padStart(2,'0') + String(dt.getDate()).padStart(2,'0') +
+    'T' + String(dt.getHours()).padStart(2,'0') + String(dt.getMinutes()).padStart(2,'0') + '00';
+
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//L\'Instant K//RDV//FR',
+    'BEGIN:VEVENT',
+    'UID:rdv-' + row + '-' + fmt(debut) + '@linstantk',
+    'DTSTAMP:' + fmt(new Date()),
+    'DTSTART:' + fmt(debut),
+    'DTEND:' + fmt(fin),
+    'SUMMARY:' + icsEscape('💅 RDV L\'Instant K — ' + (b.prestation || '')),
+    'DESCRIPTION:' + icsEscape('Rendez-vous L\'Instant K' + (b.reference ? ' — Référence : ' + b.reference : '')),
+    'BEGIN:VALARM',
+    'TRIGGER:-PT2H',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:RDV L\'Instant K dans 2h',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'rdv-linstantk.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 function demanderAnnulation(row, dateLabel, creneau) {

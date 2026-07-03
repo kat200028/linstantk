@@ -109,6 +109,9 @@
     .rdv-prestation { font-size: 0.9rem; color: var(--violet-dark); font-weight: 600; margin-top: 3px; }
     .rdv-contact { font-size: 0.78rem; color: #9CA3AF; margin-top: 5px; display: flex; gap: 14px; flex-wrap: wrap; }
     .rdv-message { font-size: 0.8rem; color: var(--violet); font-weight: 600; margin-top: 4px; }
+    .btn-block-num { background: none; border: 1px solid #E5E7EB; border-radius: 50px; padding: 1px 8px; font-size: 0.7rem; cursor: pointer; color: #9CA3AF; opacity: 0.7; transition: all .15s; vertical-align: middle; }
+    .btn-block-num:hover { opacity: 1; border-color: var(--red); color: var(--red); }
+    .btn-block-num.blocked { background: #FEE2E2; border-color: #FECACA; color: var(--red); opacity: 1; font-weight: 700; }
 
     /* Pied de carte : actions */
     .rdv-card-footer { display: none; border-top: 1px solid #FEF3C7; background: #FFFBEB; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -480,7 +483,7 @@ function showPage(id, btn) {
 
 /* ══ CHARGEMENT ══ */
 let allBookings = [], currentFilter = 'tous';
-let dispo = {}, tarifsData = null;
+let dispo = {}, tarifsData = null, blacklist = [];
 let calYear, calMonth, selectedDate = null;
 
 async function loadAll() {
@@ -490,6 +493,7 @@ async function loadAll() {
     allBookings = (data.bookings || []).reverse();
     if (data.disponibilites) dispo = data.disponibilites;
     if (data.tarifs) tarifsData = data.tarifs;
+    if (data.blacklist) blacklist = data.blacklist;
     renderBookings();
     renderStats();
     renderCal();
@@ -499,6 +503,32 @@ async function loadAll() {
     buildTarifsEditor(DEFAULT_TARIFS);
     renderCal();
   }
+}
+
+/* ══ LISTE NOIRE ══ */
+function normaliserTel(tel) {
+  return String(tel == null ? '' : tel).replace(/\D/g, '').slice(-9);
+}
+
+function estBloque(tel) {
+  const t = normaliserTel(tel);
+  return t && blacklist.some(n => normaliserTel(n) === t);
+}
+
+async function toggleBlacklist(tel) {
+  const t = normaliserTel(tel);
+  if (!t) return;
+  if (estBloque(tel)) {
+    if (!confirm('Débloquer ce numéro ? Ses demandes de RDV seront de nouveau acceptées.')) return;
+    blacklist = blacklist.filter(n => normaliserTel(n) !== t);
+  } else {
+    if (!confirm('Bloquer ce numéro ? Ses futures demandes de RDV seront refusées automatiquement (sans notification).')) return;
+    blacklist.push(String(tel));
+  }
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'save_blacklist', blacklist }) });
+  } catch(e) { alert('Erreur lors de la sauvegarde de la liste noire.'); }
+  renderBookings();
 }
 
 /* ══ BOOKINGS ══ */
@@ -599,7 +629,7 @@ function renderBookings() {
             <div class="rdv-name">${b.prenom} ${b.nom}</div>
             <div class="rdv-prestation">${b.prestation}</div>
             <div class="rdv-contact">
-              ${b.telephone ? `<span>📞 ${b.telephone}</span>` : ''}
+              ${b.telephone ? `<span>📞 ${b.telephone} <button class="btn-block-num${estBloque(b.telephone) ? ' blocked' : ''}" onclick="toggleBlacklist('${String(b.telephone).replace(/[^\d+ .]/g,'')}')" title="${estBloque(b.telephone) ? 'Numéro bloqué — cliquer pour débloquer' : 'Bloquer ce numéro (liste noire)'}">${estBloque(b.telephone) ? '⛔ bloqué' : '🚫'}</button></span>` : ''}
               ${b.reference ? `<span>🎟 ${b.reference}</span>` : ''}
             </div>
             ${b.message ? `<div class="rdv-message">💬 ${b.message}</div>` : ''}
