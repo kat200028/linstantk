@@ -638,16 +638,13 @@ function trouverOuCreerReference(tel) {
   return existant ? existant.reference : genererReference();
 }
 
-// Un RDV "actif" bloque une nouvelle demande tant qu'il n'est ni refusé/annulé, ni déjà passé
-function aDejaUnRdvActif(tel) {
+// Bloque seulement si la cliente a déjà un RDV actif (en attente/accepté) le même jour
+function aDejaUnRdvActifCeJour(tel, dateStr) {
   const telNorm = normaliserTel(tel);
-  const today = new Date(); today.setHours(0,0,0,0);
   return BOOKINGS.some(b => {
     if (normaliserTel(b.telephone) !== telNorm) return false;
     if (b.status !== 'En attente' && b.status !== 'Accepté') return false;
-    if (!b.date_str) return true;
-    const d = new Date(b.date_str + 'T00:00:00');
-    return d >= today;
+    return b.date_str === dateStr;
   });
 }
 
@@ -656,8 +653,8 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
   const creneau = document.getElementById('f-creneau').value;
   if (!creneau) { alert('Veuillez choisir un créneau dans le calendrier ci-dessus.'); return; }
   if (selectedPrestations.length === 0) { alert('Veuillez choisir au moins une prestation.'); return; }
-  if (aDejaUnRdvActif(document.getElementById('f-tel').value)) {
-    alert('Vous avez déjà une demande de rendez-vous en cours (en attente ou confirmée).\n\nRendez-vous sur « Mon RDV » pour la consulter ou l\'annuler avant d\'en demander un nouveau.');
+  if (aDejaUnRdvActifCeJour(document.getElementById('f-tel').value, document.getElementById('f-date').value)) {
+    alert('Vous avez déjà une demande de rendez-vous ce jour-là (en attente ou confirmée).\n\nRendez-vous sur « Mon RDV » pour la consulter, ou choisissez une autre date.');
     return;
   }
 
