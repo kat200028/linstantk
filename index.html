@@ -670,6 +670,8 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
         reference: reference
       })
     });
+    // Mémorise la référence localement pour que d'autres réservations dans la même session (même jour) la retrouvent
+    BOOKINGS.push({ telephone: document.getElementById('f-tel').value.trim(), reference: reference, date_str: dateVal, creneau: creneau, status: 'En attente' });
     this.reset();
     selectedPrestations = [];
     renderTags();
