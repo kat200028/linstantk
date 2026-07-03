@@ -105,9 +105,10 @@
 
   <div class="search-card">
     <h2>🔍 Rechercher mon rendez-vous</h2>
-    <p>Entrez le numéro de téléphone utilisé lors de votre réservation</p>
-    <div class="search-row">
+    <p>Entrez le téléphone utilisé lors de votre réservation et votre référence client (reçue à la réservation)</p>
+    <div class="search-row" style="flex-wrap:wrap">
       <input type="tel" class="search-input" id="telInput" placeholder="06 XX XX XX XX" onkeydown="if(event.key==='Enter')rechercher()" />
+      <input type="text" class="search-input" id="refInput" placeholder="Référence ex: K-AB27" style="max-width:180px;text-transform:uppercase" onkeydown="if(event.key==='Enter')rechercher()" />
       <button class="btn-search" id="searchBtn" onclick="rechercher()">Rechercher</button>
     </div>
   </div>
@@ -181,9 +182,15 @@ function normaliserTel(tel) {
   return t;
 }
 
+function normaliserRef(ref) {
+  return String(ref == null ? '' : ref).replace(/\s+/g, '').toUpperCase();
+}
+
 async function rechercher() {
   const tel = document.getElementById('telInput').value.trim();
+  const ref = normaliserRef(document.getElementById('refInput').value);
   if (!tel) return;
+  if (!ref) { alert('Veuillez entrer votre référence client (ex: K-AB27).'); return; }
 
   const btn = document.getElementById('searchBtn');
   btn.disabled = true; btn.textContent = '...';
@@ -202,6 +209,9 @@ async function rechercher() {
     allRdvs = (data.bookings || []).filter(b => {
       const bTel = normaliserTel(b.telephone || '');
       if (bTel !== telNorm) return false;
+      // Vérification de la référence client (les anciens RDV sans référence restent accessibles par téléphone)
+      const bRef = normaliserRef(b.reference || '');
+      if (bRef && bRef !== ref) return false;
       if (b.status === 'Refusé') return false;
       const d = getDateObj(b.date || '');
       if (!d) return true;
@@ -222,7 +232,7 @@ function afficherResultats() {
   if (!allRdvs.length) {
     results.innerHTML = `<div class="empty-msg">
       <div class="empty-icon">🔍</div>
-      <p>Aucun rendez-vous trouvé pour ce numéro.<br><br>Vérifiez le numéro utilisé lors de votre réservation.</p>
+      <p>Aucun rendez-vous trouvé.<br><br>Vérifiez le numéro de téléphone et la référence client reçue lors de votre réservation.</p>
     </div>`;
     return;
   }

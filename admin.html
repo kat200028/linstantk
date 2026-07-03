@@ -574,6 +574,7 @@ function renderBookings() {
             <div class="rdv-prestation">${b.prestation}</div>
             <div class="rdv-contact">
               ${b.telephone ? `<span>📞 ${b.telephone}</span>` : ''}
+              ${b.reference ? `<span>🎟 ${b.reference}</span>` : ''}
             </div>
             ${b.message ? `<div class="rdv-message">💬 ${b.message}</div>` : ''}
           </div>

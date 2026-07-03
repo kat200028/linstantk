@@ -330,6 +330,7 @@
     <span class="modal-icon">💌</span>
     <h3>Demande envoyée !</h3>
     <p>Votre demande de rendez-vous a bien été reçue. Je vous recontacte très vite pour confirmer. ⭐</p>
+    <p style="background:var(--violet-pale);border-radius:12px;padding:12px 16px;font-weight:700;color:var(--violet-dark)">Votre référence client :<br><span id="refClient" style="font-size:1.4rem;letter-spacing:2px"></span><br><span style="font-weight:400;font-size:0.8rem">Notez-la — elle sera demandée pour consulter ou annuler votre RDV.</span></p>
     <button onclick="document.getElementById('modalOK').classList.remove('show')">Parfait !</button>
   </div>
 </div>
@@ -588,6 +589,13 @@ function renderTags() {
 }
 
 /* ══ FORMULAIRE ══ */
+function genererReference() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // sans caractères ambigus (I/1, O/0)
+  let ref = 'K-';
+  for (let i = 0; i < 4; i++) ref += chars[Math.floor(Math.random() * chars.length)];
+  return ref;
+}
+
 document.getElementById('rdvForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const creneau = document.getElementById('f-creneau').value;
@@ -600,6 +608,8 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
   const dateVal = document.getElementById('f-date').value;
   const d = dateVal ? new Date(dateVal + 'T00:00:00') : null;
   const dateLabel = d ? JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()] : '';
+
+  const reference = genererReference();
 
   try {
     await fetch(SCRIPT_URL, {
@@ -614,7 +624,8 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
         date: dateLabel,
         date_str: dateVal,
         creneau: creneau,
-        message: document.getElementById('f-message').value.trim()
+        message: document.getElementById('f-message').value.trim(),
+        reference: reference
       })
     });
     this.reset();
@@ -626,6 +637,7 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
     document.getElementById('slotsPanel').classList.remove('show');
     selectedDate = null; selectedSlot = null;
     renderCal();
+    document.getElementById('refClient').textContent = reference;
     document.getElementById('modalOK').classList.add('show');
   } catch(err) {
     document.getElementById('modalErr').classList.add('show');

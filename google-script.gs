@@ -20,7 +20,8 @@ function doPost(e) {
         data.date || '',
         data.creneau || '',
         'En attente',
-        data.message || ''
+        data.message || '',
+        data.reference || ''
       ]);
       notifyTelegramNewRdv(data);
       return jsonResponse({ success: true });
@@ -86,7 +87,8 @@ function doGet(e) {
         date: rows[i][5],
         creneau: rows[i][6],
         status: rows[i][7] || 'En attente',
-        message: rows[i][8] || ''
+        message: rows[i][8] || '',
+        reference: rows[i][9] || ''
       });
     }
 
@@ -110,7 +112,8 @@ function notifyTelegramNewRdv(data) {
     data.date ? `Date : ${data.date}` : '',
     data.creneau ? `Créneau : ${data.creneau}` : '',
     data.telephone ? `Téléphone : ${data.telephone}` : '',
-    data.message ? `Message : ${data.message}` : ''
+    data.message ? `Message : ${data.message}` : '',
+    data.reference ? `Référence : ${data.reference}` : ''
   ].filter(Boolean);
   sendTelegramMessage(lines.join('\n'));
 }
