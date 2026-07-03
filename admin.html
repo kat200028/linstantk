@@ -282,6 +282,32 @@
         <div class="stat-box"><div class="stat-emoji">⏳</div><div class="stat-num c-orange" id="s-attente">–</div><div class="stat-label">En attente</div></div>
         <div class="stat-box"><div class="stat-emoji">❌</div><div class="stat-num c-red" id="s-refuse">–</div><div class="stat-label">Refusés</div></div>
       </div>
+
+      <!-- STATS DU MOIS -->
+      <div class="chart-box" style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:22px">
+          <button class="cal-nav-btn" onclick="changeStatsMonth(-1)">‹</button>
+          <div class="cal-month-label" id="statsMonthLabel"></div>
+          <button class="cal-nav-btn" onclick="changeStatsMonth(1)">›</button>
+        </div>
+        <div class="stats-row" style="margin-bottom:0">
+          <div class="stat-box"><div class="stat-emoji">✅</div><div class="stat-num c-green" id="m-accepte">–</div><div class="stat-label">RDV acceptés</div></div>
+          <div class="stat-box"><div class="stat-emoji">💶</div><div class="stat-num c-violet" id="m-ca">–</div><div class="stat-label">CA estimé</div></div>
+          <div class="stat-box"><div class="stat-emoji">📥</div><div class="stat-num c-orange" id="m-demandes">–</div><div class="stat-label">Demandes reçues</div></div>
+          <div class="stat-box"><div class="stat-emoji">❌</div><div class="stat-num c-red" id="m-annul">–</div><div class="stat-label">Refus / Annulations</div></div>
+        </div>
+      </div>
+
+      <div class="chart-box" style="margin-bottom:24px">
+        <h3>📈 Évolution sur 6 mois — RDV acceptés &amp; CA estimé</h3>
+        <div id="chartMois"></div>
+      </div>
+
+      <div class="chart-box" style="margin-bottom:24px">
+        <h3>👑 Clientes les plus fidèles</h3>
+        <div id="chartClientes"></div>
+      </div>
+
       <div class="chart-box">
         <h3>🏆 Prestations les plus demandées</h3>
         <div id="chartContent"><div class="loading-msg"><div class="spinner"></div>Chargement...</div></div>
@@ -612,15 +638,89 @@ function setFilter(f, btn) {
 }
 
 /* ══ STATS ══ */
+let statsYear = null, statsMonth = null;
+
+function changeStatsMonth(dir) {
+  statsMonth += dir;
+  if (statsMonth > 11) { statsMonth = 0; statsYear++; }
+  if (statsMonth < 0)  { statsMonth = 11; statsYear--; }
+  renderStats();
+}
+
+function monthKeyOf(b) {
+  const k = getSortKey(b.date || '');
+  return /^\d{4}-\d{2}/.test(k) ? k.slice(0, 7) : null;
+}
+
+// Estime le CA à partir des prix contenus dans la prestation ("Pose Gel X – 40€ + Dépose – 15€")
+function estimerCA(prestation) {
+  const matches = String(prestation || '').match(/(\d+(?:[.,]\d+)?)\s*€/g) || [];
+  return matches.reduce((sum, m) => sum + parseFloat(m.replace('€', '').replace(',', '.')), 0);
+}
+
 function renderStats() {
   const total = allBookings.length;
   const accepte = allBookings.filter(b => b.status === 'Accepté').length;
   const attente = allBookings.filter(b => b.status === 'En attente').length;
-  const refuse = allBookings.filter(b => b.status === 'Refusé').length;
+  const refuse = allBookings.filter(b => b.status === 'Refusé' || b.status === 'Annulé par cliente').length;
   document.getElementById('s-total').textContent = total;
   document.getElementById('s-accepte').textContent = accepte;
   document.getElementById('s-attente').textContent = attente;
   document.getElementById('s-refuse').textContent = refuse;
+
+  /* — Stats du mois sélectionné — */
+  if (statsYear === null) {
+    const now = new Date();
+    statsYear = now.getFullYear();
+    statsMonth = now.getMonth();
+  }
+  const pad = n => String(n).padStart(2, '0');
+  const selKey = `${statsYear}-${pad(statsMonth + 1)}`;
+  document.getElementById('statsMonthLabel').textContent = MOIS[statsMonth] + ' ' + statsYear;
+
+  const duMois = allBookings.filter(b => monthKeyOf(b) === selKey);
+  const acceptesMois = duMois.filter(b => b.status === 'Accepté');
+  const annulesMois = duMois.filter(b => b.status === 'Refusé' || b.status === 'Annulé par cliente');
+  const caMois = acceptesMois.reduce((s, b) => s + estimerCA(b.prestation), 0);
+  document.getElementById('m-accepte').textContent = acceptesMois.length;
+  document.getElementById('m-ca').textContent = Math.round(caMois) + '€';
+  document.getElementById('m-demandes').textContent = duMois.length;
+  document.getElementById('m-annul').textContent = annulesMois.length;
+
+  /* — Évolution 6 mois (se termine sur le mois affiché) — */
+  const moisData = [];
+  for (let i = 5; i >= 0; i--) {
+    let y = statsYear, m = statsMonth - i;
+    while (m < 0) { m += 12; y--; }
+    const key = `${y}-${pad(m + 1)}`;
+    const acc = allBookings.filter(b => monthKeyOf(b) === key && b.status === 'Accepté');
+    moisData.push({
+      label: MOIS[m] + ' ' + String(y).slice(2),
+      count: acc.length,
+      ca: Math.round(acc.reduce((s, b) => s + estimerCA(b.prestation), 0))
+    });
+  }
+  const maxCount = Math.max(1, ...moisData.map(d => d.count));
+  document.getElementById('chartMois').innerHTML = moisData.map(d =>
+    `<div class="bar-row"><div class="bar-name">${d.label}</div><div class="bar-track"><div class="bar-fill" style="width:${d.count / maxCount * 100}%"></div></div><div class="bar-val" style="min-width:100px">${d.count} RDV · ${d.ca}€</div></div>`
+  ).join('');
+
+  /* — Top clientes (RDV acceptés) — */
+  const parCliente = {};
+  allBookings.filter(b => b.status === 'Accepté').forEach(b => {
+    const nom = `${(b.prenom || '').trim()} ${(b.nom || '').trim()}`.trim();
+    if (!nom) return;
+    const k = nom.toLowerCase();
+    if (!parCliente[k]) parCliente[k] = { nom, count: 0 };
+    parCliente[k].count++;
+  });
+  const topClientes = Object.values(parCliente).sort((a, b) => b.count - a.count).slice(0, 5);
+  const maxCli = topClientes.length ? topClientes[0].count : 1;
+  document.getElementById('chartClientes').innerHTML = topClientes.length
+    ? topClientes.map(c => `<div class="bar-row"><div class="bar-name" title="${c.nom}">${c.nom}</div><div class="bar-track"><div class="bar-fill" style="width:${c.count / maxCli * 100}%"></div></div><div class="bar-val">${c.count} RDV</div></div>`).join('')
+    : '<div class="empty-msg">Aucun RDV accepté pour le moment.</div>';
+
+  /* — Top prestations — */
   const counts = {};
   allBookings.forEach(b => { const k = (b.prestation||'').split('–')[0].trim(); if(k) counts[k]=(counts[k]||0)+1; });
   const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
