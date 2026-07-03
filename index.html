@@ -431,6 +431,7 @@ const CATS = [{
 const SLOTS_BASE = ["8h00", "11h00", "14h00", "17h00"];
 const MOIS_NOMS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyBWo_5_U1vv_tppFQaCeX9hfBD-_VTrMDgqrRCOXOjj0BKo7uF2gFXACIoL6yEWSN8/exec";
 function dateKey(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
@@ -501,7 +502,7 @@ function App() {
   function confirm() {
     setLoading(true);
 
-    // Sauvegarde locale du RDV pour la partie admin
+    // Sauvegarde locale du RDV
     try {
       const rdv = {
         id: Date.now(),
@@ -521,6 +522,24 @@ function App() {
       existants.push(rdv);
       localStorage.setItem("rdv_beaute_liste", JSON.stringify(existants));
     } catch (e) {}
+    // Envoi vers Google Sheet
+    try {
+      const joursNoms = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+      const d = new Date(viewYear, viewMonth, selDay);
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          prenom: form.prenom,
+          nom: form.nom,
+          telephone: form.tel,
+          prestation: pInfo ? pInfo.label : '',
+          date: `${joursNoms[d.getDay()]} ${selDay} ${MOIS_NOMS[viewMonth]}`,
+          creneau: selSlot
+        })
+      });
+    } catch(e) {}
     setTimeout(() => {
       setLoading(false);
       setStep(5);

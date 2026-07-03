@@ -178,6 +178,7 @@ const {
   useEffect
 } = React;
 const ADMIN_PASSWORD = "linstantk2026";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyBWo_5_U1vv_tppFQaCeX9hfBD-_VTrMDgqrRCOXOjj0BKo7uF2gFXACIoL6yEWSN8/exec";
 const DEFAULT_CATS = [{
   id: "manucure",
   label: "Manucure",
@@ -425,23 +426,64 @@ function LoginScreen({
 function RdvTab({
   showToast
 }) {
-  const [list, setList] = useState(() => load("rdv_beaute_liste", []));
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("tous");
-  function update(id, patch) {
+  function toStatut(s) {
+    if (!s) return 'en_attente';
+    const l = String(s).toLowerCase().replace(/[éè]/g,'e').replace(/[à]/g,'a');
+    if (l === 'accepte' || l === 'confirme') return 'confirme';
+    if (l === 'annule') return 'annule';
+    return 'en_attente';
+  }
+  function fromStatut(s) {
+    if (s === 'confirme') return 'Accepté';
+    if (s === 'annule') return 'Annulé';
+    return 'En attente';
+  }
+  useEffect(() => {
+    fetch(SCRIPT_URL)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setList(data.bookings.map(b => ({
+            id: b.row,
+            row: b.row,
+            prenom: b.prenom,
+            nom: b.nom,
+            tel: b.telephone,
+            prestation: b.prestation,
+            dateStr: b.date,
+            creneau: b.creneau,
+            statut: toStatut(b.status),
+            creeLe: b.date_soumission
+          })));
+        } else {
+          showToast("Erreur lors du chargement");
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        showToast("Impossible de charger les RDV");
+        setLoading(false);
+      });
+  }, []);
+  function update(id, row, patch) {
     const next = list.map(r => r.id === id ? {
       ...r,
       ...patch
     } : r);
     setList(next);
-    save("rdv_beaute_liste", next);
+    showToast("Statut mis à jour");
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'update', row: row, status: fromStatut(patch.statut)})
+    }).catch(() => {});
   }
-  function remove(id) {
-    const next = list.filter(r => r.id !== id);
-    setList(next);
-    save("rdv_beaute_liste", next);
-    showToast("Rendez-vous supprimé");
-  }
-  const filtered = list.filter(r => filter === "tous" || r.statut === filter).sort((a, b) => (a.jour || 0) - (b.jour || 0));
+  const filtered = list.filter(r => filter === "tous" || r.statut === filter);
+  if (loading) return /*#__PURE__*/React.createElement("div", {style: {padding: "40px", textAlign: "center", color: "#8b5e8f"}}, "Chargement des rendez-vous...");
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "section-title"
   }, "Rendez-vous"), /*#__PURE__*/React.createElement("div", {
@@ -459,7 +501,7 @@ function RdvTab({
     }
   }, f === "tous" ? "Tous" : f === "en_attente" ? "En attente" : f === "confirme" ? "Confirmés" : "Annulés"))), filtered.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "empty-msg"
-  }, "Aucun rendez-vous pour le moment."), filtered.map(r => /*#__PURE__*/React.createElement("div", {
+  }, list.length === 0 ? "Aucun rendez-vous." : "Aucun rendez-vous dans cette catégorie."), filtered.map(r => /*#__PURE__*/React.createElement("div", {
     key: r.id,
     className: `rdv-card ${r.statut}`
   }, /*#__PURE__*/React.createElement("div", {
@@ -468,28 +510,21 @@ function RdvTab({
     className: "rdv-name"
   }, r.prenom, " ", r.nom), /*#__PURE__*/React.createElement("div", {
     className: "rdv-when"
-  }, r.jour, " juillet · ", r.creneau)), /*#__PURE__*/React.createElement("span", {
+  }, r.dateStr || "—", " · ", r.creneau)), /*#__PURE__*/React.createElement("span", {
     className: `rdv-statut ${r.statut}`
   }, r.statut === "en_attente" ? "En attente" : r.statut === "confirme" ? "Confirmé" : "Annulé")), /*#__PURE__*/React.createElement("div", {
     className: "rdv-detail"
-  }, "💅 ", r.prestation, " — ", r.prix), /*#__PURE__*/React.createElement("div", {
+  }, "💅 ", r.prestation), /*#__PURE__*/React.createElement("div", {
     className: "rdv-detail"
   }, "📞 ", r.tel), /*#__PURE__*/React.createElement("div", {
     className: "rdv-actions"
   }, r.statut !== "confirme" && /*#__PURE__*/React.createElement("button", {
     className: "btn-valider",
-    onClick: () => update(r.id, {
-      statut: "confirme"
-    })
+    onClick: () => update(r.id, r.row, {statut: "confirme"})
   }, "✓ Valider"), r.statut !== "annule" && /*#__PURE__*/React.createElement("button", {
     className: "btn-annuler",
-    onClick: () => update(r.id, {
-      statut: "annule"
-    })
-  }, "✕ Annuler"), /*#__PURE__*/React.createElement("button", {
-    className: "btn-suppr",
-    onClick: () => remove(r.id)
-  }, "🗑")))));
+    onClick: () => update(r.id, r.row, {statut: "annule"})
+  }, "✕ Annuler")))));
 }
 function ServicesTab({
   showToast

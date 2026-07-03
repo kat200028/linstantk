@@ -1,6 +1,7 @@
 function doPost(e) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('rdv') || ss.getActiveSheet();
     const data = JSON.parse(e.postData.contents);
 
     if (data.action === 'update') {
@@ -28,7 +29,8 @@ function doPost(e) {
 
 function doGet(e) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('rdv') || ss.getActiveSheet();
     const rows = sheet.getDataRange().getValues();
     const bookings = [];
     for (let i = 1; i < rows.length; i++) {
