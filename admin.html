@@ -597,6 +597,18 @@ async function toggleBlacklist(tel) {
   renderBookings();
 }
 
+async function modifierTelephone(row, telActuel) {
+  const nouveau = prompt('Nouveau numéro de téléphone :', telActuel);
+  if (nouveau === null) return;
+  const val = nouveau.trim();
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'update_phone', row, telephone: val }) });
+    const b = allBookings.find(x => x.row === row);
+    if (b) b.telephone = val;
+    renderBookings();
+  } catch(e) { alert('Erreur lors de la mise à jour du téléphone.'); }
+}
+
 /* ══ BOOKINGS ══ */
 function isPassé(dateStr) {
   if (!dateStr) return false;
@@ -695,7 +707,7 @@ function renderBookings() {
             <div class="rdv-name">${b.prenom} ${b.nom}</div>
             <div class="rdv-prestation">${b.prestation}</div>
             <div class="rdv-contact">
-              ${b.telephone ? `<span>📞 ${b.telephone} <button class="btn-block-num${estBloque(b.telephone) ? ' blocked' : ''}" onclick="toggleBlacklist('${String(b.telephone).replace(/[^\d+ .]/g,'')}')" title="${estBloque(b.telephone) ? 'Numéro bloqué — cliquer pour débloquer' : 'Bloquer ce numéro (liste noire)'}">${estBloque(b.telephone) ? '⛔ bloqué' : '🚫'}</button></span>` : ''}
+              <span>📞 ${b.telephone || '(non renseigné)'} <button class="btn-block-num" onclick="modifierTelephone(${b.row}, '${String(b.telephone||'').replace(/'/g,"\\'")}')" title="Modifier le numéro">✏️</button> ${b.telephone ? `<button class="btn-block-num${estBloque(b.telephone) ? ' blocked' : ''}" onclick="toggleBlacklist('${String(b.telephone).replace(/[^\d+ .]/g,'')}')" title="${estBloque(b.telephone) ? 'Numéro bloqué — cliquer pour débloquer' : 'Bloquer ce numéro (liste noire)'}">${estBloque(b.telephone) ? '⛔ bloqué' : '🚫'}</button>` : ''}</span>
               ${b.reference ? `<span>🎟 ${b.reference}</span>` : ''}
             </div>
             ${b.message ? `<div class="rdv-message">💬 ${b.message}</div>` : ''}

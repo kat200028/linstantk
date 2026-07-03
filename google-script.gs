@@ -80,6 +80,12 @@ function doPost(e) {
       return jsonResponse({ success: true });
     }
 
+    if (data.action === 'update_phone') {
+      const s = getSheet('RDV');
+      s.getRange(parseInt(data.row), 4).setValue(data.telephone || '');
+      return jsonResponse({ success: true });
+    }
+
     if (data.action === 'update') {
       const s = getSheet('RDV');
       const row = parseInt(data.row);
