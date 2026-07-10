@@ -223,17 +223,24 @@ function sendTelegramMessage(text) {
   const props = PropertiesService.getScriptProperties();
   const token = props.getProperty('TELEGRAM_BOT_TOKEN');
   const chatId = props.getProperty('TELEGRAM_CHAT_ID');
-  if (!token || !chatId) return;
+  if (!token || !chatId) { Logger.log('TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID manquant dans les Script Properties'); return; }
   try {
-    UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'post',
       contentType: 'application/json',
       payload: JSON.stringify({ chat_id: chatId, text: text }),
       muteHttpExceptions: true
     });
+    Logger.log('Réponse Telegram (code ' + res.getResponseCode() + ') : ' + res.getContentText());
   } catch (err) {
     Logger.log('Erreur notification Telegram: ' + err);
   }
+}
+
+// Fonction de test : sélectionne "testerTelegram" dans le menu déroulant en haut de l'éditeur puis clique ▶ Exécuter.
+// Regarde ensuite "Exécutions" (icône horloge à gauche) pour voir le résultat détaillé.
+function testerTelegram() {
+  sendTelegramMessage('✅ Test de notification — si tu reçois ce message, tout fonctionne !');
 }
 
 function sendDailyReminders() {
