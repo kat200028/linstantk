@@ -34,6 +34,17 @@ function doPost(e) {
       return jsonResponse({ success: true });
     }
 
+    if (data.action === 'save_client_note') {
+      const s = getSheet('Config');
+      const val = s.getRange('D1').getValue();
+      const notes = val ? JSON.parse(val) : {};
+      const tel = normaliserTelServeur(data.telephone);
+      if (data.note && data.note.trim()) notes[tel] = data.note;
+      else delete notes[tel];
+      s.getRange('D1').setValue(JSON.stringify(notes));
+      return jsonResponse({ success: true });
+    }
+
     if (data.action === 'login') {
       const hash = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD_HASH');
       if (!hash) return jsonResponse({ success: false, setup: true });
@@ -124,6 +135,7 @@ function doGet(e) {
     const dispoVal = config.getRange('A1').getValue();
     const tarifsVal = config.getRange('B1').getValue();
     const blacklistVal = config.getRange('C1').getValue();
+    const clientNotesVal = config.getRange('D1').getValue();
 
     if (type === 'disponibilites') {
       return jsonResponse({ success: true, disponibilites: dispoVal ? JSON.parse(dispoVal) : {} });
@@ -157,7 +169,8 @@ function doGet(e) {
       bookings: bookings,
       disponibilites: dispoVal ? JSON.parse(dispoVal) : {},
       tarifs: tarifsVal ? JSON.parse(tarifsVal) : null,
-      blacklist: blacklistVal ? JSON.parse(blacklistVal) : []
+      blacklist: blacklistVal ? JSON.parse(blacklistVal) : [],
+      clientNotes: clientNotesVal ? JSON.parse(clientNotesVal) : {}
     });
 
   } catch (err) {

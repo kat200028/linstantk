@@ -224,6 +224,31 @@
     .btn-add-item { background: transparent; border: 2px dashed #C4B5FD; color: var(--violet); padding: 8px 18px; border-radius: 50px; font-size: 0.82rem; font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%; transition: all .2s; }
     .btn-add-item:hover { background: var(--violet-pale); }
 
+    /* FICHE CLIENTE */
+    .rdv-name { cursor: pointer; }
+    .rdv-name:hover { text-decoration: underline; color: var(--violet); }
+    .client-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
+    .client-modal-bg.show { display: flex; }
+    .client-modal-box { background: white; border-radius: 24px; padding: 32px; max-width: 560px; width: 100%; }
+    .client-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .client-modal-title { font-size: 1.3rem; font-weight: 900; color: var(--dark); }
+    .client-modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--gray); }
+    .client-modal-sub { font-size: 0.85rem; color: var(--gray); margin-bottom: 18px; }
+    .client-badge { display: inline-block; padding: 4px 14px; border-radius: 50px; font-size: 0.78rem; font-weight: 800; margin-bottom: 18px; }
+    .client-badge.nouvelle { background: var(--violet-pale); color: var(--violet-dark); }
+    .client-badge.fidele { background: #D1FAE5; color: #065F46; }
+    .client-notes-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); margin-bottom: 8px; }
+    .client-notes-box { width: 100%; min-height: 80px; padding: 12px 14px; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 0.9rem; color: var(--dark); font-family: inherit; resize: vertical; margin-bottom: 8px; }
+    .client-notes-box:focus { outline: none; border-color: var(--violet); }
+    .client-notes-save { background: var(--violet); color: white; border: none; padding: 8px 20px; border-radius: 50px; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+    .client-notes-saved { color: var(--green); font-size: 0.8rem; font-weight: 700; margin-left: 10px; display: none; }
+    .client-history-title { font-size: 0.95rem; font-weight: 800; margin: 22px 0 12px; }
+    .client-history-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #F3F4F6; font-size: 0.85rem; }
+    .client-history-item:last-child { border-bottom: none; }
+    .client-history-date { font-weight: 700; color: var(--dark); min-width: 130px; }
+    .client-history-presta { flex: 1; color: var(--gray); }
+    .client-history-status { font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 50px; white-space: nowrap; }
+
     /* SAVE BAR */
     .save-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: white; border-top: 2px solid #EDE9FE; padding: 16px 28px; display: none; align-items: center; justify-content: space-between; box-shadow: 0 -4px 20px rgba(124,58,237,0.1); gap: 16px; }
     .save-bar p { font-size: 0.85rem; color: var(--gray); }
@@ -425,6 +450,26 @@
       <button class="btn-save" id="btnSaveTarifs" onclick="saveTarifs()">💾 Enregistrer</button>
     </div>
   </div>
+
+  <!-- FICHE CLIENTE -->
+  <div class="client-modal-bg" id="clientModal" onclick="if(event.target===this) fermerFicheClient()">
+    <div class="client-modal-box">
+      <div class="client-modal-header">
+        <div class="client-modal-title" id="clientModalNom"></div>
+        <button class="client-modal-close" onclick="fermerFicheClient()">✕</button>
+      </div>
+      <div class="client-modal-sub" id="clientModalContact"></div>
+      <div id="clientModalBadge"></div>
+
+      <div class="client-notes-label">📝 Notes privées (visibles uniquement par vous)</div>
+      <textarea class="client-notes-box" id="clientNotesInput" placeholder="Préférences, allergies, remarques..."></textarea>
+      <button class="client-notes-save" onclick="sauvegarderNoteClient()">Enregistrer la note</button>
+      <span class="client-notes-saved" id="clientNotesSaved">✅ Enregistré</span>
+
+      <div class="client-history-title" id="clientHistoryTitle"></div>
+      <div id="clientHistoryList"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -552,7 +597,7 @@ function showPage(id, btn) {
 
 /* ══ CHARGEMENT ══ */
 let allBookings = [], currentFilter = 'tous';
-let dispo = {}, tarifsData = null, blacklist = [];
+let dispo = {}, tarifsData = null, blacklist = [], clientNotes = {};
 let calYear, calMonth, selectedDate = null;
 
 async function loadAll() {
@@ -563,6 +608,7 @@ async function loadAll() {
     if (data.disponibilites) dispo = data.disponibilites;
     if (data.tarifs) tarifsData = data.tarifs;
     if (data.blacklist) blacklist = data.blacklist;
+    if (data.clientNotes) clientNotes = data.clientNotes;
     renderBookings();
     renderStats();
     renderCal();
@@ -610,6 +656,61 @@ async function modifierTelephone(row, telActuel) {
     if (b) b.telephone = val;
     renderBookings();
   } catch(e) { alert('Erreur lors de la mise à jour du téléphone.'); }
+}
+
+/* ══ FICHE CLIENTE ══ */
+let ficheClientTel = null;
+
+function ouvrirFicheClient(prenom, nom, telephone) {
+  const telNorm = normaliserTel(telephone);
+  ficheClientTel = telNorm;
+
+  const historique = allBookings
+    .filter(b => normaliserTel(b.telephone) === telNorm)
+    .sort((a, b) => getSortKey(b.date).localeCompare(getSortKey(a.date))); // plus récent en premier
+
+  const visites = historique.filter(b => b.status === 'Accepté').length;
+
+  document.getElementById('clientModalNom').textContent = `${prenom} ${nom}`.trim() || 'Cliente';
+  document.getElementById('clientModalContact').textContent = '📞 ' + (telephone || 'non renseigné');
+  document.getElementById('clientModalBadge').innerHTML = visites >= 2
+    ? `<span class="client-badge fidele">⭐ Cliente fidèle — ${visites} visites</span>`
+    : `<span class="client-badge nouvelle">👋 ${visites === 1 ? 'Nouvelle cliente' : 'Aucune visite encore'}</span>`;
+
+  document.getElementById('clientNotesInput').value = clientNotes[telNorm] || '';
+  document.getElementById('clientNotesSaved').style.display = 'none';
+
+  document.getElementById('clientHistoryTitle').textContent = `📋 Historique (${historique.length} rendez-vous)`;
+  document.getElementById('clientHistoryList').innerHTML = historique.length
+    ? historique.map(b => {
+        const isAnnule = b.status === 'Annulé par cliente';
+        const bCls = b.status === 'Accepté' ? 'badge-accepte' : (b.status === 'Refusé') ? 'badge-refuse' : isAnnule ? 'badge-annule' : 'badge-attente';
+        return `<div class="client-history-item">
+          <span class="client-history-date">${b.date ? formatDateFr(b.date) : 'Sans date'}</span>
+          <span class="client-history-presta">${b.prestation || ''}${b.creneau ? ' — ' + b.creneau : ''}</span>
+          <span class="client-history-status ${bCls}">${b.status}</span>
+        </div>`;
+      }).join('')
+    : '<p class="no-slots">Aucun historique.</p>';
+
+  document.getElementById('clientModal').classList.add('show');
+}
+
+function fermerFicheClient() {
+  document.getElementById('clientModal').classList.remove('show');
+  ficheClientTel = null;
+}
+
+async function sauvegarderNoteClient() {
+  if (!ficheClientTel) return;
+  const note = document.getElementById('clientNotesInput').value;
+  clientNotes[ficheClientTel] = note;
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'save_client_note', telephone: ficheClientTel, note }) });
+    const el = document.getElementById('clientNotesSaved');
+    el.style.display = 'inline';
+    setTimeout(() => { el.style.display = 'none'; }, 2500);
+  } catch(e) { alert('Erreur lors de la sauvegarde de la note.'); }
 }
 
 /* ══ BOOKINGS ══ */
@@ -728,7 +829,7 @@ function renderBookings() {
         <div class="rdv-card-body">
           <div class="rdv-avatar">${ini}</div>
           <div class="rdv-main">
-            <div class="rdv-name">${b.prenom} ${b.nom}</div>
+            <div class="rdv-name" onclick="ouvrirFicheClient('${String(b.prenom||'').replace(/'/g,"\\'")}', '${String(b.nom||'').replace(/'/g,"\\'")}', '${String(b.telephone||'').replace(/'/g,"\\'")}')">${b.prenom} ${b.nom}</div>
             <div class="rdv-prestation">${b.prestation}</div>
             <div class="rdv-contact">
               <span>📞 ${b.telephone || '(non renseigné)'} <button class="btn-block-num" onclick="modifierTelephone(${b.row}, '${String(b.telephone||'').replace(/'/g,"\\'")}')" title="Modifier le numéro">✏️</button> ${b.telephone ? `<button class="btn-block-num${estBloque(b.telephone) ? ' blocked' : ''}" onclick="toggleBlacklist('${String(b.telephone).replace(/[^\d+ .]/g,'')}')" title="${estBloque(b.telephone) ? 'Numéro bloqué — cliquer pour débloquer' : 'Bloquer ce numéro (liste noire)'}">${estBloque(b.telephone) ? '⛔ bloqué' : '🚫'}</button>` : ''}</span>
