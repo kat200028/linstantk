@@ -671,6 +671,14 @@ function renderBookings() {
   });
   const sortedKeys = Object.keys(grouped).sort();
 
+  // Trie les RDV d'une même journée par ordre de passage (heure du créneau)
+  function heureEnMinutes(creneau) {
+    const m = String(creneau || '').match(/(\d{1,2})\s*h\s*(\d{0,2})/i);
+    if (!m) return 9999;
+    return parseInt(m[1]) * 60 + (m[2] ? parseInt(m[2]) : 0);
+  }
+  Object.values(grouped).forEach(group => group.sort((a, b) => heureEnMinutes(a.creneau) - heureEnMinutes(b.creneau)));
+
   list.innerHTML = sortedKeys.map(key => {
     const group = grouped[key];
     const dateLabel = group[0].date ? formatDateFr(group[0].date) : 'Sans date';
