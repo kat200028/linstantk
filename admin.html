@@ -774,7 +774,7 @@ function renderBookings() {
     // La recherche par nom ignore les filtres/groupements et cherche dans TOUS les RDV (y compris passés)
     items = allBookings.filter(b => `${b.prenom||''} ${b.nom||''}`.toLowerCase().includes(recherche));
   } else if (currentFilter === 'tous') {
-    items = allBookings.filter(b => !isPassé(b.date));
+    items = allBookings.filter(b => !isPassé(b.date) && !b.termine);
   } else if (currentFilter === 'passé') {
     items = allBookings.filter(b => isPassé(b.date));
   } else if (currentFilter === 'Refusé') {
