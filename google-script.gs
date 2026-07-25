@@ -97,6 +97,12 @@ function doPost(e) {
       return jsonResponse({ success: true });
     }
 
+    if (data.action === 'mark_termine') {
+      const s = getSheet('RDV');
+      s.getRange(parseInt(data.row), 11).setValue(data.termine ? true : false);
+      return jsonResponse({ success: true });
+    }
+
     if (data.action === 'update') {
       const s = getSheet('RDV');
       const row = parseInt(data.row);
@@ -160,7 +166,8 @@ function doGet(e) {
         creneau: rows[i][6],
         status: rows[i][7] || 'En attente',
         message: rows[i][8] || '',
-        reference: rows[i][9] || ''
+        reference: rows[i][9] || '',
+        termine: rows[i][10] === true
       });
     }
 

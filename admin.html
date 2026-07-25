@@ -84,22 +84,26 @@
     .rdv-card.accepte { border-left-color: var(--green); }
     .rdv-card.refuse  { border-left-color: var(--red); opacity: 0.55; }
     .rdv-card.annule  { border-left-color: var(--red); opacity: 0.55; }
+    .rdv-card.termine { border-left-color: #9CA3AF; opacity: 0.7; }
 
     /* Bandeau date/heure en tête de carte */
     .rdv-datebar { display: flex; align-items: center; gap: 10px; padding: 12px 22px; background: var(--violet-pale); }
     .rdv-card.accepte .rdv-datebar { background: #D1FAE5; }
     .rdv-card.refuse  .rdv-datebar { background: #FEE2E2; }
     .rdv-card.annule  .rdv-datebar { background: #FEE2E2; }
+    .rdv-card.termine .rdv-datebar { background: #F3F4F6; }
     .rdv-datebar-date { font-size: 1.05rem; font-weight: 900; color: var(--violet-dark); text-transform: capitalize; }
     .rdv-card.accepte .rdv-datebar-date { color: #065F46; }
     .rdv-card.refuse  .rdv-datebar-date { color: #991B1B; }
     .rdv-card.annule  .rdv-datebar-date { color: #991B1B; }
+    .rdv-card.termine .rdv-datebar-date { color: #4B5563; }
     .rdv-datebar-heure { font-size: 0.95rem; font-weight: 800; color: var(--dark); background: white; padding: 3px 14px; border-radius: 50px; }
     .rdv-status-badge { margin-left: auto; padding: 5px 14px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
     .badge-attente { background: #FEF3C7; color: #92400E; }
     .badge-accepte { background: #A7F3D0; color: #065F46; }
     .badge-refuse  { background: #FECACA; color: #991B1B; }
     .badge-annule  { background: #FECACA; color: #991B1B; }
+    .badge-termine { background: #E5E7EB; color: #4B5563; }
 
     /* Corps de la carte */
     .rdv-card-body { padding: 18px 22px; display: flex; align-items: center; gap: 16px; }
@@ -119,6 +123,7 @@
     .rdv-card.accepte .rdv-card-footer { display: flex; border-top-color: #A7F3D0; background: #F0FDF4; }
     .rdv-card.refuse  .rdv-card-footer,
     .rdv-card.annule  .rdv-card-footer { display: none; }
+    .rdv-card.termine .rdv-card-footer { display: flex; border-top-color: #E5E7EB; background: #F9FAFB; }
     .btn-annuler-admin { background: white; color: var(--red); border: 2px solid #FECACA; padding: 10px 22px; border-radius: 50px; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background .15s; }
     .btn-annuler-admin:hover { background: #FEF2F2; }
     .rdv-footer-hint { font-size: 0.82rem; color: #92400E; font-weight: 700; }
@@ -646,6 +651,15 @@ async function toggleBlacklist(tel) {
   renderBookings();
 }
 
+async function marquerTermine(row, termine) {
+  const b = allBookings.find(x => x.row === row);
+  if (b) b.termine = termine;
+  renderBookings();
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'mark_termine', row, termine }) });
+  } catch(e) { alert('Erreur lors de la mise à jour.'); }
+}
+
 async function modifierTelephone(row, telActuel) {
   const nouveau = prompt('Nouveau numéro de téléphone :', telActuel);
   if (nouveau === null) return;
@@ -802,8 +816,10 @@ function renderBookings() {
     const count = group.length;
     const cardsHtml = group.map(b => {
       const isAnnule = b.status === 'Annulé par cliente';
-      const cls = b.status === 'Accepté' ? 'accepte' : (b.status === 'Refusé' || isAnnule) ? (isAnnule ? 'annule' : 'refuse') : 'attente';
-      const bCls = b.status === 'Accepté' ? 'badge-accepte' : (b.status === 'Refusé') ? 'badge-refuse' : isAnnule ? 'badge-annule' : 'badge-attente';
+      const isTermine = b.status === 'Accepté' && b.termine;
+      const cls = isTermine ? 'termine' : b.status === 'Accepté' ? 'accepte' : (b.status === 'Refusé' || isAnnule) ? (isAnnule ? 'annule' : 'refuse') : 'attente';
+      const bCls = isTermine ? 'badge-termine' : b.status === 'Accepté' ? 'badge-accepte' : (b.status === 'Refusé') ? 'badge-refuse' : isAnnule ? 'badge-annule' : 'badge-attente';
+      const statusLabel = isTermine ? '✔ Terminé' : b.status;
       const ini = (b.prenom || '?')[0].toUpperCase();
       let footerHtml = '';
       if (b.status === 'En attente') {
@@ -814,17 +830,24 @@ function renderBookings() {
             <button class="btn-refuse" onclick="updateStatus(${b.row},'Refusé')">✕ Refuser</button>
           </div>
         </div>`;
-      } else if (b.status === 'Accepté') {
+      } else if (b.status === 'Accepté' && !isTermine) {
         footerHtml = `<div class="rdv-card-footer">
-          <span class="rdv-footer-hint" style="color:#065F46">✅ RDV confirmé</span>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;color:#065F46;font-weight:700">
+            <input type="checkbox" onchange="marquerTermine(${b.row}, this.checked)" style="width:18px;height:18px;cursor:pointer" /> Marquer comme terminé
+          </label>
           <button class="btn-annuler-admin" onclick="updateStatus(${b.row},'Refusé')">Annuler ce RDV</button>
+        </div>`;
+      } else if (isTermine) {
+        footerHtml = `<div class="rdv-card-footer">
+          <span class="rdv-footer-hint" style="color:var(--gray)">✔ Prestation terminée</span>
+          <button class="btn-annuler-admin" onclick="marquerTermine(${b.row}, false)">Annuler la validation</button>
         </div>`;
       }
       return `<div class="rdv-card ${cls}" id="card-${b.row}">
         <div class="rdv-datebar">
           <span class="rdv-datebar-date">📅 ${b.date ? formatDateFr(b.date) : 'Sans date'}</span>
           ${b.creneau ? `<span class="rdv-datebar-heure">🕐 ${b.creneau}</span>` : ''}
-          <span class="rdv-status-badge ${bCls}">${b.status}</span>
+          <span class="rdv-status-badge ${bCls}">${statusLabel}</span>
         </div>
         <div class="rdv-card-body">
           <div class="rdv-avatar">${ini}</div>
