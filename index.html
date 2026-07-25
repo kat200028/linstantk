@@ -330,12 +330,7 @@
     <span class="modal-icon">💌</span>
     <h3>Demande envoyée !</h3>
     <p>Votre demande de rendez-vous a bien été reçue. Je vous recontacte très vite pour confirmer. ⭐</p>
-    <p style="background:var(--violet-pale);border-radius:12px;padding:12px 16px;font-weight:700;color:var(--violet-dark)">Votre référence client :<br>
-      <span style="display:inline-flex;align-items:center;gap:8px;margin:6px 0">
-        <span id="refClient" style="font-size:1.4rem;letter-spacing:2px"></span>
-        <button type="button" onclick="copierReference()" id="btnCopyRef" title="Copier la référence" style="background:white;border:2px solid #C4B5FD;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:1rem">📋</button>
-      </span><br>
-      <span style="font-weight:400;font-size:0.8rem">Gardez-la précieusement — c'est la même pour toutes vos réservations.<br>Elle vous sera demandée sur la page <strong>« Mon RDV »</strong> (menu en haut du site) pour consulter ou annuler votre rendez-vous.</span></p>
+    <p style="background:var(--violet-pale);border-radius:12px;padding:12px 16px;font-size:0.82rem;color:var(--violet-dark)">Pour consulter ou annuler votre rendez-vous, rendez-vous sur la page <strong>« Mon RDV »</strong> (menu en haut du site) avec votre nom et votre téléphone.</p>
     <button onclick="document.getElementById('modalOK').classList.remove('show')">Parfait !</button>
     <a href="mon-rdv.html" style="display:block;margin-top:10px;font-size:0.82rem;color:var(--violet);font-weight:700">Voir « Mon RDV » →</a>
   </div>
@@ -410,27 +405,6 @@ let calYear, calMonth, selectedDate = null, selectedSlot = null;
 
 /* ══ NAV ══ */
 function toggleMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
-
-/* ══ COPIE RÉFÉRENCE ══ */
-function copierReference() {
-  const ref = document.getElementById('refClient').textContent;
-  const btn = document.getElementById('btnCopyRef');
-  const ok = () => { btn.textContent = '✅'; setTimeout(() => { btn.textContent = '📋'; }, 2000); };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(ref).then(ok).catch(() => fallbackCopy(ref, ok));
-  } else {
-    fallbackCopy(ref, ok);
-  }
-}
-function fallbackCopy(text, onDone) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed'; ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand('copy'); onDone(); } catch(e) {}
-  document.body.removeChild(ta);
-}
 
 /* ══ TARIFS ══ */
 function buildPrestations(tarifs) {
@@ -695,7 +669,6 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
     document.getElementById('slotsPanel').classList.remove('show');
     selectedDate = null; selectedSlot = null;
     renderCal();
-    document.getElementById('refClient').textContent = reference;
     document.getElementById('modalOK').classList.add('show');
   } catch(err) {
     document.getElementById('modalErr').classList.add('show');

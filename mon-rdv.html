@@ -107,10 +107,10 @@
 
   <div class="search-card">
     <h2>🔍 Rechercher mon rendez-vous</h2>
-    <p>Entrez le téléphone utilisé lors de votre réservation et votre référence client (reçue à la réservation — laissez vide si vous n'en avez pas encore)</p>
+    <p>Entrez votre nom ou prénom et le téléphone utilisé lors de votre réservation</p>
     <div class="search-row" style="flex-wrap:wrap">
+      <input type="text" class="search-input" id="nomInput" placeholder="Nom ou prénom" onkeydown="if(event.key==='Enter')rechercher()" />
       <input type="tel" class="search-input" id="telInput" placeholder="06 XX XX XX XX" onkeydown="if(event.key==='Enter')rechercher()" />
-      <input type="text" class="search-input" id="refInput" placeholder="Référence ex: K-AB27 (optionnel)" style="max-width:200px;text-transform:uppercase" onkeydown="if(event.key==='Enter')rechercher()" />
       <button class="btn-search" id="searchBtn" onclick="rechercher()">Rechercher</button>
     </div>
   </div>
@@ -184,14 +184,10 @@ function normaliserTel(tel) {
   return t;
 }
 
-function normaliserRef(ref) {
-  return String(ref == null ? '' : ref).replace(/\s+/g, '').toUpperCase();
-}
-
 async function rechercher() {
+  const nom = document.getElementById('nomInput').value.trim().toLowerCase();
   const tel = document.getElementById('telInput').value.trim();
-  const ref = normaliserRef(document.getElementById('refInput').value);
-  if (!tel) return;
+  if (!nom || !tel) { alert('Veuillez entrer votre nom (ou prénom) et votre numéro de téléphone.'); return; }
 
   const btn = document.getElementById('searchBtn');
   btn.disabled = true; btn.textContent = '...';
@@ -210,9 +206,8 @@ async function rechercher() {
     allRdvs = (data.bookings || []).filter(b => {
       const bTel = normaliserTel(b.telephone || '');
       if (bTel !== telNorm) return false;
-      // Vérification de la référence client (les anciens RDV sans référence restent accessibles par téléphone)
-      const bRef = normaliserRef(b.reference || '');
-      if (bRef && bRef !== ref) return false;
+      const nomComplet = `${b.prenom||''} ${b.nom||''}`.toLowerCase();
+      if (!nomComplet.includes(nom)) return false;
       if (b.status === 'Refusé') return false;
       const d = getDateObj(b.date || '');
       if (!d) return true;
@@ -263,7 +258,6 @@ function afficherResultats() {
       <div class="rdv-body">
         <div class="rdv-prestation">${b.prestation || ''}</div>
         ${b.message ? `<div class="rdv-sub">💬 ${b.message}</div>` : ''}
-        ${b.reference ? `<div class="rdv-sub">🎟 Référence : ${b.reference}</div>` : ''}
       </div>
       ${footer}
     </div>`;
