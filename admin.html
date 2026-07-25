@@ -662,26 +662,34 @@ function renderBookings() {
   document.getElementById('rdv-sub').textContent = items.length + ' rendez-vous';
   if (!items.length) { list.innerHTML = '<div class="empty-msg">Aucun rendez-vous dans cette catégorie.</div>'; return; }
 
-  // Grouper par date (tri chronologique)
+  // Groupe par mois pour "Accepté", par jour pour les autres filtres
+  const parMois = currentFilter === 'Accepté';
   const grouped = {};
   items.forEach(b => {
-    const key = getSortKey(b.date) || 'Sans date';
+    const jourKey = getSortKey(b.date) || 'Sans date';
+    const key = parMois ? (jourKey !== 'Sans date' ? jourKey.slice(0, 7) : 'Sans date') : jourKey;
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(b);
   });
   const sortedKeys = Object.keys(grouped).sort();
 
-  // Trie les RDV d'une même journée par ordre de passage (heure du créneau)
+  // Trie les RDV par ordre de passage (jour puis heure du créneau)
   function heureEnMinutes(creneau) {
     const m = String(creneau || '').match(/(\d{1,2})\s*h\s*(\d{0,2})/i);
     if (!m) return 9999;
     return parseInt(m[1]) * 60 + (m[2] ? parseInt(m[2]) : 0);
   }
-  Object.values(grouped).forEach(group => group.sort((a, b) => heureEnMinutes(a.creneau) - heureEnMinutes(b.creneau)));
+  Object.values(grouped).forEach(group => group.sort((a, b) => {
+    const dCmp = getSortKey(a.date).localeCompare(getSortKey(b.date));
+    return dCmp !== 0 ? dCmp : heureEnMinutes(a.creneau) - heureEnMinutes(b.creneau);
+  }));
 
   list.innerHTML = sortedKeys.map(key => {
     const group = grouped[key];
-    const dateLabel = group[0].date ? formatDateFr(group[0].date) : 'Sans date';
+    let dateLabel;
+    if (!group[0].date) dateLabel = 'Sans date';
+    else if (parMois) { const [y, m] = key.split('-'); dateLabel = MOIS[parseInt(m) - 1] + ' ' + y; }
+    else dateLabel = formatDateFr(group[0].date);
     const count = group.length;
     const cardsHtml = group.map(b => {
       const isAnnule = b.status === 'Annulé par cliente';
