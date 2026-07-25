@@ -323,6 +323,9 @@
     <div id="page-rdvs" class="page">
       <div class="page-title">Rendez-vous</div>
       <div class="page-sub" id="rdv-sub">Gérez les demandes de vos clientes</div>
+      <div class="filters" style="margin-bottom:10px">
+        <input type="text" id="searchNom" class="search-input" placeholder="🔍 Rechercher par nom ou prénom..." oninput="renderBookings()" style="flex:1;min-width:220px;padding:9px 16px;border:2px solid #E5E7EB;border-radius:50px;font-size:0.88rem;color:var(--dark)" />
+      </div>
       <div class="filters">
         <button class="filter-chip active" onclick="setFilter('tous',this)">Tous</button>
         <button class="filter-chip" onclick="setFilter('En attente',this)">⏳ En attente</button>
@@ -649,8 +652,13 @@ function getSortKey(dateStr) {
 
 function renderBookings() {
   const list = document.getElementById('rdvList');
+  const recherche = (document.getElementById('searchNom')?.value || '').trim().toLowerCase();
+
   let items;
-  if (currentFilter === 'tous') {
+  if (recherche) {
+    // La recherche par nom ignore les filtres/groupements et cherche dans TOUS les RDV (y compris passés)
+    items = allBookings.filter(b => `${b.prenom||''} ${b.nom||''}`.toLowerCase().includes(recherche));
+  } else if (currentFilter === 'tous') {
     items = allBookings.filter(b => !isPassé(b.date));
   } else if (currentFilter === 'passé') {
     items = allBookings.filter(b => isPassé(b.date));
@@ -659,11 +667,11 @@ function renderBookings() {
   } else {
     items = allBookings.filter(b => b.status === currentFilter);
   }
-  document.getElementById('rdv-sub').textContent = items.length + ' rendez-vous';
-  if (!items.length) { list.innerHTML = '<div class="empty-msg">Aucun rendez-vous dans cette catégorie.</div>'; return; }
+  document.getElementById('rdv-sub').textContent = (recherche ? items.length + ' résultat(s) pour « ' + recherche + ' »' : items.length + ' rendez-vous');
+  if (!items.length) { list.innerHTML = `<div class="empty-msg">${recherche ? 'Aucun rendez-vous trouvé pour ce nom.' : 'Aucun rendez-vous dans cette catégorie.'}</div>`; return; }
 
-  // Groupe par mois pour "Accepté", par jour pour les autres filtres
-  const parMois = currentFilter === 'Accepté';
+  // Groupe par mois pour "Accepté", par jour pour les autres filtres (désactivé pendant une recherche par nom)
+  const parMois = currentFilter === 'Accepté' && !recherche;
   const grouped = {};
   items.forEach(b => {
     const jourKey = getSortKey(b.date) || 'Sans date';
