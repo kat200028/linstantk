@@ -259,6 +259,7 @@
   <div class="form-card">
     <div class="form-rdv-recap" id="formRecap">
       <p>📅 <strong id="recapDate"></strong> &nbsp;·&nbsp; 🕐 <strong id="recapCreneau"></strong></p>
+      <p id="recapTotalWrap" style="display:none;margin-top:4px">💶 Total : <strong id="recapTotal"></strong></p>
     </div>
     <form id="rdvForm">
       <div class="form-grid">
@@ -277,6 +278,7 @@
         <div class="form-group full">
           <label>Prestation(s) souhaitée(s) *</label>
           <div id="selectedTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:0"></div>
+          <p id="prestaTotal" style="display:none;font-size:0.9rem;font-weight:800;color:var(--violet);margin-bottom:10px"></p>
           <select id="f-service" onchange="addPrestation(this)">
             <option value="">-- Choisir une prestation --</option>
           </select>
@@ -554,6 +556,10 @@ function selectSlot(dateStr, slot, label) {
   document.getElementById('recapDate').textContent = label.charAt(0).toUpperCase() + label.slice(1);
   document.getElementById('recapCreneau').textContent = slot;
   document.getElementById('formRecap').classList.add('show');
+  const totalTexte = calculerTotalTexte();
+  const recapTotalWrap = document.getElementById('recapTotalWrap');
+  if (totalTexte) { recapTotalWrap.style.display = 'block'; document.getElementById('recapTotal').textContent = totalTexte; }
+  else { recapTotalWrap.style.display = 'none'; }
 
   setTimeout(() => {
     document.getElementById('reservation').scrollIntoView({ behavior: 'smooth' });
@@ -582,11 +588,33 @@ function removePrestation(i) {
   renderTags();
 }
 
+function calculerTotalTexte() {
+  if (!selectedPrestations.length) return null;
+  let total = 0, hasDevis = false;
+  selectedPrestations.forEach(p => {
+    const m = p.match(/(\d+(?:[.,]\d+)?)\s*€/);
+    if (m) total += parseFloat(m[1].replace(',', '.'));
+    else hasDevis = true;
+  });
+  return total + '€' + (hasDevis ? ' (+ montant sur devis)' : '');
+}
+
 function renderTags() {
   const container = document.getElementById('selectedTags');
   container.innerHTML = selectedPrestations.map((p, i) =>
     `<div class="presta-tag">${p}<button type="button" onclick="removePrestation(${i})">✕</button></div>`
   ).join('');
+
+  const totalEl = document.getElementById('prestaTotal');
+  const totalTexte = calculerTotalTexte();
+  if (!totalTexte) { totalEl.style.display = 'none'; }
+  else { totalEl.style.display = 'block'; totalEl.textContent = '💶 Total : ' + totalTexte; }
+
+  const recapTotalWrap = document.getElementById('recapTotalWrap');
+  if (recapTotalWrap.parentElement.classList.contains('show')) {
+    if (totalTexte) { recapTotalWrap.style.display = 'block'; document.getElementById('recapTotal').textContent = totalTexte; }
+    else { recapTotalWrap.style.display = 'none'; }
+  }
 }
 
 /* ══ FORMULAIRE ══ */
