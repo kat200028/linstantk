@@ -828,9 +828,14 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
     BOOKINGS.push({ telephone: telVal, reference: reference, date_str: dateVal, creneau: creneau, status: 'En attente' });
 
     // Propose un RDV de remplissage 3 semaines plus tard si la prestation choisie le nécessite
-    const prestaRemplissage = prestationsSnapshot.find(p => p.toLowerCase().includes('remplissage'));
-    rappelEnAttente = prestaRemplissage && dateVal
-      ? { prenom: prenomVal, nom: nomVal, telephone: telVal, prestation: prestaRemplissage, baseDateStr: dateVal }
+    // (le remplissage lui-même, mais aussi une pose extérieure : chablon, Gel X...)
+    const MOTS_CLES_REMPLISSAGE = ['remplissage', 'pose chablon', 'pose gel', 'pose extérieur'];
+    const prestaDeclencheuse = prestationsSnapshot.find(p => {
+      const lower = p.toLowerCase();
+      return MOTS_CLES_REMPLISSAGE.some(mot => lower.includes(mot));
+    });
+    rappelEnAttente = prestaDeclencheuse && dateVal
+      ? { prenom: prenomVal, nom: nomVal, telephone: telVal, prestation: 'Remplissage', baseDateStr: dateVal }
       : null;
 
     this.reset();
