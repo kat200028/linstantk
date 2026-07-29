@@ -229,6 +229,17 @@
     .btn-add-item { background: transparent; border: 2px dashed #C4B5FD; color: var(--violet); padding: 8px 18px; border-radius: 50px; font-size: 0.82rem; font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%; transition: all .2s; }
     .btn-add-item:hover { background: var(--violet-pale); }
 
+    /* AJOUT RDV MANUEL */
+    .btn-add-rdv { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 9px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .btn-add-rdv:hover { opacity: 0.9; }
+    .addrdv-modal-box .form-group { margin-bottom: 14px; }
+    .addrdv-modal-box label { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); margin-bottom: 6px; }
+    .addrdv-modal-box input, .addrdv-modal-box select, .addrdv-modal-box textarea { width: 100%; padding: 11px 14px; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 0.92rem; color: var(--dark); font-family: inherit; }
+    .addrdv-modal-box input:focus, .addrdv-modal-box select:focus, .addrdv-modal-box textarea:focus { outline: none; border-color: var(--violet); }
+    .addrdv-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .btn-addrdv-submit { width: 100%; background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 14px; border-radius: 50px; font-weight: 800; font-size: 0.95rem; cursor: pointer; margin-top: 6px; }
+    .btn-addrdv-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
     /* FICHE CLIENTE */
     .rdv-name { cursor: pointer; }
     .rdv-name:hover { text-decoration: underline; color: var(--violet); }
@@ -355,6 +366,7 @@
       <div class="page-sub" id="rdv-sub">Gérez les demandes de vos clientes</div>
       <div class="filters" style="margin-bottom:10px">
         <input type="text" id="searchNom" class="search-input" placeholder="🔍 Rechercher par nom ou prénom..." oninput="renderBookings()" style="flex:1;min-width:220px;padding:9px 16px;border:2px solid #E5E7EB;border-radius:50px;font-size:0.88rem;color:var(--dark)" />
+        <button class="btn-add-rdv" onclick="ouvrirAjoutRdv()">+ Ajouter un RDV</button>
       </div>
       <div class="filters">
         <button class="filter-chip active" onclick="setFilter('tous',this)">Tous</button>
@@ -473,6 +485,58 @@
 
       <div class="client-history-title" id="clientHistoryTitle"></div>
       <div id="clientHistoryList"></div>
+    </div>
+  </div>
+
+  <!-- AJOUT RDV MANUEL -->
+  <div class="client-modal-bg" id="addRdvModal" onclick="if(event.target===this) fermerAjoutRdv()">
+    <div class="client-modal-box addrdv-modal-box">
+      <div class="client-modal-header">
+        <div class="client-modal-title">+ Ajouter un RDV</div>
+        <button class="client-modal-close" onclick="fermerAjoutRdv()">✕</button>
+      </div>
+      <div class="client-modal-sub">Pour une réservation prise par téléphone ou en direct</div>
+
+      <div class="addrdv-modal-grid">
+        <div class="form-group">
+          <label>Prénom *</label>
+          <input type="text" id="addrdv-prenom" placeholder="Prénom" />
+        </div>
+        <div class="form-group">
+          <label>Nom *</label>
+          <input type="text" id="addrdv-nom" placeholder="Nom" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Téléphone *</label>
+        <input type="tel" id="addrdv-tel" placeholder="06 XX XX XX XX" />
+      </div>
+      <div class="form-group">
+        <label>Prestation</label>
+        <select id="addrdv-presta"><option value="">-- Choisir une prestation --</option></select>
+      </div>
+      <div class="addrdv-modal-grid">
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="addrdv-date" />
+        </div>
+        <div class="form-group">
+          <label>Créneau</label>
+          <input type="text" id="addrdv-creneau" placeholder="ex: 14h00" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Statut</label>
+        <select id="addrdv-statut">
+          <option value="Accepté">✅ Accepté (confirmé)</option>
+          <option value="En attente">⏳ En attente</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Note <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
+        <textarea id="addrdv-message" rows="2" placeholder="Remarque, allergie, demande particulière..."></textarea>
+      </div>
+      <button class="btn-addrdv-submit" id="btnAddRdvSubmit" onclick="soumettreAjoutRdv()">Ajouter le rendez-vous</button>
     </div>
   </div>
 </div>
@@ -673,6 +737,91 @@ async function modifierTelephone(row, telActuel) {
 }
 
 /* ══ FICHE CLIENTE ══ */
+/* ══ AJOUT RDV MANUEL ══ */
+function genererReferenceAdmin() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let ref = 'K-';
+  for (let i = 0; i < 4; i++) ref += chars[Math.floor(Math.random() * chars.length)];
+  return ref;
+}
+
+function buildAddRdvPrestaSelect() {
+  const sel = document.getElementById('addrdv-presta');
+  const tarifs = tarifsData || DEFAULT_TARIFS;
+  sel.innerHTML = '<option value="">-- Choisir une prestation --</option>';
+  tarifs.forEach(cat => {
+    const grp = document.createElement('optgroup');
+    grp.label = cat.emoji + ' ' + cat.nom;
+    cat.items.forEach(item => {
+      const o = document.createElement('option');
+      o.value = item.nom + ' – ' + item.prix;
+      o.textContent = item.nom + ' – ' + item.prix;
+      grp.appendChild(o);
+    });
+    sel.appendChild(grp);
+  });
+}
+
+function ouvrirAjoutRdv() {
+  document.getElementById('addrdv-prenom').value = '';
+  document.getElementById('addrdv-nom').value = '';
+  document.getElementById('addrdv-tel').value = '';
+  document.getElementById('addrdv-date').value = '';
+  document.getElementById('addrdv-creneau').value = '';
+  document.getElementById('addrdv-message').value = '';
+  document.getElementById('addrdv-statut').value = 'Accepté';
+  buildAddRdvPrestaSelect();
+  document.getElementById('addRdvModal').classList.add('show');
+}
+
+function fermerAjoutRdv() {
+  document.getElementById('addRdvModal').classList.remove('show');
+}
+
+async function soumettreAjoutRdv() {
+  const prenom = document.getElementById('addrdv-prenom').value.trim();
+  const nom = document.getElementById('addrdv-nom').value.trim();
+  const telephone = document.getElementById('addrdv-tel').value.trim();
+  const dateVal = document.getElementById('addrdv-date').value;
+  if (!prenom || !nom || !telephone || !dateVal) {
+    alert('Merci de remplir au moins le prénom, le nom, le téléphone et la date.');
+    return;
+  }
+
+  const d = new Date(dateVal + 'T00:00:00');
+  const dateLabel = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+
+  // Récupère une référence existante si cette cliente en a déjà une, sinon en génère une nouvelle
+  const telNorm = normaliserTel(telephone);
+  const existant = allBookings.find(b => b.reference && normaliserTel(b.telephone) === telNorm);
+  const reference = existant ? existant.reference : genererReferenceAdmin();
+
+  const btn = document.getElementById('btnAddRdvSubmit');
+  btn.disabled = true; btn.textContent = 'Ajout en cours...';
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'admin_add',
+        prenom, nom, telephone,
+        prestation: document.getElementById('addrdv-presta').value,
+        date: dateLabel,
+        date_str: dateVal,
+        creneau: document.getElementById('addrdv-creneau').value.trim(),
+        status: document.getElementById('addrdv-statut').value,
+        message: document.getElementById('addrdv-message').value.trim(),
+        reference
+      })
+    });
+    fermerAjoutRdv();
+    await loadAll();
+  } catch(e) {
+    alert('Erreur lors de l\'ajout du RDV.');
+  }
+  btn.disabled = false; btn.textContent = 'Ajouter le rendez-vous';
+}
+
 let ficheClientTel = null;
 
 function ouvrirFicheClient(prenom, nom, telephone) {

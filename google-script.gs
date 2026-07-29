@@ -28,6 +28,23 @@ function doPost(e) {
       return jsonResponse({ success: true });
     }
 
+    if (data.action === 'admin_add') {
+      const s = getSheet('RDV');
+      s.appendRow([
+        new Date().toLocaleString('fr-FR'),
+        data.prenom || '',
+        data.nom || '',
+        data.telephone || '',
+        data.prestation || '',
+        data.date || '',
+        data.creneau || '',
+        data.status || 'Accepté',
+        data.message || '',
+        data.reference || ''
+      ]);
+      return jsonResponse({ success: true });
+    }
+
     if (data.action === 'save_blacklist') {
       const s = getSheet('Config');
       s.getRange('C1').setValue(JSON.stringify(data.blacklist || []));
