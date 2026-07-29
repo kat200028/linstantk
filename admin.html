@@ -229,6 +229,15 @@
     .btn-add-item { background: transparent; border: 2px dashed #C4B5FD; color: var(--violet); padding: 8px 18px; border-radius: 50px; font-size: 0.82rem; font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%; transition: all .2s; }
     .btn-add-item:hover { background: var(--violet-pale); }
 
+    /* CLIENTES */
+    .cliente-row { background: white; border-radius: 16px; border: 1px solid #EDE9FE; padding: 16px 20px; display: flex; align-items: center; gap: 14px; margin-bottom: 10px; cursor: pointer; transition: box-shadow .15s, transform .15s; }
+    .cliente-row:hover { box-shadow: 0 4px 16px rgba(124,58,237,0.1); transform: translateY(-1px); }
+    .cliente-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--violet); flex-shrink: 0; }
+    .cliente-info { flex: 1; min-width: 0; }
+    .cliente-nom { font-weight: 800; color: var(--dark); font-size: 1rem; }
+    .cliente-detail { font-size: 0.8rem; color: var(--gray); margin-top: 2px; }
+    .cliente-letter { font-size: 0.78rem; font-weight: 800; color: var(--violet); text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 8px; padding-left: 4px; }
+
     /* AJOUT RDV MANUEL */
     .btn-add-rdv { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 9px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
     .btn-add-rdv:hover { opacity: 0.9; }
@@ -312,6 +321,7 @@
   <div class="tab-nav">
     <button class="tab-nav-btn active" onclick="showPage('stats',this)">📊 Statistiques</button>
     <button class="tab-nav-btn" onclick="showPage('rdvs',this)">📋 Rendez-vous</button>
+    <button class="tab-nav-btn" onclick="showPage('clientes',this)">👥 Clientes</button>
     <button class="tab-nav-btn" onclick="showPage('dispo',this)">📅 Disponibilités</button>
     <button class="tab-nav-btn" onclick="showPage('tarifs',this)">💰 Tarifs</button>
   </div>
@@ -377,6 +387,16 @@
         <button class="refresh" onclick="loadAll()">🔄 Actualiser</button>
       </div>
       <div class="rdv-list" id="rdvList"><div class="loading-msg"><div class="spinner"></div>Chargement...</div></div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div id="page-clientes" class="page">
+      <div class="page-title">Clientes</div>
+      <div class="page-sub" id="clientes-sub">Toutes vos clientes, par ordre alphabétique</div>
+      <div class="filters" style="margin-bottom:16px">
+        <input type="text" id="searchClientes" class="search-input" placeholder="🔍 Rechercher par nom ou prénom..." oninput="renderClientes()" style="flex:1;min-width:220px;padding:9px 16px;border:2px solid #E5E7EB;border-radius:50px;font-size:0.88rem;color:var(--dark)" />
+      </div>
+      <div id="clientesList"><div class="loading-msg"><div class="spinner"></div>Chargement...</div></div>
     </div>
 
     <!-- DISPO -->
@@ -707,6 +727,7 @@ async function loadAll() {
     if (data.clientNotes) clientNotes = data.clientNotes;
     renderBookings();
     renderStats();
+    renderClientes();
     renderCal();
     buildTarifsEditor(tarifsData || DEFAULT_TARIFS);
   } catch(e) {
@@ -787,6 +808,48 @@ function buildAddRdvPrestaSelect() {
     });
     sel.appendChild(grp);
   });
+}
+
+/* ══ LISTE DES CLIENTES ══ */
+function listeClientesUniques() {
+  const parTel = {};
+  allBookings.forEach(b => {
+    const key = normaliserTel(b.telephone || '') || `${b.prenom}|${b.nom}`;
+    const visites = allBookings.filter(x => (normaliserTel(x.telephone || '') || `${x.prenom}|${x.nom}`) === key && x.status === 'Accepté').length;
+    parTel[key] = { prenom: b.prenom || '', nom: b.nom || '', telephone: b.telephone || '', visites };
+  });
+  return Object.values(parTel).filter(c => c.prenom || c.nom);
+}
+
+function renderClientes() {
+  const recherche = (document.getElementById('searchClientes')?.value || '').trim().toLowerCase();
+  let clientes = listeClientesUniques();
+  if (recherche) clientes = clientes.filter(c => `${c.prenom} ${c.nom}`.toLowerCase().includes(recherche));
+  clientes.sort((a, b) => `${a.nom}${a.prenom}`.localeCompare(`${b.nom}${b.prenom}`));
+
+  document.getElementById('clientes-sub').textContent = clientes.length + ' cliente' + (clientes.length > 1 ? 's' : '');
+
+  const container = document.getElementById('clientesList');
+  if (!clientes.length) { container.innerHTML = '<div class="empty-msg">Aucune cliente trouvée.</div>'; return; }
+
+  let html = '';
+  let derniereLettre = '';
+  clientes.forEach(c => {
+    const lettre = (c.nom || c.prenom || '?')[0].toUpperCase();
+    if (lettre !== derniereLettre) {
+      html += `<div class="cliente-letter">${lettre}</div>`;
+      derniereLettre = lettre;
+    }
+    const ini = (c.prenom || c.nom || '?')[0].toUpperCase();
+    html += `<div class="cliente-row" onclick="ouvrirFicheClient('${String(c.prenom).replace(/'/g,"\\'")}', '${String(c.nom).replace(/'/g,"\\'")}', '${String(c.telephone).replace(/'/g,"\\'")}')">
+      <div class="cliente-avatar">${ini}</div>
+      <div class="cliente-info">
+        <div class="cliente-nom">${c.prenom} ${c.nom}</div>
+        <div class="cliente-detail">${c.telephone || 'Téléphone non renseigné'} ${c.visites ? '· ⭐ ' + c.visites + ' visite' + (c.visites > 1 ? 's' : '') : ''}</div>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
 }
 
 let clientsExistants = [];
