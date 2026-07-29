@@ -745,6 +745,17 @@ function allerAuPlanningRappel() {
   const fin = new Date(base); fin.setDate(fin.getDate() + 21);
   semaineIdealeRange = { debut: fmtDateStr(debut), fin: fmtDateStr(fin) };
 
+  // Pré-remplit le formulaire pour éviter à la cliente de retaper ses infos
+  document.getElementById('f-prenom').value = rappelEnAttente.prenom;
+  document.getElementById('f-nom').value = rappelEnAttente.nom;
+  document.getElementById('f-tel').value = rappelEnAttente.telephone;
+  let itemRemplissage = null;
+  TARIFS.forEach(cat => cat.items.forEach(item => {
+    if (!itemRemplissage && item.nom.toLowerCase() === 'remplissage') itemRemplissage = item;
+  }));
+  selectedPrestations = [itemRemplissage ? (itemRemplissage.nom + ' – ' + itemRemplissage.prix) : 'Remplissage'];
+  renderTags();
+
   const cible = new Date(base);
   cible.setDate(cible.getDate() + 21);
   calYear = cible.getFullYear();
