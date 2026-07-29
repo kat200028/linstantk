@@ -81,6 +81,10 @@
     .cal-cell.dispo { background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); border-color: #C4B5FD; cursor: pointer; }
     .cal-cell.dispo:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(124,58,237,0.2); border-color: var(--violet); }
     .cal-cell.dispo .cal-num { color: var(--violet); }
+    .cal-cell.semaine-ideale { background: linear-gradient(135deg, #FEF3C7, #FDE68A); border-color: #F59E0B; }
+    .cal-cell.semaine-ideale .cal-num { color: #92400E; }
+    .cal-cell.semaine-ideale .cal-label { color: #92400E; }
+    .cal-cell.semaine-ideale.selected { background: linear-gradient(135deg, var(--violet), var(--pink)); border-color: transparent; }
     .cal-cell.complet { background: #FEF2F2; border-color: #FECACA; cursor: default; }
     .cal-cell.complet .cal-num { color: #EF4444; }
     .cal-cell.selected { background: linear-gradient(135deg, var(--violet), var(--pink)); border-color: transparent; }
@@ -232,6 +236,10 @@
     <div class="cal-week-header">
       <div>Lun</div><div>Mar</div><div>Mer</div>
       <div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
+    </div>
+
+    <div id="legendeSemaineIdeale" style="display:none;background:#FEF3C7;border:1px solid #F59E0B;border-radius:12px;padding:10px 18px;font-size:0.85rem;color:#92400E;text-align:center;margin-bottom:14px">
+      🟡 Semaine idéale pour votre remplissage (3 semaines après votre pose)
     </div>
 
     <div class="cal-grid" id="calGrid">
@@ -414,6 +422,7 @@ let TARIFS = DEFAULT_TARIFS;
 let DISPONIBILITES = {};
 let BOOKINGS = [];
 let calYear, calMonth, selectedDate = null, selectedSlot = null;
+let semaineIdealeRange = null;
 
 /* ══ NAV ══ */
 function toggleMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
@@ -519,6 +528,7 @@ function renderCal() {
     else if (hasDispo) cls += ' dispo';
     else cls += ' closed';
     if (isSelected) cls += ' selected';
+    if (semaineIdealeRange && dateStr >= semaineIdealeRange.debut && dateStr <= semaineIdealeRange.fin) cls += ' semaine-ideale';
     cell.className = cls;
 
     let labelTxt = '';
@@ -725,12 +735,21 @@ function afficherRappelDates() {
   list.innerHTML = html + lienPlanning;
 }
 
+function fmtDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 function allerAuPlanningRappel() {
   const base = new Date(rappelEnAttente.baseDateStr + 'T00:00:00');
+  const debut = new Date(base); debut.setDate(debut.getDate() + 15);
+  const fin = new Date(base); fin.setDate(fin.getDate() + 21);
+  semaineIdealeRange = { debut: fmtDateStr(debut), fin: fmtDateStr(fin) };
+
   const cible = new Date(base);
   cible.setDate(cible.getDate() + 21);
   calYear = cible.getFullYear();
   calMonth = cible.getMonth();
+  document.getElementById('legendeSemaineIdeale').style.display = 'block';
   renderCal();
   fermerModalRappel();
   document.getElementById('disponibilites').scrollIntoView({ behavior: 'smooth' });
