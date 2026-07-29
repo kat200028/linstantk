@@ -508,16 +508,16 @@
         </div>
       </div>
       <div class="form-group">
-        <label>Téléphone *</label>
+        <label>Téléphone <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
         <input type="tel" id="addrdv-tel" placeholder="06 XX XX XX XX" />
       </div>
       <div class="form-group">
-        <label>Prestation</label>
+        <label>Prestation *</label>
         <select id="addrdv-presta"><option value="">-- Choisir une prestation --</option></select>
       </div>
       <div class="addrdv-modal-grid">
         <div class="form-group">
-          <label>Date *</label>
+          <label>Date <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
           <input type="date" id="addrdv-date" />
         </div>
         <div class="form-group">
@@ -537,6 +537,28 @@
         <textarea id="addrdv-message" rows="2" placeholder="Remarque, allergie, demande particulière..."></textarea>
       </div>
       <button class="btn-addrdv-submit" id="btnAddRdvSubmit" onclick="soumettreAjoutRdv()">Ajouter le rendez-vous</button>
+    </div>
+  </div>
+
+  <!-- DEPLACER RDV -->
+  <div class="client-modal-bg" id="moveRdvModal" onclick="if(event.target===this) fermerDeplacerRdv()">
+    <div class="client-modal-box addrdv-modal-box">
+      <div class="client-modal-header">
+        <div class="client-modal-title">📅 Déplacer le RDV</div>
+        <button class="client-modal-close" onclick="fermerDeplacerRdv()">✕</button>
+      </div>
+      <div class="client-modal-sub" id="moveRdvSub"></div>
+      <div class="addrdv-modal-grid">
+        <div class="form-group">
+          <label>Nouvelle date *</label>
+          <input type="date" id="moverdv-date" />
+        </div>
+        <div class="form-group">
+          <label>Nouveau créneau</label>
+          <input type="text" id="moverdv-creneau" placeholder="ex: 14h00" />
+        </div>
+      </div>
+      <button class="btn-addrdv-submit" id="btnMoveRdvSubmit" onclick="soumettreDeplacerRdv()">Déplacer le rendez-vous</button>
     </div>
   </div>
 </div>
@@ -781,19 +803,23 @@ function fermerAjoutRdv() {
 async function soumettreAjoutRdv() {
   const prenom = document.getElementById('addrdv-prenom').value.trim();
   const nom = document.getElementById('addrdv-nom').value.trim();
+  const prestation = document.getElementById('addrdv-presta').value;
   const telephone = document.getElementById('addrdv-tel').value.trim();
   const dateVal = document.getElementById('addrdv-date').value;
-  if (!prenom || !nom || !telephone || !dateVal) {
-    alert('Merci de remplir au moins le prénom, le nom, le téléphone et la date.');
+  if (!prenom || !nom || !prestation) {
+    alert('Merci de remplir au moins le prénom, le nom et la prestation.');
     return;
   }
 
-  const d = new Date(dateVal + 'T00:00:00');
-  const dateLabel = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+  let dateLabel = '';
+  if (dateVal) {
+    const d = new Date(dateVal + 'T00:00:00');
+    dateLabel = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+  }
 
   // Récupère une référence existante si cette cliente en a déjà une, sinon en génère une nouvelle
-  const telNorm = normaliserTel(telephone);
-  const existant = allBookings.find(b => b.reference && normaliserTel(b.telephone) === telNorm);
+  const telNorm = telephone ? normaliserTel(telephone) : '';
+  const existant = telNorm ? allBookings.find(b => b.reference && normaliserTel(b.telephone) === telNorm) : null;
   const reference = existant ? existant.reference : genererReferenceAdmin();
 
   const btn = document.getElementById('btnAddRdvSubmit');
@@ -804,8 +830,7 @@ async function soumettreAjoutRdv() {
       method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'admin_add',
-        prenom, nom, telephone,
-        prestation: document.getElementById('addrdv-presta').value,
+        prenom, nom, telephone, prestation,
         date: dateLabel,
         date_str: dateVal,
         creneau: document.getElementById('addrdv-creneau').value.trim(),
@@ -820,6 +845,50 @@ async function soumettreAjoutRdv() {
     alert('Erreur lors de l\'ajout du RDV.');
   }
   btn.disabled = false; btn.textContent = 'Ajouter le rendez-vous';
+}
+
+/* ══ DEPLACER RDV ══ */
+let moveRdvRow = null;
+
+function ouvrirDeplacerRdv(row) {
+  const b = allBookings.find(x => x.row === row);
+  if (!b) return;
+  moveRdvRow = row;
+  document.getElementById('moveRdvSub').textContent = `${b.prenom} ${b.nom} — ${b.prestation || ''}`;
+  // Tente de pré-remplir la date si elle est au format ISO (YYYY-MM-DD)
+  const key = getSortKey(b.date || '');
+  document.getElementById('moverdv-date').value = /^\d{4}-\d{2}-\d{2}$/.test(key) ? key : '';
+  document.getElementById('moverdv-creneau').value = b.creneau || '';
+  document.getElementById('moveRdvModal').classList.add('show');
+}
+
+function fermerDeplacerRdv() {
+  document.getElementById('moveRdvModal').classList.remove('show');
+  moveRdvRow = null;
+}
+
+async function soumettreDeplacerRdv() {
+  if (!moveRdvRow) return;
+  const dateVal = document.getElementById('moverdv-date').value;
+  if (!dateVal) { alert('Merci de choisir une nouvelle date.'); return; }
+  const d = new Date(dateVal + 'T00:00:00');
+  const dateLabel = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+  const creneau = document.getElementById('moverdv-creneau').value.trim();
+
+  const btn = document.getElementById('btnMoveRdvSubmit');
+  btn.disabled = true; btn.textContent = 'Déplacement...';
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reschedule', row: moveRdvRow, date: dateLabel, creneau })
+    });
+    fermerDeplacerRdv();
+    await loadAll();
+  } catch(e) {
+    alert('Erreur lors du déplacement du RDV.');
+  }
+  btn.disabled = false; btn.textContent = 'Déplacer le rendez-vous';
 }
 
 let ficheClientTel = null;
@@ -996,6 +1065,7 @@ function renderBookings() {
         <div class="rdv-datebar">
           <span class="rdv-datebar-date">📅 ${b.date ? formatDateFr(b.date) : 'Sans date'}</span>
           ${b.creneau ? `<span class="rdv-datebar-heure">🕐 ${b.creneau}</span>` : ''}
+          <button class="btn-block-num" onclick="ouvrirDeplacerRdv(${b.row})" title="Déplacer ce RDV (changer date/heure)">📅✏️</button>
           <span class="rdv-status-badge ${bCls}">${statusLabel}</span>
         </div>
         <div class="rdv-card-body">

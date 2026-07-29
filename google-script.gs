@@ -28,6 +28,14 @@ function doPost(e) {
       return jsonResponse({ success: true });
     }
 
+    if (data.action === 'reschedule') {
+      const s = getSheet('RDV');
+      const row = parseInt(data.row);
+      s.getRange(row, 6).setValue(data.date || '');
+      s.getRange(row, 7).setValue(data.creneau || '');
+      return jsonResponse({ success: true });
+    }
+
     if (data.action === 'admin_add') {
       const s = getSheet('RDV');
       s.appendRow([
