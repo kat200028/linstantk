@@ -395,6 +395,7 @@
       <div class="page-sub" id="clientes-sub">Toutes vos clientes, par ordre alphabétique</div>
       <div class="filters" style="margin-bottom:16px">
         <input type="text" id="searchClientes" class="search-input" placeholder="🔍 Rechercher par nom ou prénom..." oninput="renderClientes()" style="flex:1;min-width:220px;padding:9px 16px;border:2px solid #E5E7EB;border-radius:50px;font-size:0.88rem;color:var(--dark)" />
+        <button class="btn-block-num" id="btnSupprimerClientes" onclick="supprimerClientesSelectionnees()" title="Supprimer les clientes sélectionnées" style="display:none;font-size:1rem;padding:8px 14px">🗑️</button>
       </div>
       <div id="clientesList"><div class="loading-msg"><div class="spinner"></div>Chargement...</div></div>
     </div>
@@ -816,9 +817,36 @@ function listeClientesUniques() {
   allBookings.forEach(b => {
     const key = normaliserTel(b.telephone || '') || `${b.prenom}|${b.nom}`;
     const visites = allBookings.filter(x => (normaliserTel(x.telephone || '') || `${x.prenom}|${x.nom}`) === key && x.status === 'Accepté').length;
-    parTel[key] = { prenom: b.prenom || '', nom: b.nom || '', telephone: b.telephone || '', visites };
+    parTel[key] = { key, prenom: b.prenom || '', nom: b.nom || '', telephone: b.telephone || '', visites };
   });
   return Object.values(parTel).filter(c => c.prenom || c.nom);
+}
+
+let clientesSelectionnees = new Set();
+
+function toggleClienteSelection(key, checked) {
+  if (checked) clientesSelectionnees.add(key); else clientesSelectionnees.delete(key);
+  document.getElementById('btnSupprimerClientes').style.display = clientesSelectionnees.size ? 'inline-block' : 'none';
+}
+
+async function supprimerClientesSelectionnees() {
+  if (!clientesSelectionnees.size) return;
+  const rowsASupprimer = allBookings
+    .filter(b => clientesSelectionnees.has(normaliserTel(b.telephone || '') || `${b.prenom}|${b.nom}`))
+    .map(b => b.row);
+  if (!confirm(`Supprimer ${clientesSelectionnees.size} cliente(s) et tous ses/leurs rendez-vous (${rowsASupprimer.length} au total) ? Cette action est irréversible.`)) return;
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_rows', rows: rowsASupprimer })
+    });
+    clientesSelectionnees.clear();
+    document.getElementById('btnSupprimerClientes').style.display = 'none';
+    await loadAll();
+  } catch(e) {
+    alert('Erreur lors de la suppression.');
+  }
 }
 
 function renderClientes() {
@@ -841,15 +869,18 @@ function renderClientes() {
       derniereLettre = lettre;
     }
     const ini = (c.prenom || c.nom || '?')[0].toUpperCase();
-    html += `<div class="cliente-row" onclick="ouvrirFicheClient('${String(c.prenom).replace(/'/g,"\\'")}', '${String(c.nom).replace(/'/g,"\\'")}', '${String(c.telephone).replace(/'/g,"\\'")}')">
-      <div class="cliente-avatar">${ini}</div>
-      <div class="cliente-info">
+    const keyEsc = String(c.key).replace(/'/g,"\\'");
+    html += `<div class="cliente-row">
+      <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleClienteSelection('${keyEsc}', this.checked)" ${clientesSelectionnees.has(c.key) ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;flex-shrink:0" />
+      <div class="cliente-avatar" onclick="ouvrirFicheClient('${String(c.prenom).replace(/'/g,"\\'")}', '${String(c.nom).replace(/'/g,"\\'")}', '${String(c.telephone).replace(/'/g,"\\'")}')">${ini}</div>
+      <div class="cliente-info" onclick="ouvrirFicheClient('${String(c.prenom).replace(/'/g,"\\'")}', '${String(c.nom).replace(/'/g,"\\'")}', '${String(c.telephone).replace(/'/g,"\\'")}')">
         <div class="cliente-nom">${c.prenom} ${c.nom}</div>
         <div class="cliente-detail">${c.telephone || 'Téléphone non renseigné'} ${c.visites ? '· ⭐ ' + c.visites + ' visite' + (c.visites > 1 ? 's' : '') : ''}</div>
       </div>
     </div>`;
   });
   container.innerHTML = html;
+  document.getElementById('btnSupprimerClientes').style.display = clientesSelectionnees.size ? 'inline-block' : 'none';
 }
 
 let clientsExistants = [];

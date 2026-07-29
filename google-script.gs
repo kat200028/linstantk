@@ -28,6 +28,13 @@ function doPost(e) {
       return jsonResponse({ success: true });
     }
 
+    if (data.action === 'delete_rows') {
+      const s = getSheet('RDV');
+      const rows = (data.rows || []).map(Number).sort(function(a, b) { return b - a; });
+      rows.forEach(function(r) { s.deleteRow(r); });
+      return jsonResponse({ success: true });
+    }
+
     if (data.action === 'reschedule') {
       const s = getSheet('RDV');
       const row = parseInt(data.row);
