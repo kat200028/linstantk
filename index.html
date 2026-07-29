@@ -717,7 +717,7 @@ function afficherRappelDates() {
 
   const list = document.getElementById('rappelDatesList');
   list.style.display = 'flex';
-  const lienPlanning = `<button class="slot-btn" style="text-align:left;background:transparent;border-style:dashed" onclick="allerAuPlanningRappel()">📅 Voir tout le planning →</button>`;
+  const lienPlanning = `<button class="slot-btn" style="text-align:left;width:100%;display:flex;align-items:center;gap:8px;background:white;border-style:dashed;font-weight:700" onclick="allerAuPlanningRappel()"><span style="font-size:1.1rem">📅</span> Voir calendrier</button>`;
   const boutonDate = c => {
     const label = JOURS_LONG[c.d.getDay()] + ' ' + c.d.getDate() + ' ' + MOIS[c.d.getMonth()];
     return `<button class="slot-btn" style="text-align:left" onclick="afficherRappelSlots('${c.dateStr}')">${label.charAt(0).toUpperCase() + label.slice(1)} — ${c.dispo.length} créneau${c.dispo.length > 1 ? 'x' : ''}</button>`;
