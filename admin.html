@@ -497,6 +497,11 @@
       </div>
       <div class="client-modal-sub">Pour une réservation prise par téléphone ou en direct</div>
 
+      <div class="form-group">
+        <label>Cliente existante <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
+        <select id="addrdv-client-existant" onchange="remplirClientExistant(this.value)"><option value="">-- Nouvelle cliente --</option></select>
+      </div>
+
       <div class="addrdv-modal-grid">
         <div class="form-group">
           <label>Prénom *</label>
@@ -784,7 +789,34 @@ function buildAddRdvPrestaSelect() {
   });
 }
 
+let clientsExistants = [];
+
+function buildAddRdvClientSelect() {
+  const parTel = {};
+  allBookings.forEach(b => {
+    const key = normaliserTel(b.telephone || '') || `${b.prenom}|${b.nom}`;
+    parTel[key] = { prenom: b.prenom || '', nom: b.nom || '', telephone: b.telephone || '' };
+  });
+  clientsExistants = Object.values(parTel)
+    .filter(c => c.prenom || c.nom)
+    .sort((a, b) => `${a.nom}${a.prenom}`.localeCompare(`${b.nom}${b.prenom}`));
+
+  const sel = document.getElementById('addrdv-client-existant');
+  sel.innerHTML = '<option value="">-- Nouvelle cliente --</option>' +
+    clientsExistants.map((c, i) => `<option value="${i}">${c.prenom} ${c.nom}${c.telephone ? ' — ' + c.telephone : ''}</option>`).join('');
+}
+
+function remplirClientExistant(index) {
+  if (index === '') return;
+  const c = clientsExistants[index];
+  if (!c) return;
+  document.getElementById('addrdv-prenom').value = c.prenom;
+  document.getElementById('addrdv-nom').value = c.nom;
+  document.getElementById('addrdv-tel').value = c.telephone;
+}
+
 function ouvrirAjoutRdv() {
+  document.getElementById('addrdv-client-existant').value = '';
   document.getElementById('addrdv-prenom').value = '';
   document.getElementById('addrdv-nom').value = '';
   document.getElementById('addrdv-tel').value = '';
@@ -793,6 +825,7 @@ function ouvrirAjoutRdv() {
   document.getElementById('addrdv-message').value = '';
   document.getElementById('addrdv-statut').value = 'Accepté';
   buildAddRdvPrestaSelect();
+  buildAddRdvClientSelect();
   document.getElementById('addRdvModal').classList.add('show');
 }
 
