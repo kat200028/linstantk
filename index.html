@@ -358,7 +358,7 @@
       <textarea id="rappelMessage" rows="2" placeholder="Une demande particulière ?" style="width:100%;padding:11px 14px;border:2px solid #E5E7EB;border-radius:12px;font-size:0.9rem;color:var(--dark);font-family:inherit;resize:vertical"></textarea>
     </div>
     <div id="rappelSlotsList" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:18px;justify-content:center"></div>
-    <button onclick="fermerModalRappel()" style="background:transparent;border:2px solid #E5E7EB;color:var(--gray)">Non merci</button>
+    <button id="rappelBtnFermer" onclick="fermerModalRappel()" style="background:transparent;border:2px solid #E5E7EB;color:var(--gray)">Non merci</button>
   </div>
 </div>
 <div class="modal-bg" id="modalErr">
@@ -842,12 +842,19 @@ async function confirmerRappel(slot) {
     renderCal();
   } catch(err) {}
 
+  // Ferme la proposition et affiche le même "Merci" que d'habitude —
+  // on ne repropose jamais un nouveau rappel après ce 2e rendez-vous
   fermerModalRappel();
+  document.getElementById('modalOK').classList.add('show');
 }
 
 function fermerModalRappel() {
   document.getElementById('modalRappel').classList.remove('show');
+  document.getElementById('rappelIntro').style.display = 'block';
+  document.getElementById('rappelDatesList').style.display = 'flex';
   document.getElementById('rappelDetails').style.display = 'none';
+  document.getElementById('rappelSlotsList').style.display = 'none';
+  document.getElementById('rappelBtnFermer').style.display = 'inline-block';
   document.getElementById('rappelMessage').value = '';
   rappelEnAttente = null;
   rappelDateChoisie = null;
