@@ -683,31 +683,46 @@ function fermerModalOK() {
 
 function afficherRappelDates() {
   const base = new Date(rappelEnAttente.baseDateStr + 'T00:00:00');
-  const candidats = [];
+  const ideales = [], autres = [];
   for (let offset = 14; offset <= 28; offset++) {
     const d = new Date(base);
     d.setDate(d.getDate() + offset);
     const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const dispo = slotsDispoPourDate(dateStr);
-    if (dispo.length) candidats.push({ dateStr, d, dispo });
-    if (candidats.length >= 8) break;
+    if (!dispo.length) continue;
+    const c = { dateStr, d, dispo };
+    if (offset >= 15 && offset <= 21) ideales.push(c); else autres.push(c);
   }
 
   document.getElementById('rappelSlotsList').style.display = 'none';
   document.getElementById('rappelSlotsList').innerHTML = '';
-  document.getElementById('rappelIntro').textContent = 'Voici des jours disponibles autour de 3 semaines après, si vous souhaitez le réserver dès maintenant :';
+  document.getElementById('rappelIntro').textContent = 'Voici la semaine idéale pour votre remplissage (3 semaines après) :';
 
   const list = document.getElementById('rappelDatesList');
   list.style.display = 'flex';
   const lienPlanning = `<button class="slot-btn" style="text-align:left;background:transparent;border-style:dashed" onclick="allerAuPlanningRappel()">📅 Voir tout le planning →</button>`;
-  if (!candidats.length) {
+  const boutonDate = c => {
+    const label = JOURS_LONG[c.d.getDay()] + ' ' + c.d.getDate() + ' ' + MOIS[c.d.getMonth()];
+    return `<button class="slot-btn" style="text-align:left" onclick="afficherRappelSlots('${c.dateStr}')">${label.charAt(0).toUpperCase() + label.slice(1)} — ${c.dispo.length} créneau${c.dispo.length > 1 ? 'x' : ''}</button>`;
+  };
+
+  if (!ideales.length && !autres.length) {
     list.innerHTML = '<p style="color:var(--gray);font-size:0.88rem;margin-bottom:8px">Aucun créneau disponible pour le moment sur cette période.</p>' + lienPlanning;
     return;
   }
-  list.innerHTML = candidats.map(c => {
-    const label = JOURS_LONG[c.d.getDay()] + ' ' + c.d.getDate() + ' ' + MOIS[c.d.getMonth()];
-    return `<button class="slot-btn" style="text-align:left" onclick="afficherRappelSlots('${c.dateStr}')">${label.charAt(0).toUpperCase() + label.slice(1)} — ${c.dispo.length} créneau${c.dispo.length > 1 ? 'x' : ''}</button>`;
-  }).join('') + lienPlanning;
+
+  let html = '';
+  if (ideales.length) {
+    html += '<p style="font-size:0.78rem;font-weight:800;color:var(--violet);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">⭐ Semaine idéale</p>';
+    html += ideales.map(boutonDate).join('');
+  } else {
+    html += '<p style="color:var(--gray);font-size:0.85rem">Aucun créneau libre la semaine idéale.</p>';
+  }
+  if (autres.length) {
+    html += '<p style="font-size:0.78rem;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 2px">Autres dates possibles</p>';
+    html += autres.slice(0, 5).map(boutonDate).join('');
+  }
+  list.innerHTML = html + lienPlanning;
 }
 
 function allerAuPlanningRappel() {
