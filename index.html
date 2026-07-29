@@ -351,6 +351,12 @@
     <h3>Un remplissage dans 3 semaines ?</h3>
     <p id="rappelIntro">Voici les jours disponibles la semaine du remplissage, si vous souhaitez le réserver dès maintenant :</p>
     <div id="rappelDatesList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;max-height:260px;overflow-y:auto"></div>
+    <div id="rappelDetails" style="display:none;text-align:left;margin-bottom:14px">
+      <label style="display:block;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray);margin-bottom:6px">Prestation</label>
+      <select id="rappelPresta" style="width:100%;padding:11px 14px;border:2px solid #E5E7EB;border-radius:12px;font-size:0.9rem;color:var(--dark);margin-bottom:14px"></select>
+      <label style="display:block;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray);margin-bottom:6px">Message <span style="font-weight:400;text-transform:none">(optionnel)</span></label>
+      <textarea id="rappelMessage" rows="2" placeholder="Une demande particulière ?" style="width:100%;padding:11px 14px;border:2px solid #E5E7EB;border-radius:12px;font-size:0.9rem;color:var(--dark);font-family:inherit;resize:vertical"></textarea>
+    </div>
     <div id="rappelSlotsList" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:18px;justify-content:center"></div>
     <button onclick="fermerModalRappel()" style="background:transparent;border:2px solid #E5E7EB;color:var(--gray)">Non merci</button>
   </div>
@@ -692,6 +698,7 @@ function fermerModalOK() {
 }
 
 function afficherRappelDates() {
+  document.getElementById('rappelDetails').style.display = 'none';
   const base = new Date(rappelEnAttente.baseDateStr + 'T00:00:00');
   const ideales = [], autres = [];
   for (let offset = 14; offset <= 28; offset++) {
@@ -766,6 +773,27 @@ function allerAuPlanningRappel() {
   document.getElementById('disponibilites').scrollIntoView({ behavior: 'smooth' });
 }
 
+function buildRappelPrestaSelect() {
+  const sel = document.getElementById('rappelPresta');
+  sel.innerHTML = '';
+  let matched = false;
+  TARIFS.forEach(cat => {
+    const grp = document.createElement('optgroup');
+    grp.label = cat.emoji + ' ' + cat.nom;
+    cat.items.forEach(item => {
+      const val = item.nom + ' – ' + item.prix;
+      const o = document.createElement('option');
+      o.value = val;
+      o.textContent = val;
+      if (val === rappelEnAttente.prestation || (!matched && item.nom.toLowerCase() === 'remplissage')) {
+        o.selected = true; matched = true;
+      }
+      grp.appendChild(o);
+    });
+    sel.appendChild(grp);
+  });
+}
+
 function afficherRappelSlots(dateStr) {
   rappelDateChoisie = dateStr;
   const dispo = slotsDispoPourDate(dateStr);
@@ -773,6 +801,8 @@ function afficherRappelSlots(dateStr) {
   const label = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
   document.getElementById('rappelIntro').textContent = 'Choisissez un créneau pour le ' + label + ' :';
   document.getElementById('rappelDatesList').style.display = 'none';
+  buildRappelPrestaSelect();
+  document.getElementById('rappelDetails').style.display = 'block';
   const slotsList = document.getElementById('rappelSlotsList');
   slotsList.style.display = 'flex';
   slotsList.innerHTML = dispo.map(s => `<button class="slot-btn" onclick="confirmerRappel('${s}')">${s}</button>`).join('');
@@ -783,6 +813,8 @@ async function confirmerRappel(slot) {
   const d = new Date(dateStr + 'T00:00:00');
   const dateLabel = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
   const reference = trouverOuCreerReference(rappelEnAttente.telephone);
+  const prestation = document.getElementById('rappelPresta').value || rappelEnAttente.prestation;
+  const message = document.getElementById('rappelMessage').value.trim();
 
   try {
     await fetch(SCRIPT_URL, {
@@ -793,11 +825,11 @@ async function confirmerRappel(slot) {
         prenom: rappelEnAttente.prenom,
         nom: rappelEnAttente.nom,
         telephone: rappelEnAttente.telephone,
-        prestation: rappelEnAttente.prestation,
+        prestation: prestation,
         date: dateLabel,
         date_str: dateStr,
         creneau: slot,
-        message: '',
+        message: message,
         reference: reference
       })
     });
@@ -810,6 +842,8 @@ async function confirmerRappel(slot) {
 
 function fermerModalRappel() {
   document.getElementById('modalRappel').classList.remove('show');
+  document.getElementById('rappelDetails').style.display = 'none';
+  document.getElementById('rappelMessage').value = '';
   rappelEnAttente = null;
   rappelDateChoisie = null;
 }
