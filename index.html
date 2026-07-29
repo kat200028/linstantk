@@ -748,8 +748,13 @@ function fmtDateStr(d) {
 
 function allerAuPlanningRappel() {
   const base = new Date(rappelEnAttente.baseDateStr + 'T00:00:00');
-  const debut = new Date(base); debut.setDate(debut.getDate() + 15);
-  const fin = new Date(base); fin.setDate(fin.getDate() + 21);
+  // Aligne sur une semaine calendaire complète (lundi à dimanche) autour de "3 semaines après",
+  // pour que le surlignage tienne toujours sur une seule ligne du calendrier
+  const cibleMilieu = new Date(base); cibleMilieu.setDate(cibleMilieu.getDate() + 18);
+  const jourSemaine = cibleMilieu.getDay(); // 0=dim
+  const decalageLundi = jourSemaine === 0 ? 6 : jourSemaine - 1;
+  const debut = new Date(cibleMilieu); debut.setDate(debut.getDate() - decalageLundi);
+  const fin = new Date(debut); fin.setDate(fin.getDate() + 6);
   semaineIdealeRange = { debut: fmtDateStr(debut), fin: fmtDateStr(fin) };
 
   // Pré-remplit le formulaire pour éviter à la cliente de retaper ses infos
