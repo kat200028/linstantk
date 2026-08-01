@@ -76,6 +76,9 @@
     .cal-cell { aspect-ratio: 1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; border: 2px solid transparent; transition: all .2s; background: white; min-height: 52px; }
     .cal-cell.empty { background: transparent; }
     .cal-cell.closed { background: #F9FAFB; border-color: transparent; cursor: default; }
+    .cal-cell.ferie { background: #F3F4F6; border-color: #E5E7EB; cursor: default; }
+    .cal-cell.ferie .cal-num { color: #9CA3AF; }
+    .cal-cell.ferie .cal-label { color: #9CA3AF; font-style: italic; }
     .cal-cell.closed .cal-num { color: #D1D5DB; }
     .cal-cell.past { opacity: 0.35; cursor: not-allowed !important; pointer-events: none; }
     .cal-cell.dispo { background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); border-color: #C4B5FD; cursor: pointer; }
@@ -375,6 +378,36 @@ const JOURS_COURT = ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
 const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 const JOURS_LONG = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 
+/* ══ JOURS FÉRIÉS (France + 22 mai Martinique) ══ */
+function joursFeriesAnnee(year) {
+  // Calcul de Pâques (algorithme de Meeus/Jones/Butcher)
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19*a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4;
+  const l = (32 + 2*e + 2*i - h - k) % 7;
+  const m = Math.floor((a + 11*h + 22*l) / 451);
+  const mois = Math.floor((h + l - 7*m + 114) / 31);
+  const jour = ((h + l - 7*m + 114) % 31) + 1;
+  const paques = new Date(year, mois - 1, jour);
+
+  const decale = n => { const nd = new Date(paques); nd.setDate(nd.getDate() + n); return fmtDateStrGlobal(nd); };
+  const p2 = n => String(n).padStart(2, '0');
+
+  return [
+    `${year}-01-01`, decale(1), `${year}-05-01`, `${year}-05-08`,
+    decale(39), decale(50), `${year}-05-22`, `${year}-07-14`,
+    `${year}-08-15`, `${year}-11-01`, `${year}-11-11`, `${year}-12-25`
+  ];
+}
+function fmtDateStrGlobal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function estJourFerie(dateStr) {
+  return joursFeriesAnnee(parseInt(dateStr.slice(0, 4))).includes(dateStr);
+}
+
 const DEFAULT_TARIFS = [
   { id:'manucure', emoji:'💅', nom:'Manucure', items:[
     {nom:'Gainage sur ongle naturel',prix:'35€'},
@@ -514,9 +547,10 @@ function renderCal() {
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const cellDate = new Date(calYear, calMonth, d);
     const isPast = cellDate < limit;
+    const isFerie = estJourFerie(dateStr);
     const rawSlots = DISPONIBILITES[dateStr] || [];
     const isBlockedDay = rawSlots[0] === '__blocked__';
-    const slots = isBlockedDay ? [] : rawSlots;
+    const slots = (isBlockedDay || isFerie) ? [] : rawSlots;
 
     // Créneaux déjà pris (En attente ou Accepté)
     const pris = BOOKINGS
@@ -530,6 +564,7 @@ function renderCal() {
     const cell = document.createElement('div');
     let cls = 'cal-cell';
     if (isPast) cls += ' past';
+    else if (isFerie) cls += ' ferie';
     else if (isComplet) cls += ' complet';
     else if (hasDispo) cls += ' dispo';
     else cls += ' closed';
@@ -538,12 +573,13 @@ function renderCal() {
     cell.className = cls;
 
     let labelTxt = '';
-    if (isComplet) labelTxt = 'Complet';
+    if (isFerie) labelTxt = 'Férié';
+    else if (isComplet) labelTxt = 'Complet';
     else if (hasDispo) labelTxt = dispo.length + ' créneau' + (dispo.length > 1 ? 'x' : '');
 
     cell.innerHTML = `<div class="cal-num">${d}</div>${labelTxt ? `<div class="cal-label">${labelTxt}</div>` : ''}`;
 
-    if (!isPast && hasDispo) {
+    if (!isPast && !isFerie && hasDispo) {
       cell.onclick = () => selectDay(dateStr, dispo);
     }
     grid.appendChild(cell);

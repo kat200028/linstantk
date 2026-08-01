@@ -151,6 +151,9 @@
     .cal-cell.empty { background: transparent; cursor: default; }
     .cal-cell.has-slots { background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); border-color: #C4B5FD; }
     .cal-cell.blocked { background: #FEE2E2; border-color: #FECACA; }
+    .cal-cell.ferie { background: #F3F4F6; border-color: #E5E7EB; }
+    .cal-cell.ferie .cal-cell-num { color: #9CA3AF; }
+    .cal-cell.ferie .cal-cell-label { color: #9CA3AF; font-style: italic; }
     .cal-cell.selected { background: linear-gradient(135deg, var(--violet), var(--pink)); border-color: transparent; }
     .cal-cell.selected .cal-cell-num, .cal-cell.selected .cal-cell-label { color: white !important; }
     .cal-cell.past { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
@@ -592,6 +595,33 @@
 <script>
 const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 const JOURS_LONG = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+
+/* ══ JOURS FÉRIÉS (France + 22 mai Martinique) ══ */
+function joursFeriesAnnee(year) {
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19*a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4;
+  const l = (32 + 2*e + 2*i - h - k) % 7;
+  const m = Math.floor((a + 11*h + 22*l) / 451);
+  const mois = Math.floor((h + l - 7*m + 114) / 31);
+  const jour = ((h + l - 7*m + 114) % 31) + 1;
+  const paques = new Date(year, mois - 1, jour);
+  const decale = n => { const nd = new Date(paques); nd.setDate(nd.getDate() + n); return fmtDateStrGlobal(nd); };
+
+  return [
+    `${year}-01-01`, decale(1), `${year}-05-01`, `${year}-05-08`,
+    decale(39), decale(50), `${year}-05-22`, `${year}-07-14`,
+    `${year}-08-15`, `${year}-11-01`, `${year}-11-11`, `${year}-12-25`
+  ];
+}
+function fmtDateStrGlobal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function estJourFerie(dateStr) {
+  return joursFeriesAnnee(parseInt(dateStr.slice(0, 4))).includes(dateStr);
+}
 
 const DEFAULT_TARIFS = [
   { id:'manucure', emoji:'💅', nom:'Manucure', items:[
@@ -1369,8 +1399,9 @@ function applyTemplate() {
     const di = jsDay === 0 ? 6 : jsDay - 1; // 0=lun ... 6=dim
     const templateSlots = weekTemplate[di];
     if (!templateSlots.length) continue;
-    // skip jours bloqués
+    // skip jours bloqués et jours fériés
     if (dispo[dateStr] && dispo[dateStr][0] === '__blocked__') continue;
+    if (estJourFerie(dateStr)) continue;
     if (!dispo[dateStr]) dispo[dateStr] = [];
     templateSlots.forEach(s => {
       if (!dispo[dateStr].includes(s)) { dispo[dateStr].push(s); changed = true; }
@@ -1464,6 +1495,7 @@ function renderCal() {
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const cellDate = new Date(calYear, calMonth, d);
     const isPast = cellDate < today;
+    const isFerie = estJourFerie(dateStr);
     const slots = dispo[dateStr];
     const isBlocked = slots && slots[0] === '__blocked__';
     const hasSlots = slots && slots.length > 0 && !isBlocked;
@@ -1474,11 +1506,12 @@ function renderCal() {
     if (isPast) cls += ' past';
     else if (isBlocked) cls += ' blocked';
     else if (hasSlots) cls += ' has-slots';
+    else if (isFerie) cls += ' ferie';
     if (isSelected) cls += ' selected';
     cell.className = cls;
 
     const taken = hasSlots ? getTakenSlots(dateStr) : [];
-    const labelTxt = isBlocked ? 'Bloqué' : hasSlots ? slots.map(s => taken.includes(s) ? `🔒${s}` : s).join(', ') : '';
+    const labelTxt = isBlocked ? 'Bloqué' : hasSlots ? slots.map(s => taken.includes(s) ? `🔒${s}` : s).join(', ') : isFerie ? '🎉 Férié' : '';
     cell.innerHTML = `<div class="cal-cell-num">${d}</div>${labelTxt ? `<div class="cal-cell-label">${labelTxt}</div>` : ''}`;
     if (!isPast) cell.onclick = () => multiMode ? toggleMultiDay(dateStr, cell) : selectDay(dateStr);
     grid.appendChild(cell);
