@@ -887,7 +887,7 @@ function renderClientes() {
   const recherche = (document.getElementById('searchClientes')?.value || '').trim().toLowerCase();
   let clientes = listeClientesUniques();
   if (recherche) clientes = clientes.filter(c => `${c.prenom} ${c.nom}`.toLowerCase().includes(recherche));
-  clientes.sort((a, b) => `${a.nom}${a.prenom}`.localeCompare(`${b.nom}${b.prenom}`));
+  clientes.sort((a, b) => `${a.prenom}${a.nom}`.localeCompare(`${b.prenom}${b.nom}`));
 
   document.getElementById('clientes-sub').textContent = clientes.length + ' cliente' + (clientes.length > 1 ? 's' : '');
 
@@ -897,7 +897,7 @@ function renderClientes() {
   let html = '';
   let derniereLettre = '';
   clientes.forEach(c => {
-    const lettre = (c.nom || c.prenom || '?')[0].toUpperCase();
+    const lettre = (c.prenom || c.nom || '?')[0].toUpperCase();
     if (lettre !== derniereLettre) {
       html += `<div class="cliente-letter">${lettre}</div>`;
       derniereLettre = lettre;
@@ -927,7 +927,7 @@ function buildAddRdvClientSelect() {
   });
   clientsExistants = Object.values(parTel)
     .filter(c => c.prenom || c.nom)
-    .sort((a, b) => `${a.nom}${a.prenom}`.localeCompare(`${b.nom}${b.prenom}`));
+    .sort((a, b) => `${a.prenom}${a.nom}`.localeCompare(`${b.prenom}${b.nom}`));
 
   const sel = document.getElementById('addrdv-client-existant');
   sel.innerHTML = '<option value="">-- Nouvelle cliente --</option>' +
