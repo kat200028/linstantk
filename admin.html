@@ -585,6 +585,10 @@
         <label>Nouveau créneau *</label>
         <select id="moverdv-creneau"></select>
       </div>
+      <div class="form-group">
+        <label>Ou un horaire libre <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel, prend le dessus si rempli)</span></label>
+        <input type="text" id="moverdv-creneau-libre" placeholder="ex: 9h30" />
+      </div>
       <button class="btn-addrdv-submit" id="btnMoveRdvSubmit" onclick="soumettreDeplacerRdv()">Déplacer le rendez-vous</button>
     </div>
   </div>
@@ -1041,6 +1045,7 @@ function ouvrirDeplacerRdv(row) {
   if (!b) return;
   moveRdvRow = row;
   document.getElementById('moveRdvSub').textContent = `${b.prenom} ${b.nom} — ${b.prestation || ''}`;
+  document.getElementById('moverdv-creneau-libre').value = '';
 
   const key = getSortKey(b.date || '');
   moveRdvDateOrigine = /^\d{4}-\d{2}-\d{2}$/.test(key) ? key : null;
@@ -1074,8 +1079,9 @@ function fermerDeplacerRdv() {
 async function soumettreDeplacerRdv() {
   if (!moveRdvRow) return;
   const dateVal = document.getElementById('moverdv-date').value;
-  const creneau = document.getElementById('moverdv-creneau').value;
-  if (!dateVal || !creneau) { alert('Merci de choisir une date et un créneau disponibles.'); return; }
+  const creneauLibre = document.getElementById('moverdv-creneau-libre').value.trim();
+  const creneau = creneauLibre || document.getElementById('moverdv-creneau').value;
+  if (!dateVal || !creneau) { alert('Merci de choisir une date, et un créneau (dans la liste ou en horaire libre).'); return; }
   const d = new Date(dateVal + 'T00:00:00');
   const dateLabel = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
 
