@@ -544,15 +544,17 @@
         <label>Prestation *</label>
         <select id="addrdv-presta"><option value="">-- Choisir une prestation --</option></select>
       </div>
-      <div class="addrdv-modal-grid">
-        <div class="form-group">
-          <label>Date <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
-          <input type="date" id="addrdv-date" />
-        </div>
-        <div class="form-group">
-          <label>Créneau</label>
-          <input type="text" id="addrdv-creneau" placeholder="ex: 14h00" />
-        </div>
+      <div class="form-group">
+        <label>Date <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
+        <input type="date" id="addrdv-date" onchange="majCreneauxAjout()" />
+      </div>
+      <div class="form-group">
+        <label>Créneau</label>
+        <select id="addrdv-creneau-select"><option value="">-- Choisir un créneau --</option></select>
+      </div>
+      <div class="form-group">
+        <label>Ou un horaire libre <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel, prend le dessus si rempli)</span></label>
+        <input type="text" id="addrdv-creneau" placeholder="ex: 14h00" />
       </div>
       <div class="form-group">
         <label>Statut</label>
@@ -941,12 +943,22 @@ function remplirClientExistant(index) {
   document.getElementById('addrdv-tel').value = c.telephone;
 }
 
+function majCreneauxAjout() {
+  const dateVal = document.getElementById('addrdv-date').value;
+  const sel = document.getElementById('addrdv-creneau-select');
+  const creneaux = dateVal ? creneauxDisponiblesPourDeplacement(dateVal) : [];
+  sel.innerHTML = creneaux.length
+    ? '<option value="">-- Choisir un créneau --</option>' + creneaux.map(s => `<option value="${s}">${s}</option>`).join('')
+    : '<option value="">Aucun créneau disponible</option>';
+}
+
 function ouvrirAjoutRdv() {
   document.getElementById('addrdv-client-existant').value = '';
   document.getElementById('addrdv-prenom').value = '';
   document.getElementById('addrdv-nom').value = '';
   document.getElementById('addrdv-tel').value = '';
   document.getElementById('addrdv-date').value = '';
+  document.getElementById('addrdv-creneau-select').innerHTML = '<option value="">-- Choisir un créneau --</option>';
   document.getElementById('addrdv-creneau').value = '';
   document.getElementById('addrdv-message').value = '';
   document.getElementById('addrdv-statut').value = 'Accepté';
@@ -992,7 +1004,7 @@ async function soumettreAjoutRdv() {
         prenom, nom, telephone, prestation,
         date: dateLabel,
         date_str: dateVal,
-        creneau: document.getElementById('addrdv-creneau').value.trim(),
+        creneau: document.getElementById('addrdv-creneau').value.trim() || document.getElementById('addrdv-creneau-select').value,
         status: document.getElementById('addrdv-statut').value,
         message: document.getElementById('addrdv-message').value.trim(),
         reference
