@@ -577,15 +577,13 @@
         <button class="client-modal-close" onclick="fermerDeplacerRdv()">✕</button>
       </div>
       <div class="client-modal-sub" id="moveRdvSub"></div>
-      <div class="addrdv-modal-grid">
-        <div class="form-group">
-          <label>Nouvelle date *</label>
-          <input type="date" id="moverdv-date" />
-        </div>
-        <div class="form-group">
-          <label>Nouveau créneau</label>
-          <input type="text" id="moverdv-creneau" placeholder="ex: 14h00" />
-        </div>
+      <div class="form-group">
+        <label>Nouvelle date *</label>
+        <select id="moverdv-date" onchange="majCreneauxDeplacement()"></select>
+      </div>
+      <div class="form-group">
+        <label>Nouveau créneau *</label>
+        <select id="moverdv-creneau"></select>
       </div>
       <button class="btn-addrdv-submit" id="btnMoveRdvSubmit" onclick="soumettreDeplacerRdv()">Déplacer le rendez-vous</button>
     </div>
@@ -1007,30 +1005,79 @@ async function soumettreAjoutRdv() {
 /* ══ DEPLACER RDV ══ */
 let moveRdvRow = null;
 
+function datesDisponiblesTri() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Object.keys(dispo)
+    .filter(dateStr => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+      const slots = dispo[dateStr];
+      if (!slots || !slots.length || slots[0] === '__blocked__') return false;
+      if (estJourFerie(dateStr)) return false;
+      const d = new Date(dateStr + 'T00:00:00');
+      return d >= today;
+    })
+    .sort();
+}
+
+function creneauxDisponiblesPourDeplacement(dateStr) {
+  const slots = (dispo[dateStr] || []).filter(s => s !== '__blocked__');
+  const pris = getTakenSlots(dateStr).filter(s => !(dateStr === moveRdvDateOrigine && s === moveRdvCreneauOrigine));
+  return slots.filter(s => !pris.includes(s));
+}
+
+let moveRdvDateOrigine = null, moveRdvCreneauOrigine = null;
+
+function majCreneauxDeplacement() {
+  const dateVal = document.getElementById('moverdv-date').value;
+  const sel = document.getElementById('moverdv-creneau');
+  const creneaux = dateVal ? creneauxDisponiblesPourDeplacement(dateVal) : [];
+  sel.innerHTML = creneaux.length
+    ? creneaux.map(s => `<option value="${s}">${s}</option>`).join('')
+    : '<option value="">Aucun créneau disponible</option>';
+}
+
 function ouvrirDeplacerRdv(row) {
   const b = allBookings.find(x => x.row === row);
   if (!b) return;
   moveRdvRow = row;
   document.getElementById('moveRdvSub').textContent = `${b.prenom} ${b.nom} — ${b.prestation || ''}`;
-  // Tente de pré-remplir la date si elle est au format ISO (YYYY-MM-DD)
+
   const key = getSortKey(b.date || '');
-  document.getElementById('moverdv-date').value = /^\d{4}-\d{2}-\d{2}$/.test(key) ? key : '';
-  document.getElementById('moverdv-creneau').value = b.creneau || '';
+  moveRdvDateOrigine = /^\d{4}-\d{2}-\d{2}$/.test(key) ? key : null;
+  moveRdvCreneauOrigine = b.creneau || null;
+
+  const dates = datesDisponiblesTri();
+  const dateSel = document.getElementById('moverdv-date');
+  if (!dates.length) {
+    dateSel.innerHTML = '<option value="">Aucune date disponible configurée</option>';
+  } else {
+    dateSel.innerHTML = dates.map(dateStr => {
+      const d = new Date(dateStr + 'T00:00:00');
+      const label = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+      return `<option value="${dateStr}">${label.charAt(0).toUpperCase() + label.slice(1)}</option>`;
+    }).join('');
+    if (moveRdvDateOrigine && dates.includes(moveRdvDateOrigine)) dateSel.value = moveRdvDateOrigine;
+  }
+  majCreneauxDeplacement();
+  if (moveRdvCreneauOrigine) document.getElementById('moverdv-creneau').value = moveRdvCreneauOrigine;
+
   document.getElementById('moveRdvModal').classList.add('show');
 }
 
 function fermerDeplacerRdv() {
   document.getElementById('moveRdvModal').classList.remove('show');
   moveRdvRow = null;
+  moveRdvDateOrigine = null;
+  moveRdvCreneauOrigine = null;
 }
 
 async function soumettreDeplacerRdv() {
   if (!moveRdvRow) return;
   const dateVal = document.getElementById('moverdv-date').value;
-  if (!dateVal) { alert('Merci de choisir une nouvelle date.'); return; }
+  const creneau = document.getElementById('moverdv-creneau').value;
+  if (!dateVal || !creneau) { alert('Merci de choisir une date et un créneau disponibles.'); return; }
   const d = new Date(dateVal + 'T00:00:00');
   const dateLabel = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
-  const creneau = document.getElementById('moverdv-creneau').value.trim();
 
   const btn = document.getElementById('btnMoveRdvSubmit');
   btn.disabled = true; btn.textContent = 'Déplacement...';
