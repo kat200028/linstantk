@@ -1276,7 +1276,8 @@ function renderBookings() {
             <input type="checkbox" onchange="marquerTermine(${b.row}, this.checked)" style="width:18px;height:18px;cursor:pointer" /> Marquer comme terminé
           </label>
           <div style="display:flex;gap:8px">
-            <button class="btn-block-num" onclick="renvoyerWhatsApp(${b.row})" title="Renvoyer le message de confirmation WhatsApp" style="font-size:0.85rem;padding:8px 14px">💬 WhatsApp</button>
+            <button class="btn-block-num" onclick="renvoyerWhatsApp(${b.row})" title="Renvoyer le message de confirmation WhatsApp" style="font-size:0.85rem;padding:8px 14px">💬 Confirmation</button>
+            <button class="btn-block-num" onclick="envoyerRappelWhatsApp(${b.row})" title="Envoyer un message de rappel WhatsApp" style="font-size:0.85rem;padding:8px 14px">⏰ Rappel</button>
             <button class="btn-annuler-admin" onclick="updateStatus(${b.row},'Refusé')">Annuler ce RDV</button>
           </div>
         </div>`;
@@ -1339,6 +1340,20 @@ function ouvrirConfirmationWhatsApp(b) {
   const lignes = [
     `Bonjour ${b.prenom} ! ✅`,
     `Votre rendez-vous${dateTxt ? ' du ' + dateTxt : ''}${b.creneau ? ' à ' + b.creneau : ''} pour ${b.prestation || 'votre prestation'} est confirmé.`,
+    `À très bientôt ! — L'Instant K`
+  ];
+  const numero = formatNumeroWhatsApp(b.telephone);
+  const url = `https://wa.me/${numero}?text=${encodeURIComponent(lignes.join('\n'))}`;
+  window.open(url, '_blank');
+}
+
+function envoyerRappelWhatsApp(row) {
+  const b = allBookings.find(x => x.row === row);
+  if (!b || !b.telephone) return;
+  const dateTxt = b.date ? formatDateFr(b.date) : '';
+  const lignes = [
+    `Bonjour ${b.prenom} ! ⏰`,
+    `Petit rappel de votre rendez-vous${dateTxt ? ' du ' + dateTxt : ''}${b.creneau ? ' à ' + b.creneau : ''} pour ${b.prestation || 'votre prestation'}.`,
     `À très bientôt ! — L'Instant K`
   ];
   const numero = formatNumeroWhatsApp(b.telephone);
