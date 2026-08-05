@@ -399,6 +399,7 @@
       <div class="page-sub" id="clientes-sub">Toutes vos clientes, par ordre alphabétique</div>
       <div class="filters" style="margin-bottom:16px">
         <input type="text" id="searchClientes" class="search-input" placeholder="🔍 Rechercher par nom ou prénom..." oninput="renderClientes()" style="flex:1;min-width:220px;padding:9px 16px;border:2px solid #E5E7EB;border-radius:50px;font-size:0.88rem;color:var(--dark)" />
+        <button class="btn-add-rdv" onclick="ouvrirAjoutRdv()">+ Ajouter une cliente</button>
         <button class="btn-block-num" id="btnSupprimerClientes" onclick="supprimerClientesSelectionnees()" title="Supprimer les clientes sélectionnées" style="display:none;font-size:1rem;padding:8px 14px">🗑️</button>
       </div>
       <div id="clientesList"><div class="loading-msg"><div class="spinner"></div>Chargement...</div></div>
