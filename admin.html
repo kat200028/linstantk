@@ -569,9 +569,15 @@
           <input type="text" id="addrdv-nom" placeholder="Nom" />
         </div>
       </div>
-      <div class="form-group">
-        <label>Téléphone <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
-        <input type="tel" id="addrdv-tel" placeholder="06 XX XX XX XX" />
+      <div class="addrdv-modal-grid">
+        <div class="form-group">
+          <label>Téléphone <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
+          <input type="tel" id="addrdv-tel" placeholder="06 XX XX XX XX" />
+        </div>
+        <div class="form-group">
+          <label>Téléphone 2 <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
+          <input type="tel" id="addrdv-tel2" placeholder="06 XX XX XX XX" />
+        </div>
       </div>
       <div class="form-group">
         <label>Prestation *</label>
@@ -991,6 +997,7 @@ function ouvrirAjoutRdv() {
   document.getElementById('addrdv-prenom').value = '';
   document.getElementById('addrdv-nom').value = '';
   document.getElementById('addrdv-tel').value = '';
+  document.getElementById('addrdv-tel2').value = '';
   document.getElementById('addrdv-date').value = '';
   document.getElementById('addrdv-creneau-select').innerHTML = '<option value="">-- Choisir un créneau --</option>';
   document.getElementById('addrdv-creneau').value = '';
@@ -1009,7 +1016,9 @@ async function soumettreAjoutRdv() {
   const prenom = document.getElementById('addrdv-prenom').value.trim();
   const nom = document.getElementById('addrdv-nom').value.trim();
   const prestation = document.getElementById('addrdv-presta').value;
-  const telephone = document.getElementById('addrdv-tel').value.trim();
+  const tel1 = document.getElementById('addrdv-tel').value.trim();
+  const tel2 = document.getElementById('addrdv-tel2').value.trim();
+  const telephone = tel1 && tel2 ? `${tel1} / ${tel2}` : (tel1 || tel2);
   const dateVal = document.getElementById('addrdv-date').value;
   if (!prenom || !nom || !prestation) {
     alert('Merci de remplir au moins le prénom, le nom et la prestation.');
@@ -1362,7 +1371,8 @@ function renderBookings() {
 }
 
 function formatNumeroWhatsApp(tel) {
-  let digits = String(tel || '').replace(/\D/g, '');
+  const premier = String(tel || '').split('/')[0];
+  let digits = premier.replace(/\D/g, '');
   digits = digits.replace(/^0+/, '');
   if (digits.startsWith('596')) return digits;
   if (digits.startsWith('33')) return digits; // au cas où un numéro serait déjà en +33
