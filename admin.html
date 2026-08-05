@@ -545,6 +545,25 @@
     </div>
   </div>
 
+  <!-- MODIFIER TELEPHONE -->
+  <div class="client-modal-bg" id="editTelModal" onclick="if(event.target===this) fermerModifierTelephone()">
+    <div class="client-modal-box" style="max-width:380px">
+      <div class="client-modal-header">
+        <div class="client-modal-title">✏️ Numéro(s) de téléphone</div>
+        <button class="client-modal-close" onclick="fermerModifierTelephone()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Téléphone</label>
+        <input type="tel" id="edittel-1" placeholder="06 XX XX XX XX" />
+      </div>
+      <div class="form-group">
+        <label>Téléphone 2 <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
+        <input type="tel" id="edittel-2" placeholder="06 XX XX XX XX" />
+      </div>
+      <button class="btn-addrdv-submit" onclick="validerModifierTelephone()">Enregistrer</button>
+    </div>
+  </div>
+
   <!-- AJOUT RDV MANUEL -->
   <div class="client-modal-bg" id="addRdvModal" onclick="if(event.target===this) fermerAjoutRdv()">
     <div class="client-modal-box addrdv-modal-box">
@@ -847,10 +866,28 @@ async function marquerTermine(row, termine) {
   } catch(e) { alert('Erreur lors de la mise à jour.'); }
 }
 
-async function modifierTelephone(row, telActuel) {
-  const nouveau = prompt('Nouveau numéro de téléphone :', telActuel);
-  if (nouveau === null) return;
-  const val = nouveau.trim();
+let editTelRow = null;
+
+function modifierTelephone(row, telActuel) {
+  editTelRow = row;
+  const parts = String(telActuel || '').split('/').map(s => s.trim());
+  document.getElementById('edittel-1').value = parts[0] || '';
+  document.getElementById('edittel-2').value = parts[1] || '';
+  document.getElementById('editTelModal').classList.add('show');
+}
+
+function fermerModifierTelephone() {
+  editTelRow = null;
+  document.getElementById('editTelModal').classList.remove('show');
+}
+
+async function validerModifierTelephone() {
+  if (editTelRow === null) return;
+  const row = editTelRow;
+  const tel1 = document.getElementById('edittel-1').value.trim();
+  const tel2 = document.getElementById('edittel-2').value.trim();
+  const val = tel1 && tel2 ? `${tel1} / ${tel2}` : (tel1 || tel2);
+  fermerModifierTelephone();
   try {
     await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'update_phone', row, telephone: val }) });
     const b = allBookings.find(x => x.row === row);
