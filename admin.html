@@ -533,6 +533,18 @@
     </div>
   </div>
 
+  <!-- CONFIRMATION ENVOI WHATSAPP -->
+  <div class="client-modal-bg" id="waConfirmModal" onclick="if(event.target===this) fermerWaConfirm()">
+    <div class="client-modal-box" style="max-width:380px;text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:12px">💬</div>
+      <div style="font-weight:800;font-size:1.05rem;margin-bottom:22px" id="waConfirmTexte"></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn-block-num" onclick="fermerWaConfirm()" style="padding:10px 18px">Non merci</button>
+        <button class="btn-save" onclick="confirmerEnvoiWa()" style="padding:10px 18px">💬 Oui, envoyer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- AJOUT RDV MANUEL -->
   <div class="client-modal-bg" id="addRdvModal" onclick="if(event.target===this) fermerAjoutRdv()">
     <div class="client-modal-box addrdv-modal-box">
@@ -1018,11 +1030,6 @@ async function soumettreAjoutRdv() {
   const creneau = document.getElementById('addrdv-creneau').value.trim() || document.getElementById('addrdv-creneau-select').value;
   const statut = document.getElementById('addrdv-statut').value;
 
-  const veutEnvoyer = statut === 'Accepté' && telephone
-    ? confirm(`Envoyer un message de confirmation WhatsApp à ${prenom} ?`)
-    : false;
-  const waWindow = veutEnvoyer ? window.open('', '_blank') : null;
-
   const btn = document.getElementById('btnAddRdvSubmit');
   btn.disabled = true; btn.textContent = 'Ajout en cours...';
 
@@ -1042,13 +1049,10 @@ async function soumettreAjoutRdv() {
     });
     fermerAjoutRdv();
     await loadAll();
-    if (waWindow) {
-      const texte = remplirTemplate(getMessageTemplate('confirmation'), { prenom, date: dateVal, creneau, prestation });
-      const numero = formatNumeroWhatsApp(telephone);
-      waWindow.location = `https://wa.me/${numero}?text=${encodeURIComponent(texte)}`;
+    if (statut === 'Accepté' && telephone) {
+      demanderEnvoiWa({ prenom, telephone, date: dateVal, creneau, prestation }, 'confirmation');
     }
   } catch(e) {
-    if (waWindow) waWindow.close();
     alert('Erreur lors de l\'ajout du RDV.');
   }
   btn.disabled = false; btn.textContent = 'Ajouter le rendez-vous';
@@ -1367,7 +1371,7 @@ function formatNumeroWhatsApp(tel) {
 
 function renvoyerWhatsApp(row) {
   const b = allBookings.find(x => x.row === row);
-  if (b) ouvrirConfirmationWhatsApp(b);
+  if (b) demanderEnvoiWa(b, 'confirmation');
 }
 
 const MSG_CONFIRMATION_DEFAUT = `Coucou {prenom} 💕✨\nTon rendez-vous du {date} à {creneau} pour {prestation} est confirmé, je t'attends avec plaisir !\nÀ très vite 🥰 — L'Instant K`;
@@ -1394,13 +1398,38 @@ function ouvrirConfirmationWhatsApp(b) {
   window.open(url, '_blank');
 }
 
+/* ══ CONFIRMATION D'ENVOI WHATSAPP (modal maison, pas de confirm() natif) ══
+   Le confirm() natif "consomme" le geste de clic sur certains navigateurs (Safari iOS),
+   ce qui fait bloquer le window.open() suivant comme un pop-up indésirable.
+   En utilisant un vrai bouton dans un modal, le clic sur "Oui, envoyer" reste
+   un geste utilisateur direct et window.open() n'est jamais bloqué. */
+let waConfirmPending = null;
+
+function demanderEnvoiWa(booking, type) {
+  if (!booking || !booking.telephone) return;
+  waConfirmPending = { booking, type };
+  const verbe = type === 'rappel' ? 'un rappel' : 'la confirmation';
+  document.getElementById('waConfirmTexte').textContent = `Envoyer ${verbe} par WhatsApp à ${booking.prenom} ?`;
+  document.getElementById('waConfirmModal').classList.add('show');
+}
+
+function fermerWaConfirm() {
+  waConfirmPending = null;
+  document.getElementById('waConfirmModal').classList.remove('show');
+}
+
+function confirmerEnvoiWa() {
+  if (!waConfirmPending) return;
+  const { booking, type } = waConfirmPending;
+  const texte = remplirTemplate(getMessageTemplate(type), booking);
+  const numero = formatNumeroWhatsApp(booking.telephone);
+  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texte)}`, '_blank');
+  fermerWaConfirm();
+}
+
 function envoyerRappelWhatsApp(row) {
   const b = allBookings.find(x => x.row === row);
-  if (!b || !b.telephone) return;
-  const texte = remplirTemplate(getMessageTemplate('rappel'), b);
-  const numero = formatNumeroWhatsApp(b.telephone);
-  const url = `https://wa.me/${numero}?text=${encodeURIComponent(texte)}`;
-  window.open(url, '_blank');
+  if (b) demanderEnvoiWa(b, 'rappel');
 }
 
 function chargerMessagesWhatsApp() {
@@ -1424,27 +1453,14 @@ function reinitialiserMessagesWhatsApp() {
 
 async function updateStatus(row, status) {
   const card = document.getElementById('card-' + row);
-  const b0 = allBookings.find(x => x.row === row);
-  const veutEnvoyer = status === 'Accepté' && b0 && b0.telephone
-    ? confirm(`Envoyer un message de confirmation WhatsApp à ${b0.prenom} ?`)
-    : false;
   if (card) card.style.opacity = '0.4';
-  // Ouvre l'onglet WhatsApp tout de suite (au clic) pour éviter le blocage de pop-up des navigateurs,
-  // puis on redirige cet onglet vers l'URL une fois le message prêt.
-  const waWindow = veutEnvoyer ? window.open('', '_blank') : null;
   try {
     await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'update', row, status}) });
     const b = allBookings.find(x => x.row === row);
     if (b) b.status = status;
     renderBookings(); renderStats();
-    if (waWindow && b) {
-      const texte = remplirTemplate(getMessageTemplate('confirmation'), b);
-      const numero = formatNumeroWhatsApp(b.telephone);
-      waWindow.location = `https://wa.me/${numero}?text=${encodeURIComponent(texte)}`;
-    } else if (waWindow) {
-      waWindow.close();
-    }
-  } catch(e) { if (card) card.style.opacity = '1'; if (waWindow) waWindow.close(); alert('Erreur.'); }
+    if (status === 'Accepté' && b && b.telephone) demanderEnvoiWa(b, 'confirmation');
+  } catch(e) { if (card) card.style.opacity = '1'; alert('Erreur.'); }
 }
 
 function setFilter(f, btn) {
