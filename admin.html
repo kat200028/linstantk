@@ -1015,6 +1015,14 @@ async function soumettreAjoutRdv() {
   const existant = telNorm ? allBookings.find(b => b.reference && normaliserTel(b.telephone) === telNorm) : null;
   const reference = existant ? existant.reference : genererReferenceAdmin();
 
+  const creneau = document.getElementById('addrdv-creneau').value.trim() || document.getElementById('addrdv-creneau-select').value;
+  const statut = document.getElementById('addrdv-statut').value;
+
+  const veutEnvoyer = statut === 'Accepté' && telephone
+    ? confirm(`Envoyer un message de confirmation WhatsApp à ${prenom} ?`)
+    : false;
+  const waWindow = veutEnvoyer ? window.open('', '_blank') : null;
+
   const btn = document.getElementById('btnAddRdvSubmit');
   btn.disabled = true; btn.textContent = 'Ajout en cours...';
 
@@ -1026,15 +1034,21 @@ async function soumettreAjoutRdv() {
         prenom, nom, telephone, prestation,
         date: dateLabel,
         date_str: dateVal,
-        creneau: document.getElementById('addrdv-creneau').value.trim() || document.getElementById('addrdv-creneau-select').value,
-        status: document.getElementById('addrdv-statut').value,
+        creneau,
+        status: statut,
         message: document.getElementById('addrdv-message').value.trim(),
         reference
       })
     });
     fermerAjoutRdv();
     await loadAll();
+    if (waWindow) {
+      const texte = remplirTemplate(getMessageTemplate('confirmation'), { prenom, date: dateVal, creneau, prestation });
+      const numero = formatNumeroWhatsApp(telephone);
+      waWindow.location = `https://wa.me/${numero}?text=${encodeURIComponent(texte)}`;
+    }
   } catch(e) {
+    if (waWindow) waWindow.close();
     alert('Erreur lors de l\'ajout du RDV.');
   }
   btn.disabled = false; btn.textContent = 'Ajouter le rendez-vous';
