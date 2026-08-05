@@ -327,6 +327,7 @@
     <button class="tab-nav-btn" onclick="showPage('clientes',this)">👥 Clientes</button>
     <button class="tab-nav-btn" onclick="showPage('dispo',this)">📅 Disponibilités</button>
     <button class="tab-nav-btn" onclick="showPage('tarifs',this)">💰 Tarifs</button>
+    <button class="tab-nav-btn" onclick="showPage('messages',this)">💬 Messages</button>
   </div>
 
   <main>
@@ -470,6 +471,26 @@
       <div class="page-title">Tarifs</div>
       <div class="page-sub">Modifiez vos prestations et prix — puis cliquez <strong>Enregistrer</strong></div>
       <div id="tarifsEditor"></div>
+    </div>
+
+    <!-- MESSAGES WHATSAPP -->
+    <div id="page-messages" class="page">
+      <div class="page-title">Messages WhatsApp</div>
+      <div class="page-sub">Personnalise les messages envoyés via WhatsApp. Utilise <code>{prenom}</code>, <code>{date}</code>, <code>{creneau}</code>, <code>{prestation}</code> — ils seront remplacés automatiquement.</div>
+
+      <div style="max-width:600px;margin-top:20px">
+        <label style="display:block;font-weight:800;margin-bottom:8px">✅ Message de confirmation</label>
+        <textarea id="msgConfirmationInput" rows="5" style="width:100%;padding:14px;border:2px solid #E5E7EB;border-radius:12px;font-family:inherit;font-size:0.92rem;resize:vertical"></textarea>
+
+        <label style="display:block;font-weight:800;margin:22px 0 8px">⏰ Message de rappel</label>
+        <textarea id="msgRappelInput" rows="5" style="width:100%;padding:14px;border:2px solid #E5E7EB;border-radius:12px;font-family:inherit;font-size:0.92rem;resize:vertical"></textarea>
+
+        <div style="display:flex;gap:10px;margin-top:20px;align-items:center">
+          <button class="btn-save" onclick="sauvegarderMessagesWhatsApp()">💾 Enregistrer</button>
+          <button class="btn-block-num" onclick="reinitialiserMessagesWhatsApp()">↺ Réinitialiser</button>
+          <span class="save-ok" id="msgSaveOk" style="display:none">✅ Enregistré !</span>
+        </div>
+      </div>
     </div>
 
   </main>
@@ -744,6 +765,7 @@ function showPage(id, btn) {
   btn.classList.add('active');
   document.getElementById('saveBarDispo').style.display = id === 'dispo' ? 'flex' : 'none';
   document.getElementById('saveBarTarifs').style.display = id === 'tarifs' ? 'flex' : 'none';
+  if (id === 'messages') chargerMessagesWhatsApp();
 }
 
 /* ══ CHARGEMENT ══ */
@@ -1334,31 +1356,56 @@ function renvoyerWhatsApp(row) {
   if (b) ouvrirConfirmationWhatsApp(b);
 }
 
+const MSG_CONFIRMATION_DEFAUT = `Coucou {prenom} 💕✨\nTon rendez-vous du {date} à {creneau} pour {prestation} est confirmé, je t'attends avec plaisir !\nÀ très vite 🥰 — L'Instant K`;
+const MSG_RAPPEL_DEFAUT = `Coucou {prenom} 🌸 petit rappel tout doux : on se retrouve {date} à {creneau} pour {prestation} !\nÀ demain 😘 — L'Instant K`;
+
+function getMessageTemplate(type) {
+  return localStorage.getItem('wa_msg_' + type) || (type === 'confirmation' ? MSG_CONFIRMATION_DEFAUT : MSG_RAPPEL_DEFAUT);
+}
+
+function remplirTemplate(tpl, b) {
+  const dateTxt = b.date ? formatDateFr(b.date) : '';
+  return tpl
+    .replace(/\{prenom\}/g, b.prenom || '')
+    .replace(/\{date\}/g, dateTxt || 'votre date')
+    .replace(/\{creneau\}/g, b.creneau || 'votre horaire')
+    .replace(/\{prestation\}/g, b.prestation || 'votre prestation');
+}
+
 function ouvrirConfirmationWhatsApp(b) {
   if (!b.telephone) return;
-  const dateTxt = b.date ? formatDateFr(b.date) : '';
-  const lignes = [
-    `Bonjour ${b.prenom} ! ✅`,
-    `Votre rendez-vous${dateTxt ? ' du ' + dateTxt : ''}${b.creneau ? ' à ' + b.creneau : ''} pour ${b.prestation || 'votre prestation'} est confirmé.`,
-    `À très bientôt ! — L'Instant K`
-  ];
+  const texte = remplirTemplate(getMessageTemplate('confirmation'), b);
   const numero = formatNumeroWhatsApp(b.telephone);
-  const url = `https://wa.me/${numero}?text=${encodeURIComponent(lignes.join('\n'))}`;
+  const url = `https://wa.me/${numero}?text=${encodeURIComponent(texte)}`;
   window.open(url, '_blank');
 }
 
 function envoyerRappelWhatsApp(row) {
   const b = allBookings.find(x => x.row === row);
   if (!b || !b.telephone) return;
-  const dateTxt = b.date ? formatDateFr(b.date) : '';
-  const lignes = [
-    `Bonjour ${b.prenom} ! ⏰`,
-    `Petit rappel de votre rendez-vous${dateTxt ? ' du ' + dateTxt : ''}${b.creneau ? ' à ' + b.creneau : ''} pour ${b.prestation || 'votre prestation'}.`,
-    `À très bientôt ! — L'Instant K`
-  ];
+  const texte = remplirTemplate(getMessageTemplate('rappel'), b);
   const numero = formatNumeroWhatsApp(b.telephone);
-  const url = `https://wa.me/${numero}?text=${encodeURIComponent(lignes.join('\n'))}`;
+  const url = `https://wa.me/${numero}?text=${encodeURIComponent(texte)}`;
   window.open(url, '_blank');
+}
+
+function chargerMessagesWhatsApp() {
+  document.getElementById('msgConfirmationInput').value = getMessageTemplate('confirmation');
+  document.getElementById('msgRappelInput').value = getMessageTemplate('rappel');
+}
+
+function sauvegarderMessagesWhatsApp() {
+  localStorage.setItem('wa_msg_confirmation', document.getElementById('msgConfirmationInput').value);
+  localStorage.setItem('wa_msg_rappel', document.getElementById('msgRappelInput').value);
+  const ok = document.getElementById('msgSaveOk');
+  ok.style.display = 'inline';
+  setTimeout(() => ok.style.display = 'none', 2000);
+}
+
+function reinitialiserMessagesWhatsApp() {
+  localStorage.removeItem('wa_msg_confirmation');
+  localStorage.removeItem('wa_msg_rappel');
+  chargerMessagesWhatsApp();
 }
 
 async function updateStatus(row, status) {
