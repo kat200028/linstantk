@@ -1411,13 +1411,23 @@ function reinitialiserMessagesWhatsApp() {
 async function updateStatus(row, status) {
   const card = document.getElementById('card-' + row);
   if (card) card.style.opacity = '0.4';
+  // Ouvre l'onglet WhatsApp tout de suite (au clic) pour éviter le blocage de pop-up des navigateurs,
+  // puis on redirige cet onglet vers l'URL une fois le message prêt.
+  const b0 = allBookings.find(x => x.row === row);
+  const waWindow = (status === 'Accepté' && b0 && b0.telephone) ? window.open('', '_blank') : null;
   try {
     await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'update', row, status}) });
     const b = allBookings.find(x => x.row === row);
     if (b) b.status = status;
     renderBookings(); renderStats();
-    if (status === 'Accepté' && b) ouvrirConfirmationWhatsApp(b);
-  } catch(e) { if (card) card.style.opacity = '1'; alert('Erreur.'); }
+    if (waWindow && b) {
+      const texte = remplirTemplate(getMessageTemplate('confirmation'), b);
+      const numero = formatNumeroWhatsApp(b.telephone);
+      waWindow.location = `https://wa.me/${numero}?text=${encodeURIComponent(texte)}`;
+    } else if (waWindow) {
+      waWindow.close();
+    }
+  } catch(e) { if (card) card.style.opacity = '1'; if (waWindow) waWindow.close(); alert('Erreur.'); }
 }
 
 function setFilter(f, btn) {
