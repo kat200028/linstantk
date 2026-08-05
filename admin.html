@@ -521,6 +521,7 @@
         <button class="client-modal-close" onclick="fermerFicheClient()">✕</button>
       </div>
       <div class="client-modal-sub" id="clientModalContact"></div>
+      <button class="btn-block-num" onclick="modifierTelephoneClient()" style="margin-bottom:14px">✏️ Modifier le(s) numéro(s)</button>
       <div id="clientModalBadge"></div>
 
       <div class="client-notes-label">📝 Notes privées (visibles uniquement par vous)</div>
@@ -866,33 +867,53 @@ async function marquerTermine(row, termine) {
   } catch(e) { alert('Erreur lors de la mise à jour.'); }
 }
 
-let editTelRow = null;
+let editTelRows = null; // tableau de rows à mettre à jour (1 pour une carte RDV, plusieurs pour toute la fiche cliente)
 
 function modifierTelephone(row, telActuel) {
-  editTelRow = row;
+  editTelRows = [row];
   const parts = String(telActuel || '').split('/').map(s => s.trim());
   document.getElementById('edittel-1').value = parts[0] || '';
   document.getElementById('edittel-2').value = parts[1] || '';
   document.getElementById('editTelModal').classList.add('show');
 }
 
+function modifierTelephoneClient() {
+  if (!ficheClientTel) return;
+  const rdvsClient = allBookings.filter(b => normaliserTel(b.telephone) === ficheClientTel);
+  if (!rdvsClient.length) return;
+  editTelRows = rdvsClient.map(b => b.row);
+  const parts = String(rdvsClient[0].telephone || '').split('/').map(s => s.trim());
+  document.getElementById('edittel-1').value = parts[0] || '';
+  document.getElementById('edittel-2').value = parts[1] || '';
+  document.getElementById('editTelModal').classList.add('show');
+}
+
 function fermerModifierTelephone() {
-  editTelRow = null;
+  editTelRows = null;
   document.getElementById('editTelModal').classList.remove('show');
 }
 
 async function validerModifierTelephone() {
-  if (editTelRow === null) return;
-  const row = editTelRow;
+  if (!editTelRows || !editTelRows.length) return;
+  const rows = editTelRows;
   const tel1 = document.getElementById('edittel-1').value.trim();
   const tel2 = document.getElementById('edittel-2').value.trim();
   const val = tel1 && tel2 ? `${tel1} / ${tel2}` : (tel1 || tel2);
+  const telNormAvant = ficheClientTel;
   fermerModifierTelephone();
   try {
-    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'update_phone', row, telephone: val }) });
-    const b = allBookings.find(x => x.row === row);
-    if (b) b.telephone = val;
+    await Promise.all(rows.map(row =>
+      fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'update_phone', row, telephone: val }) })
+    ));
+    rows.forEach(row => {
+      const b = allBookings.find(x => x.row === row);
+      if (b) b.telephone = val;
+    });
     renderBookings();
+    if (telNormAvant && document.getElementById('clientModal').classList.contains('show')) {
+      const b = allBookings.find(x => rows.includes(x.row));
+      if (b) ouvrirFicheClient(b.prenom, b.nom, val);
+    }
   } catch(e) { alert('Erreur lors de la mise à jour du téléphone.'); }
 }
 
