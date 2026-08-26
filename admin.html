@@ -1907,6 +1907,9 @@ function buildTarifsEditor(tarifs) {
       <div class="tarif-cat-header">
         <span style="font-size:1.4rem">${cat.emoji}</span>
         <span class="tarif-cat-title">${cat.nom}</span>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--dark);white-space:nowrap;cursor:pointer;margin-left:auto">
+          <input type="checkbox" ${cat.items.length && cat.items.every(it => it.indisponible) ? 'checked' : ''} onchange="toggleCategorieIndisponible(${ci},this.checked)" style="width:18px;height:18px" /> Toute la catégorie indisponible
+        </label>
       </div>
       <div class="tarif-items" id="tarif-items-${ci}">
         ${cat.items.map((item,ii) => renderTarifRow(ci,ii,item)).join('')}
@@ -1932,6 +1935,11 @@ function renderTarifRow(ci, ii, item) {
 
 function updateTarif(ci, ii, field, val) {
   tarifsData[ci].items[ii][field] = val;
+}
+
+function toggleCategorieIndisponible(ci, val) {
+  tarifsData[ci].items.forEach(item => item.indisponible = val);
+  buildTarifsEditor(tarifsData);
 }
 
 function addTarifItem(ci) {
