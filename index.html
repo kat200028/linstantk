@@ -489,7 +489,7 @@ function buildPrestations(tarifs) {
     pane.className = 'tab-pane' + (i === 0 ? ' active' : '');
     pane.innerHTML = '<div class="services-grid">' + cat.items.map(item =>
       `<div class="service-item"${item.indisponible ? ' style="opacity:0.45"' : ''}>
-        <span class="service-name">${item.nom}${item.badge ? `<span class="badge">${item.badge}</span>` : ''}${item.indisponible ? ' <span style="color:var(--gray);font-weight:600;font-size:0.78rem">(indisponible)</span>' : ''}</span>
+        <span class="service-name">${item.nom}${item.badge ? `<span class="badge">${item.badge}</span>` : ''}${item.indisponible ? ' <span style="color:var(--gray);font-weight:600;font-size:0.78rem">(temporairement indisponible)</span>' : ''}</span>
         <span class="service-price">${item.prix}</span>
       </div>`
     ).join('') + '</div>';
