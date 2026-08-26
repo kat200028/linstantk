@@ -822,16 +822,19 @@ async function loadAll() {
     if (data.tarifs) tarifsData = data.tarifs;
     if (data.blacklist) blacklist = data.blacklist;
     if (data.clientNotes) clientNotes = data.clientNotes;
-    renderBookings();
-    renderStats();
-    renderClientes();
-    renderCal();
-    buildTarifsEditor(tarifsData || DEFAULT_TARIFS);
   } catch(e) {
-    document.getElementById('rdvList').innerHTML = '<div class="empty-msg">Impossible de charger les données.</div>';
+    document.getElementById('rdvList').innerHTML = '<div class="empty-msg">Impossible de charger les données. Vérifiez votre connexion et réessayez.</div>';
+    document.getElementById('clientesList').innerHTML = '<div class="empty-msg">Impossible de charger les données.</div>';
     buildTarifsEditor(DEFAULT_TARIFS);
     renderCal();
+    return;
   }
+  // Chaque section se rend indépendamment : un souci dans l'une ne doit pas bloquer les autres
+  try { renderBookings(); } catch(e) { console.error('renderBookings', e); document.getElementById('rdvList').innerHTML = '<div class="empty-msg">Erreur d\'affichage des RDV.</div>'; }
+  try { renderStats(); } catch(e) { console.error('renderStats', e); }
+  try { renderClientes(); } catch(e) { console.error('renderClientes', e); document.getElementById('clientesList').innerHTML = '<div class="empty-msg">Erreur d\'affichage des clientes.</div>'; }
+  try { renderCal(); } catch(e) { console.error('renderCal', e); }
+  try { buildTarifsEditor(tarifsData || DEFAULT_TARIFS); } catch(e) { console.error('buildTarifsEditor', e); }
 }
 
 /* ══ LISTE NOIRE ══ */
