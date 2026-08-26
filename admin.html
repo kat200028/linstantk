@@ -1920,6 +1920,9 @@ function renderTarifRow(ci, ii, item) {
   return `<div class="tarif-row" id="tarif-row-${ci}-${ii}">
     <input class="tarif-nom" value="${item.nom}" oninput="updateTarif(${ci},${ii},'nom',this.value)" placeholder="Nom de la prestation" />
     <input class="tarif-prix" value="${item.prix}" oninput="updateTarif(${ci},${ii},'prix',this.value)" placeholder="Prix" />
+    <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--gray);white-space:nowrap;cursor:pointer">
+      <input type="checkbox" ${item.indisponible ? 'checked' : ''} onchange="updateTarif(${ci},${ii},'indisponible',this.checked)" /> Indisponible
+    </label>
     <button class="btn-del-row" onclick="delTarifItem(${ci},${ii})" title="Supprimer">✕</button>
   </div>`;
 }

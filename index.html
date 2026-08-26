@@ -488,21 +488,23 @@ function buildPrestations(tarifs) {
     pane.id = 'tab-' + cat.id;
     pane.className = 'tab-pane' + (i === 0 ? ' active' : '');
     pane.innerHTML = '<div class="services-grid">' + cat.items.map(item =>
-      `<div class="service-item">
-        <span class="service-name">${item.nom}${item.badge ? `<span class="badge">${item.badge}</span>` : ''}</span>
+      `<div class="service-item"${item.indisponible ? ' style="opacity:0.45"' : ''}>
+        <span class="service-name">${item.nom}${item.badge ? `<span class="badge">${item.badge}</span>` : ''}${item.indisponible ? ' <span style="color:var(--gray);font-weight:600;font-size:0.78rem">(indisponible)</span>' : ''}</span>
         <span class="service-price">${item.prix}</span>
       </div>`
     ).join('') + '</div>';
     content.appendChild(pane);
   });
 
-  // Remplir le select du formulaire
+  // Remplir le select du formulaire (les prestations indisponibles sont exclues)
   const sel = document.getElementById('f-service');
   sel.innerHTML = '<option value="">-- Choisir une prestation --</option>';
   tarifs.forEach(cat => {
+    const items = cat.items.filter(item => !item.indisponible);
+    if (!items.length) return;
     const grp = document.createElement('optgroup');
     grp.label = cat.emoji + ' ' + cat.nom;
-    cat.items.forEach(item => {
+    items.forEach(item => {
       const o = document.createElement('option');
       o.value = item.nom + ' – ' + item.prix;
       o.textContent = item.nom + ' – ' + item.prix;
