@@ -221,7 +221,8 @@
     .tarif-cat { background: white; border-radius: 18px; padding: 24px 28px; margin-bottom: 16px; border: 1px solid #EDE9FE; }
     .tarif-cat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
     .tarif-cat-title { font-size: 1rem; font-weight: 800; }
-    .tarif-items { display: flex; flex-direction: column; gap: 10px; }
+    .tarif-items { display: flex; flex-direction: column; gap: 16px; }
+    .tarif-row-wrap { border-bottom: 1px solid #F3F4F6; padding-bottom: 14px; }
     .tarif-row { display: flex; align-items: center; gap: 12px; }
     .tarif-nom { flex: 1; padding: 10px 14px; border: 2px solid #E5E7EB; border-radius: 10px; font-size: 0.9rem; color: var(--dark); background: white; }
     .tarif-nom:focus { outline: none; border-color: var(--violet); }
@@ -1917,13 +1918,15 @@ function buildTarifsEditor(tarifs) {
 }
 
 function renderTarifRow(ci, ii, item) {
-  return `<div class="tarif-row" id="tarif-row-${ci}-${ii}">
-    <input class="tarif-nom" value="${item.nom}" oninput="updateTarif(${ci},${ii},'nom',this.value)" placeholder="Nom de la prestation" />
-    <input class="tarif-prix" value="${item.prix}" oninput="updateTarif(${ci},${ii},'prix',this.value)" placeholder="Prix" />
-    <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--gray);white-space:nowrap;cursor:pointer">
-      <input type="checkbox" ${item.indisponible ? 'checked' : ''} onchange="updateTarif(${ci},${ii},'indisponible',this.checked)" /> Indisponible
+  return `<div class="tarif-row-wrap" id="tarif-row-${ci}-${ii}">
+    <div class="tarif-row">
+      <input class="tarif-nom" value="${item.nom}" oninput="updateTarif(${ci},${ii},'nom',this.value)" placeholder="Nom de la prestation" />
+      <input class="tarif-prix" value="${item.prix}" oninput="updateTarif(${ci},${ii},'prix',this.value)" placeholder="Prix" />
+      <button class="btn-del-row" onclick="delTarifItem(${ci},${ii})" title="Supprimer">✕</button>
+    </div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--dark);white-space:nowrap;cursor:pointer;margin-top:6px">
+      <input type="checkbox" ${item.indisponible ? 'checked' : ''} onchange="updateTarif(${ci},${ii},'indisponible',this.checked)" style="width:18px;height:18px" /> Indisponible
     </label>
-    <button class="btn-del-row" onclick="delTarifItem(${ci},${ii})" title="Supprimer">✕</button>
   </div>`;
 }
 
