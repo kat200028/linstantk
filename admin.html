@@ -1106,6 +1106,15 @@ async function soumettreAjoutRdv() {
   btn.disabled = true; btn.textContent = 'Ajout en cours...';
 
   try {
+    // Si ce créneau n'existe pas encore dans les disponibilités de ce jour, on l'y ajoute
+    if (dateVal && creneau) {
+      const slotsJour = Array.isArray(dispo[dateVal]) ? dispo[dateVal] : [];
+      if (!slotsJour.includes(creneau)) {
+        dispo = { ...dispo, [dateVal]: [...slotsJour.filter(s => s !== '__blocked__'), creneau] };
+        await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'save_disponibilites', disponibilites: dispo }) });
+      }
+    }
+
     await fetch(SCRIPT_URL, {
       method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
