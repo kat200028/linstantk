@@ -1213,10 +1213,19 @@ async function soumettreDeplacerRdv() {
   btn.disabled = true; btn.textContent = 'Déplacement...';
 
   try {
+    // Si ce créneau n'existe pas encore dans les disponibilités de ce jour, on l'y ajoute
+    const slotsJour = Array.isArray(dispo[dateVal]) ? dispo[dateVal] : [];
+    const dejaPresent = slotsJour.includes(creneau);
+    const nouveauxDispo = dejaPresent ? null : { ...dispo, [dateVal]: [...slotsJour.filter(s => s !== '__blocked__'), creneau] };
+
     await fetch(SCRIPT_URL, {
       method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'reschedule', row: moveRdvRow, date: dateLabel, creneau })
     });
+    if (nouveauxDispo) {
+      dispo = nouveauxDispo;
+      await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'save_disponibilites', disponibilites: dispo }) });
+    }
     fermerDeplacerRdv();
     await loadAll();
   } catch(e) {
