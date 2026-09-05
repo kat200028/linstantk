@@ -43,6 +43,13 @@ function doPost(e) {
       return jsonResponse({ success: true });
     }
 
+    if (data.action === 'update_prestation') {
+      const s = getSheet('RDV');
+      const row = parseInt(data.row);
+      s.getRange(row, 5).setValue(data.prestation || '');
+      return jsonResponse({ success: true });
+    }
+
     if (data.action === 'admin_add') {
       const s = getSheet('RDV');
       s.appendRow([

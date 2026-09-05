@@ -536,6 +536,25 @@
     </div>
   </div>
 
+  <!-- MODIFIER PRESTATION -->
+  <div class="client-modal-bg" id="editPrestaModal" onclick="if(event.target===this) fermerModifierPresta()">
+    <div class="client-modal-box" style="max-width:420px">
+      <div class="client-modal-header">
+        <div class="client-modal-title">💅 Prestation</div>
+        <button class="client-modal-close" onclick="fermerModifierPresta()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Ajouter depuis les tarifs <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
+        <select id="editpresta-ajout" onchange="ajouterPrestaAuChamp()"><option value="">-- Choisir pour ajouter --</option></select>
+      </div>
+      <div class="form-group">
+        <label>Prestation(s)</label>
+        <textarea id="editpresta-texte" rows="3" placeholder="ex: Pose Gel X – 40€ + Pédicure – 20€"></textarea>
+      </div>
+      <button class="btn-addrdv-submit" onclick="validerModifierPresta()">Enregistrer</button>
+    </div>
+  </div>
+
   <!-- CONFIRMATION ENVOI WHATSAPP -->
   <div class="client-modal-bg" id="waConfirmModal" onclick="if(event.target===this) fermerWaConfirm()">
     <div class="client-modal-box" style="max-width:380px;text-align:center">
@@ -946,6 +965,55 @@ function buildAddRdvPrestaSelect() {
     });
     sel.appendChild(grp);
   });
+}
+
+/* ══ MODIFIER PRESTATION ══ */
+let editPrestaRow = null;
+
+function modifierPresta(row, prestaActuelle) {
+  editPrestaRow = row;
+  document.getElementById('editpresta-texte').value = prestaActuelle || '';
+  const sel = document.getElementById('editpresta-ajout');
+  const tarifs = tarifsData || DEFAULT_TARIFS;
+  sel.innerHTML = '<option value="">-- Choisir pour ajouter --</option>';
+  tarifs.forEach(cat => {
+    const grp = document.createElement('optgroup');
+    grp.label = cat.emoji + ' ' + cat.nom;
+    cat.items.forEach(item => {
+      const o = document.createElement('option');
+      o.value = item.nom + ' – ' + item.prix;
+      o.textContent = item.nom + ' – ' + item.prix;
+      grp.appendChild(o);
+    });
+    sel.appendChild(grp);
+  });
+  document.getElementById('editPrestaModal').classList.add('show');
+}
+
+function ajouterPrestaAuChamp() {
+  const sel = document.getElementById('editpresta-ajout');
+  if (!sel.value) return;
+  const champ = document.getElementById('editpresta-texte');
+  champ.value = champ.value.trim() ? champ.value.trim() + ' + ' + sel.value : sel.value;
+  sel.value = '';
+}
+
+function fermerModifierPresta() {
+  editPrestaRow = null;
+  document.getElementById('editPrestaModal').classList.remove('show');
+}
+
+async function validerModifierPresta() {
+  if (editPrestaRow === null) return;
+  const row = editPrestaRow;
+  const prestation = document.getElementById('editpresta-texte').value.trim();
+  fermerModifierPresta();
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'update_prestation', row, prestation }) });
+    const b = allBookings.find(x => x.row === row);
+    if (b) b.prestation = prestation;
+    renderBookings();
+  } catch(e) { alert('Erreur lors de la mise à jour de la prestation.'); }
 }
 
 /* ══ LISTE DES CLIENTES ══ */
@@ -1422,6 +1490,7 @@ function renderBookings() {
           <span class="rdv-datebar-date">📅 ${b.date ? formatDateFr(b.date) : 'Sans date'}</span>
           ${b.creneau ? `<span class="rdv-datebar-heure">🕐 ${b.creneau}</span>` : ''}
           <button class="btn-block-num" onclick="ouvrirDeplacerRdv(${b.row})" title="Déplacer ce RDV (changer date/heure)">📅✏️</button>
+          <button class="btn-block-num" onclick="modifierPresta(${b.row}, '${String(b.prestation||'').replace(/'/g,"\\'")}')" title="Modifier/ajouter une prestation">💅✏️</button>
           <span class="rdv-status-badge ${bCls}">${statusLabel}</span>
         </div>
         <div class="rdv-card-body">
