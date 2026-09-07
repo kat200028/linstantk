@@ -636,6 +636,7 @@ let selectedPrestations = [];
 function addPrestation(sel) {
   const val = sel.value;
   sel.value = '';
+  sel.blur(); // ferme le menu déroulant natif sur tous les navigateurs/appareils
   if (!val) return;
   if (selectedPrestations.length >= 2) {
     alert('Maximum 2 prestations par rendez-vous.');
