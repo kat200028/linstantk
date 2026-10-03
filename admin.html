@@ -151,6 +151,8 @@
     .cal-cell.empty { background: transparent; cursor: default; }
     .cal-cell.has-slots { background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); border-color: #C4B5FD; }
     .cal-cell.blocked { background: #FEE2E2; border-color: #FECACA; }
+    .agenda-grid .cal-cell { aspect-ratio: auto; min-height: 76px; align-items: stretch; justify-content: flex-start; overflow: hidden; }
+    .agenda-grid .cal-cell-num { align-self: flex-start; }
     .cal-cell.ferie { background: #F3F4F6; border-color: #E5E7EB; }
     .cal-cell.ferie .cal-cell-num { color: #9CA3AF; }
     .cal-cell.ferie .cal-cell-label { color: #9CA3AF; font-style: italic; }
@@ -327,6 +329,7 @@
     <button class="tab-nav-btn" onclick="showPage('rdvs',this)">📋 Rendez-vous</button>
     <button class="tab-nav-btn" onclick="showPage('clientes',this)">👥 Clientes</button>
     <button class="tab-nav-btn" onclick="showPage('dispo',this)">📅 Disponibilités</button>
+    <button class="tab-nav-btn" onclick="showPage('agenda',this)">🗓️ Agenda</button>
     <button class="tab-nav-btn" onclick="showPage('tarifs',this)">💰 Tarifs</button>
     <button class="tab-nav-btn" onclick="showPage('messages',this)" style="background:#A7F3D0">💬 Messages</button>
   </div>
@@ -468,6 +471,24 @@
       </div>
     </div>
 
+    </div>
+
+    <!-- AGENDA COMPLET -->
+    <div id="page-agenda" class="page">
+      <div class="page-title">Agenda</div>
+      <div class="page-sub">Tous vos RDV clientes + vos rendez-vous perso (kiné, etc.) sur un vrai calendrier</div>
+
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="changeAgendaMonth(-1)">‹</button>
+        <div class="cal-month-label" id="agendaMonthLabel"></div>
+        <button class="cal-nav-btn" onclick="changeAgendaMonth(1)">›</button>
+      </div>
+      <div class="cal-week-header">
+        <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
+      </div>
+      <div class="cal-month-grid agenda-grid" id="agendaGrid"></div>
+    </div>
+
     <!-- TARIFS -->
     <div id="page-tarifs" class="page">
       <div class="page-title">Tarifs</div>
@@ -533,6 +554,25 @@
 
       <div class="client-history-title" id="clientHistoryTitle"></div>
       <div id="clientHistoryList"></div>
+    </div>
+  </div>
+
+  <!-- JOURNEE AGENDA (RDV du jour + perso) -->
+  <div class="client-modal-bg" id="agendaJourModal" onclick="if(event.target===this) fermerAgendaJour()">
+    <div class="client-modal-box" style="max-width:440px">
+      <div class="client-modal-header">
+        <div class="client-modal-title" id="agendaJourTitre"></div>
+        <button class="client-modal-close" onclick="fermerAgendaJour()">✕</button>
+      </div>
+      <div id="agendaJourListe" style="margin-bottom:18px"></div>
+      <div class="form-group">
+        <label>+ Ajouter un rendez-vous perso (kiné, médecin...)</label>
+        <input type="text" id="agendaperso-titre" placeholder="ex: Kiné" />
+      </div>
+      <div class="form-group">
+        <input type="text" id="agendaperso-heure" placeholder="ex: 14h00" />
+      </div>
+      <button class="btn-addrdv-submit" onclick="ajouterEvenementPerso()">Ajouter</button>
     </div>
   </div>
 
@@ -825,12 +865,14 @@ function showPage(id, btn) {
   document.getElementById('saveBarDispo').style.display = id === 'dispo' ? 'flex' : 'none';
   document.getElementById('saveBarTarifs').style.display = id === 'tarifs' ? 'flex' : 'none';
   if (id === 'messages') chargerMessagesWhatsApp();
+  if (id === 'agenda') renderAgenda();
 }
 
 /* ══ CHARGEMENT ══ */
 let allBookings = [], currentFilter = 'tous';
-let dispo = {}, tarifsData = null, blacklist = [], clientNotes = {};
+let dispo = {}, tarifsData = null, blacklist = [], clientNotes = {}, evenementsPerso = {};
 let calYear, calMonth, selectedDate = null;
+let agendaYear, agendaMonth;
 
 async function loadAll() {
   try {
@@ -841,6 +883,7 @@ async function loadAll() {
     if (data.tarifs) tarifsData = data.tarifs;
     if (data.blacklist) blacklist = data.blacklist;
     if (data.clientNotes) clientNotes = data.clientNotes;
+    if (data.evenementsPerso) evenementsPerso = data.evenementsPerso;
   } catch(e) {
     document.getElementById('rdvList').innerHTML = '<div class="empty-msg">Impossible de charger les données. Vérifiez votre connexion et réessayez.</div>';
     document.getElementById('clientesList').innerHTML = '<div class="empty-msg">Impossible de charger les données.</div>';
@@ -853,6 +896,7 @@ async function loadAll() {
   try { renderStats(); } catch(e) { console.error('renderStats', e); }
   try { renderClientes(); } catch(e) { console.error('renderClientes', e); document.getElementById('clientesList').innerHTML = '<div class="empty-msg">Erreur d\'affichage des clientes.</div>'; }
   try { renderCal(); } catch(e) { console.error('renderCal', e); }
+  try { renderAgenda(); } catch(e) { console.error('renderAgenda', e); }
   try { buildTarifsEditor(tarifsData || DEFAULT_TARIFS); } catch(e) { console.error('buildTarifsEditor', e); }
 }
 
@@ -1876,6 +1920,136 @@ function renderCal() {
     if (!isPast) cell.onclick = () => multiMode ? toggleMultiDay(dateStr, cell) : selectDay(dateStr);
     grid.appendChild(cell);
   }
+}
+
+/* ══ AGENDA COMPLET (RDV + perso) ══ */
+let agendaJourSelectionne = null;
+
+function changeAgendaMonth(dir) {
+  if (!agendaYear) { const n = new Date(); agendaYear = n.getFullYear(); agendaMonth = n.getMonth(); }
+  agendaMonth += dir;
+  if (agendaMonth > 11) { agendaMonth = 0; agendaYear++; }
+  if (agendaMonth < 0)  { agendaMonth = 11; agendaYear--; }
+  renderAgenda();
+}
+
+function evenementsDuJour(dateStr) {
+  const rdvs = allBookings.filter(b => {
+    const key = /^\d{4}-\d{2}-\d{2}$/.test(b.date) ? b.date : getDateKeyAdmin(b.date);
+    return key === dateStr && (b.status === 'Accepté' || b.status === 'En attente');
+  });
+  const perso = evenementsPerso[dateStr] || [];
+  return { rdvs, perso };
+}
+
+function getDateKeyAdmin(dateLabel) {
+  // Reconstitue une clé AAAA-MM-JJ à partir d'un libellé "lundi 12 janvier" si besoin
+  if (!dateLabel) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateLabel)) return dateLabel.slice(0,10);
+  const m = dateLabel.match(/(\d{1,2})\s+(\w+)/);
+  if (!m) return '';
+  const jour = parseInt(m[1]);
+  const moisIdx = MOIS.findIndex(mm => mm.toLowerCase() === m[2].toLowerCase());
+  if (moisIdx === -1) return '';
+  const annee = (agendaYear || new Date().getFullYear());
+  return `${annee}-${String(moisIdx+1).padStart(2,'0')}-${String(jour).padStart(2,'0')}`;
+}
+
+function renderAgenda() {
+  if (!agendaYear) { const n = new Date(); agendaYear = n.getFullYear(); agendaMonth = n.getMonth(); }
+  const label = new Date(agendaYear, agendaMonth, 1).toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+  document.getElementById('agendaMonthLabel').textContent = label;
+
+  const grid = document.getElementById('agendaGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(agendaYear, agendaMonth, 1).getDay();
+  const offset = firstDay === 0 ? 6 : firstDay - 1;
+  const daysInMonth = new Date(agendaYear, agendaMonth + 1, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  for (let i = 0; i < offset; i++) {
+    const e = document.createElement('div'); e.className = 'cal-cell empty'; grid.appendChild(e);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${agendaYear}-${String(agendaMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cellDate = new Date(agendaYear, agendaMonth, d);
+    const isPast = cellDate < today;
+    const { rdvs, perso } = evenementsDuJour(dateStr);
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' + (isPast ? ' past' : '') + ((rdvs.length || perso.length) ? ' has-slots' : '');
+    const items = [
+      ...rdvs.map(b => `<div style="font-size:0.68rem;color:var(--violet-dark);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💅 ${b.creneau || ''} ${b.prenom||''}</div>`),
+      ...perso.map(ev => `<div style="font-size:0.68rem;color:#B45309;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🩺 ${ev.heure || ''} ${ev.titre||''}</div>`)
+    ].join('');
+    cell.innerHTML = `<div class="cal-cell-num">${d}</div>${items}`;
+    cell.onclick = () => ouvrirAgendaJour(dateStr);
+    grid.appendChild(cell);
+  }
+}
+
+function ouvrirAgendaJour(dateStr) {
+  agendaJourSelectionne = dateStr;
+  const d = new Date(dateStr + 'T00:00:00');
+  const label = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+  document.getElementById('agendaJourTitre').textContent = '🗓️ ' + label.charAt(0).toUpperCase() + label.slice(1);
+
+  const { rdvs, perso } = evenementsDuJour(dateStr);
+  let html = '';
+  if (!rdvs.length && !perso.length) {
+    html = '<p class="no-slots">Rien de prévu ce jour-là.</p>';
+  }
+  rdvs.forEach(b => {
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F3F4F6">
+      <span style="font-size:1.2rem">💅</span>
+      <div style="flex:1"><strong>${b.creneau || '?'}</strong> — ${b.prenom} ${b.nom} <span style="color:var(--gray)">(${b.prestation||''})</span></div>
+    </div>`;
+  });
+  perso.forEach((ev, i) => {
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F3F4F6">
+      <span style="font-size:1.2rem">🩺</span>
+      <div style="flex:1"><strong>${ev.heure || ''}</strong> — ${ev.titre}</div>
+      <button class="btn-block-num" onclick="supprimerEvenementPerso('${dateStr}', ${i})" title="Supprimer">✕</button>
+    </div>`;
+  });
+  document.getElementById('agendaJourListe').innerHTML = html;
+  document.getElementById('agendaperso-titre').value = '';
+  document.getElementById('agendaperso-heure').value = '';
+  document.getElementById('agendaJourModal').classList.add('show');
+}
+
+function fermerAgendaJour() {
+  agendaJourSelectionne = null;
+  document.getElementById('agendaJourModal').classList.remove('show');
+}
+
+async function sauvegarderEvenementsPerso() {
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({ action:'save_evenements_perso', evenementsPerso }) });
+  } catch(e) { alert('Erreur lors de la sauvegarde.'); }
+}
+
+async function ajouterEvenementPerso() {
+  if (!agendaJourSelectionne) return;
+  const titre = document.getElementById('agendaperso-titre').value.trim();
+  const heure = document.getElementById('agendaperso-heure').value.trim();
+  if (!titre) { alert('Merci de donner un titre (ex: Kiné).'); return; }
+  if (!evenementsPerso[agendaJourSelectionne]) evenementsPerso[agendaJourSelectionne] = [];
+  evenementsPerso[agendaJourSelectionne].push({ titre, heure });
+  await sauvegarderEvenementsPerso();
+  renderAgenda();
+  ouvrirAgendaJour(agendaJourSelectionne);
+}
+
+async function supprimerEvenementPerso(dateStr, index) {
+  if (!evenementsPerso[dateStr]) return;
+  evenementsPerso[dateStr].splice(index, 1);
+  if (!evenementsPerso[dateStr].length) delete evenementsPerso[dateStr];
+  await sauvegarderEvenementsPerso();
+  renderAgenda();
+  ouvrirAgendaJour(dateStr);
 }
 
 function toggleMultiDay(dateStr, cell) {

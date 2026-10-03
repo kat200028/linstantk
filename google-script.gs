@@ -166,6 +166,12 @@ function doPost(e) {
       return jsonResponse({ success: true });
     }
 
+    if (data.action === 'save_evenements_perso') {
+      const s = getSheet('Config');
+      s.getRange('E1').setValue(JSON.stringify(data.evenementsPerso || {}));
+      return jsonResponse({ success: true });
+    }
+
     return jsonResponse({ success: false, error: 'Action inconnue' });
 
   } catch (err) {
@@ -181,6 +187,7 @@ function doGet(e) {
     const tarifsVal = config.getRange('B1').getValue();
     const blacklistVal = config.getRange('C1').getValue();
     const clientNotesVal = config.getRange('D1').getValue();
+    const evenementsPersoVal = config.getRange('E1').getValue();
 
     if (type === 'disponibilites') {
       return jsonResponse({ success: true, disponibilites: dispoVal ? JSON.parse(dispoVal) : {} });
@@ -216,7 +223,8 @@ function doGet(e) {
       disponibilites: dispoVal ? JSON.parse(dispoVal) : {},
       tarifs: tarifsVal ? JSON.parse(tarifsVal) : null,
       blacklist: blacklistVal ? JSON.parse(blacklistVal) : [],
-      clientNotes: clientNotesVal ? JSON.parse(clientNotesVal) : {}
+      clientNotes: clientNotesVal ? JSON.parse(clientNotesVal) : {},
+      evenementsPerso: evenementsPersoVal ? JSON.parse(evenementsPersoVal) : {}
     });
 
   } catch (err) {
