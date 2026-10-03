@@ -1933,13 +1933,24 @@ function changeAgendaMonth(dir) {
   renderAgenda();
 }
 
+function heureEnMinutesAgenda(heure) {
+  const m = String(heure || '').match(/(\d{1,2})\s*[h:]\s*(\d{0,2})/i);
+  if (!m) return 9999;
+  return parseInt(m[1]) * 60 + (m[2] ? parseInt(m[2]) : 0);
+}
+
 function evenementsDuJour(dateStr) {
   const rdvs = allBookings.filter(b => {
     const key = /^\d{4}-\d{2}-\d{2}$/.test(b.date) ? b.date : getDateKeyAdmin(b.date);
     return key === dateStr && (b.status === 'Accepté' || b.status === 'En attente');
   });
   const perso = evenementsPerso[dateStr] || [];
-  return { rdvs, perso };
+  // Fusionne et trie tout par ordre d'heure chronologique
+  const tout = [
+    ...rdvs.map(b => ({ type:'rdv', heure: b.creneau, data: b })),
+    ...perso.map((ev, i) => ({ type:'perso', heure: ev.heure, data: ev, persoIndex: i }))
+  ].sort((a, b) => heureEnMinutesAgenda(a.heure) - heureEnMinutesAgenda(b.heure));
+  return { rdvs, perso, tout };
 }
 
 function getDateKeyAdmin(dateLabel) {
@@ -1976,14 +1987,14 @@ function renderAgenda() {
     const dateStr = `${agendaYear}-${String(agendaMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const cellDate = new Date(agendaYear, agendaMonth, d);
     const isPast = cellDate < today;
-    const { rdvs, perso } = evenementsDuJour(dateStr);
+    const { rdvs, perso, tout } = evenementsDuJour(dateStr);
 
     const cell = document.createElement('div');
     cell.className = 'cal-cell' + (isPast ? ' past' : '') + ((rdvs.length || perso.length) ? ' has-slots' : '');
-    const items = [
-      ...rdvs.map(b => `<div style="font-size:0.68rem;color:var(--violet-dark);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💅 ${b.creneau || ''} ${b.prenom||''}</div>`),
-      ...perso.map(ev => `<div style="font-size:0.68rem;color:#B45309;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🩺 ${ev.heure || ''} ${ev.titre||''}</div>`)
-    ].join('');
+    const items = tout.map(item => item.type === 'rdv'
+      ? `<div style="font-size:0.68rem;color:var(--violet-dark);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💅 ${item.data.creneau || ''} ${item.data.prenom||''}</div>`
+      : `<div style="font-size:0.68rem;color:#B45309;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🩺 ${item.data.heure || ''} ${item.data.titre||''}</div>`
+    ).join('');
     cell.innerHTML = `<div class="cal-cell-num">${d}</div>${items}`;
     cell.onclick = () => ouvrirAgendaJour(dateStr);
     grid.appendChild(cell);
@@ -1996,23 +2007,26 @@ function ouvrirAgendaJour(dateStr) {
   const label = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
   document.getElementById('agendaJourTitre').textContent = '🗓️ ' + label.charAt(0).toUpperCase() + label.slice(1);
 
-  const { rdvs, perso } = evenementsDuJour(dateStr);
+  const { rdvs, perso, tout } = evenementsDuJour(dateStr);
   let html = '';
-  if (!rdvs.length && !perso.length) {
+  if (!tout.length) {
     html = '<p class="no-slots">Rien de prévu ce jour-là.</p>';
   }
-  rdvs.forEach(b => {
-    html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F3F4F6">
-      <span style="font-size:1.2rem">💅</span>
-      <div style="flex:1"><strong>${b.creneau || '?'}</strong> — ${b.prenom} ${b.nom} <span style="color:var(--gray)">(${b.prestation||''})</span></div>
-    </div>`;
-  });
-  perso.forEach((ev, i) => {
-    html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F3F4F6">
-      <span style="font-size:1.2rem">🩺</span>
-      <div style="flex:1"><strong>${ev.heure || ''}</strong> — ${ev.titre}</div>
-      <button class="btn-block-num" onclick="supprimerEvenementPerso('${dateStr}', ${i})" title="Supprimer">✕</button>
-    </div>`;
+  tout.forEach(item => {
+    if (item.type === 'rdv') {
+      const b = item.data;
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F3F4F6">
+        <span style="font-size:1.2rem">💅</span>
+        <div style="flex:1"><strong>${b.creneau || '?'}</strong> — ${b.prenom} ${b.nom} <span style="color:var(--gray)">(${b.prestation||''})</span></div>
+      </div>`;
+    } else {
+      const ev = item.data;
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F3F4F6">
+        <span style="font-size:1.2rem">🩺</span>
+        <div style="flex:1"><strong>${ev.heure || ''}</strong> — ${ev.titre}</div>
+        <button class="btn-block-num" onclick="supprimerEvenementPerso('${dateStr}', ${item.persoIndex})" title="Supprimer">✕</button>
+      </div>`;
+    }
   });
   document.getElementById('agendaJourListe').innerHTML = html;
   document.getElementById('agendaperso-titre').value = '';
