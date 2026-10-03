@@ -448,6 +448,7 @@
 
       <div class="day-panel" id="dayPanel" style="display:none">
         <div class="day-panel-title" id="dayPanelTitle"></div>
+        <div id="dayPanelPersoWarning" style="display:none;background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;font-weight:700;font-size:0.85rem;padding:10px 14px;border-radius:10px;margin-bottom:12px"></div>
         <div class="day-panel-sub">Gérez les créneaux pour cette journée</div>
         <div class="block-day-row">
           <button class="btn-block" id="btnBlockDay" onclick="toggleBlockDay()">🚫 Bloquer cette journée</button>
@@ -1916,7 +1917,9 @@ function renderCal() {
 
     const taken = hasSlots ? getTakenSlots(dateStr) : [];
     const labelTxt = isBlocked ? 'Bloqué' : hasSlots ? slots.map(s => taken.includes(s) ? `🔒${s}` : s).join(', ') : isFerie ? '🎉 Férié' : '';
-    cell.innerHTML = `<div class="cal-cell-num">${d}</div>${labelTxt ? `<div class="cal-cell-label">${labelTxt}</div>` : ''}`;
+    const persoJour = evenementsPerso[dateStr] || [];
+    const persoTxt = persoJour.length ? persoJour.map(ev => `🩺 ${ev.titre}${ev.heure ? ' ' + ev.heure : ''}`).join(', ') : '';
+    cell.innerHTML = `<div class="cal-cell-num">${d}</div>${labelTxt ? `<div class="cal-cell-label">${labelTxt}</div>` : ''}${persoTxt ? `<div class="cal-cell-label" style="color:#B45309">${persoTxt}</div>` : ''}`;
     if (!isPast) cell.onclick = () => multiMode ? toggleMultiDay(dateStr, cell) : selectDay(dateStr);
     grid.appendChild(cell);
   }
@@ -2080,6 +2083,16 @@ function selectDay(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const label = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
   document.getElementById('dayPanelTitle').textContent = '📅 ' + label.charAt(0).toUpperCase() + label.slice(1);
+
+  const persoJour = evenementsPerso[dateStr] || [];
+  const warning = document.getElementById('dayPanelPersoWarning');
+  if (persoJour.length) {
+    warning.textContent = '⚠️ Attention, vous avez un rendez-vous perso ce jour-là : ' +
+      persoJour.map(ev => `${ev.titre}${ev.heure ? ' à ' + ev.heure : ''}`).join(', ');
+    warning.style.display = 'block';
+  } else {
+    warning.style.display = 'none';
+  }
 
   const isBlocked = dispo[dateStr][0] === '__blocked__';
   const btn = document.getElementById('btnBlockDay');
