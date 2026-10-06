@@ -1214,6 +1214,14 @@ async function soumettreAjoutRdv() {
   const creneau = document.getElementById('addrdv-creneau').value.trim() || document.getElementById('addrdv-creneau-select').value;
   const statut = document.getElementById('addrdv-statut').value;
 
+  if (dateVal && creneau) {
+    const conflit = trouverChevauchement(dateVal, creneau, null);
+    if (conflit) {
+      alert(`Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Merci de choisir un autre horaire.`);
+      return;
+    }
+  }
+
   const btn = document.getElementById('btnAddRdvSubmit');
   btn.disabled = true; btn.textContent = 'Ajout en cours...';
 
@@ -1266,6 +1274,40 @@ function datesDisponiblesTri() {
       return d >= today;
     })
     .sort();
+}
+
+function creneauVersMinutes(txt) {
+  const m = String(txt || '').match(/(\d{1,2})\s*h\s*(\d{0,2})/i);
+  if (!m) return null;
+  return parseInt(m[1]) * 60 + (m[2] ? parseInt(m[2]) : 0);
+}
+
+// Un créneau "9h00-12h00" couvre toute la plage ; un créneau isolé "8h00" est
+// supposé durer 1h par défaut (même durée que l'export .ics côté client).
+function creneauVersPlage(creneau, dureeDefautMin) {
+  const parts = String(creneau || '').split('-').map(s => s.trim());
+  const debut = creneauVersMinutes(parts[0]);
+  if (debut == null) return null;
+  const finExplicite = parts.length > 1 ? creneauVersMinutes(parts[1]) : null;
+  return { debut, fin: finExplicite != null ? finExplicite : debut + (dureeDefautMin || 60) };
+}
+
+function creneauxSeChevauchent(c1, c2) {
+  const p1 = creneauVersPlage(c1);
+  const p2 = creneauVersPlage(c2);
+  if (!p1 || !p2) return false;
+  return p1.debut < p2.fin && p2.debut < p1.fin;
+}
+
+// Cherche, parmi les RDV en attente/acceptés de ce jour, un rendez-vous dont
+// l'horaire chevauche le créneau donné (pour éviter d'en placer deux en même temps).
+function trouverChevauchement(dateStr, creneau, rowAExclure) {
+  return allBookings.find(b =>
+    b.row !== rowAExclure &&
+    getSortKey(b.date) === dateStr &&
+    (b.status === 'En attente' || b.status === 'Accepté') &&
+    creneauxSeChevauchent(b.creneau, creneau)
+  );
 }
 
 function creneauxDisponiblesPourDeplacement(dateStr) {
@@ -1327,6 +1369,13 @@ async function soumettreDeplacerRdv() {
   const creneauLibre = document.getElementById('moverdv-creneau-libre').value.trim();
   const creneau = creneauLibre || document.getElementById('moverdv-creneau').value;
   if (!dateVal || !creneau) { alert('Merci de choisir une date, et un créneau (dans la liste ou en horaire libre).'); return; }
+
+  const conflit = trouverChevauchement(dateVal, creneau, moveRdvRow);
+  if (conflit) {
+    alert(`Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Merci de choisir un autre horaire.`);
+    return;
+  }
+
   const d = new Date(dateVal + 'T00:00:00');
   const dateLabel = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
 
