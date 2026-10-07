@@ -5,6 +5,14 @@ function getSheet(name) {
   return s;
 }
 
+// Un numéro qui commence par "+" (ex: +596...) ou qui ressemble à un calcul
+// est sinon interprété par Sheets comme une formule et affiche #ERROR!.
+// L'apostrophe force systématiquement le texte brut (elle n'est jamais stockée).
+function texteBrut(val) {
+  const s = String(val == null ? '' : val);
+  return s ? "'" + s : s;
+}
+
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
@@ -16,7 +24,7 @@ function doPost(e) {
         new Date().toLocaleString('fr-FR'),
         data.prenom || '',
         data.nom || '',
-        data.telephone || '',
+        texteBrut(data.telephone),
         data.prestation || '',
         data.date || '',
         data.creneau || '',
@@ -56,7 +64,7 @@ function doPost(e) {
         new Date().toLocaleString('fr-FR'),
         data.prenom || '',
         data.nom || '',
-        data.telephone || '',
+        texteBrut(data.telephone),
         data.prestation || '',
         data.date || '',
         data.creneau || '',
@@ -132,7 +140,7 @@ function doPost(e) {
 
     if (data.action === 'update_phone') {
       const s = getSheet('RDV');
-      s.getRange(parseInt(data.row), 4).setValue(data.telephone || '');
+      s.getRange(parseInt(data.row), 4).setValue(texteBrut(data.telephone));
       return jsonResponse({ success: true });
     }
 
