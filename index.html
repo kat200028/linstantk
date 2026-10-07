@@ -515,6 +515,29 @@ function buildPrestations(tarifs) {
 }
 
 /* ══ CALENDRIER ══ */
+function creneauVersMinutes(txt) {
+  const m = String(txt || '').match(/(\d{1,2})\s*h\s*(\d{0,2})/i);
+  if (!m) return null;
+  return parseInt(m[1]) * 60 + (m[2] ? parseInt(m[2]) : 0);
+}
+
+// Un créneau "9h00-12h00" couvre toute la plage ; un créneau isolé "8h00" est
+// supposé durer 1h par défaut (même durée que l'export .ics côté "mon rdv").
+function creneauVersPlage(creneau, dureeDefautMin) {
+  const parts = String(creneau || '').split('-').map(s => s.trim());
+  const debut = creneauVersMinutes(parts[0]);
+  if (debut == null) return null;
+  const finExplicite = parts.length > 1 ? creneauVersMinutes(parts[1]) : null;
+  return { debut, fin: finExplicite != null ? finExplicite : debut + (dureeDefautMin || 60) };
+}
+
+function creneauxSeChevauchent(c1, c2) {
+  const p1 = creneauVersPlage(c1);
+  const p2 = creneauVersPlage(c2);
+  if (!p1 || !p2) return false;
+  return p1.debut < p2.fin && p2.debut < p1.fin;
+}
+
 function changeMonth(dir) {
   calMonth += dir;
   if (calMonth > 11) { calMonth = 0; calYear++; }
@@ -558,7 +581,7 @@ function renderCal() {
     const pris = BOOKINGS
       .filter(b => b.date_str === dateStr && (b.status === 'En attente' || b.status === 'Accepté'))
       .map(b => b.creneau);
-    const dispo = slots.filter(s => !pris.includes(s));
+    const dispo = slots.filter(s => !pris.some(p => creneauxSeChevauchent(p, s)));
     const isComplet = slots.length > 0 && dispo.length === 0;
     const hasDispo = dispo.length > 0;
     const isSelected = selectedDate === dateStr;
@@ -725,7 +748,7 @@ function slotsDispoPourDate(dateStr) {
   const pris = BOOKINGS
     .filter(b => b.date_str === dateStr && (b.status === 'En attente' || b.status === 'Accepté'))
     .map(b => b.creneau);
-  return rawSlots.filter(s => !pris.includes(s));
+  return rawSlots.filter(s => !pris.some(p => creneauxSeChevauchent(p, s)));
 }
 
 function fermerModalOK() {

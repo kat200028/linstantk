@@ -1313,7 +1313,7 @@ function trouverChevauchement(dateStr, creneau, rowAExclure) {
 function creneauxDisponiblesPourDeplacement(dateStr) {
   const slots = (dispo[dateStr] || []).filter(s => s !== '__blocked__');
   const pris = getTakenSlots(dateStr).filter(s => !(dateStr === moveRdvDateOrigine && s === moveRdvCreneauOrigine));
-  return slots.filter(s => !pris.includes(s));
+  return slots.filter(s => !pris.some(p => creneauxSeChevauchent(p, s)));
 }
 
 let moveRdvDateOrigine = null, moveRdvCreneauOrigine = null;
@@ -2157,7 +2157,10 @@ function renderCurrentSlots() {
   const container = document.getElementById('currentSlots');
   if (!slots.length) { container.innerHTML = '<div class="no-slots">Aucun créneau — ajoutez-en ci-dessus.</div>'; return; }
   const taken = getTakenSlots(selectedDate);
-  container.innerHTML = slots.map((s,i) => `<div class="slot-tag${taken.includes(s) ? ' taken' : ''}">${taken.includes(s) ? '🔒 ' : ''}${s}${taken.includes(s) ? ' (réservé)' : ''}<button onclick="removeSlot(${i})">✕</button></div>`).join('');
+  container.innerHTML = slots.map((s,i) => {
+    const estPris = taken.some(t => creneauxSeChevauchent(t, s));
+    return `<div class="slot-tag${estPris ? ' taken' : ''}">${estPris ? '🔒 ' : ''}${s}${estPris ? ' (réservé)' : ''}<button onclick="removeSlot(${i})">✕</button></div>`;
+  }).join('');
 }
 
 function updatePresetBtns() {
