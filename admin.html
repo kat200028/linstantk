@@ -493,7 +493,7 @@
     <!-- AGENDA COMPLET -->
     <div id="page-agenda" class="page">
       <div class="page-title">Agenda</div>
-      <div class="page-sub">Tous vos RDV clientes + vos rendez-vous perso (kiné, etc.) sur un vrai calendrier</div>
+      <div class="page-sub">Tous vos RDV clientes + vos rendez-vous perso (kiné, coiffeuse, etc.) sur un vrai calendrier</div>
 
       <div class="cal-nav">
         <button class="cal-nav-btn" onclick="changeAgendaMonth(-1)">‹</button>
@@ -583,7 +583,7 @@
       </div>
       <div id="agendaJourListe" style="margin-bottom:18px"></div>
       <div class="form-group">
-        <label>+ Ajouter un rendez-vous perso (kiné, médecin...)</label>
+        <label>+ Ajouter un rendez-vous perso (kiné, coiffeuse...)</label>
         <input type="text" id="agendaperso-titre" placeholder="ex: Kiné" />
       </div>
       <div class="form-group">
@@ -2045,7 +2045,7 @@ function renderCal() {
     const taken = hasSlots ? getTakenSlots(dateStr) : [];
     const labelTxt = isBlocked ? 'Bloqué' : hasSlots ? slots.map(s => taken.includes(s) ? `🔒${s}` : s).join(', ') : isFerie ? '🎉 Férié' : '';
     const persoJour = evenementsPerso[dateStr] || [];
-    const persoTxt = persoJour.length ? persoJour.map(ev => `🩺 ${ev.titre}${ev.heure ? ' ' + ev.heure : ''}`).join(', ') : '';
+    const persoTxt = persoJour.length ? persoJour.map(ev => `📌 ${ev.titre}${ev.heure ? ' ' + ev.heure : ''}`).join(', ') : '';
     cell.innerHTML = `<div class="cal-cell-num">${d}</div>${labelTxt ? `<div class="cal-cell-label">${labelTxt}</div>` : ''}${persoTxt ? `<div class="cal-cell-label" style="color:#B45309">${persoTxt}</div>` : ''}`;
     if (!isPast) cell.onclick = () => multiMode ? toggleMultiDay(dateStr, cell) : selectDay(dateStr);
     grid.appendChild(cell);
@@ -2123,7 +2123,7 @@ function renderAgenda() {
     cell.className = 'cal-cell' + (isPast ? ' past' : '') + ((rdvs.length || perso.length) ? ' has-slots' : '');
     const items = tout.map(item => item.type === 'rdv'
       ? `<div style="font-size:0.68rem;color:var(--violet-dark);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💅 ${item.data.creneau || ''} ${item.data.prenom||''}</div>`
-      : `<div style="font-size:0.68rem;color:#B45309;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🩺 ${item.data.heure || ''} ${item.data.titre||''}</div>`
+      : `<div style="font-size:0.68rem;color:#B45309;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📌 ${item.data.heure || ''} ${item.data.titre||''}</div>`
     ).join('');
     cell.innerHTML = `<div class="cal-cell-num">${d}</div>${items}`;
     cell.onclick = () => ouvrirAgendaJour(dateStr);
@@ -2152,7 +2152,7 @@ function ouvrirAgendaJour(dateStr) {
     } else {
       const ev = item.data;
       html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F3F4F6">
-        <span style="font-size:1.2rem">🩺</span>
+        <span style="font-size:1.2rem">📌</span>
         <div style="flex:1"><strong>${ev.heure || ''}</strong> — ${ev.titre}</div>
         <button class="btn-block-num" onclick="supprimerEvenementPerso('${dateStr}', ${item.persoIndex})" title="Supprimer">✕</button>
       </div>`;
