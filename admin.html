@@ -678,8 +678,11 @@
         </div>
       </div>
       <div class="form-group">
-        <label>Prestation *</label>
-        <select id="addrdv-presta"><option value="">-- Choisir une prestation --</option></select>
+        <label>Prestation(s) *</label>
+        <select id="addrdv-presta-ajout" onchange="ajouterPrestaAuChampAjout()"><option value="">-- Choisir pour ajouter --</option></select>
+      </div>
+      <div class="form-group">
+        <textarea id="addrdv-presta" rows="2" placeholder="ex: Pose Gel X – 40€ + Pédicure – 20€"></textarea>
       </div>
       <div class="form-group">
         <label>Date <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
@@ -1062,9 +1065,9 @@ function genererReferenceAdmin() {
 }
 
 function buildAddRdvPrestaSelect() {
-  const sel = document.getElementById('addrdv-presta');
+  const sel = document.getElementById('addrdv-presta-ajout');
   const tarifs = tarifsData || DEFAULT_TARIFS;
-  sel.innerHTML = '<option value="">-- Choisir une prestation --</option>';
+  sel.innerHTML = '<option value="">-- Choisir pour ajouter --</option>';
   tarifs.forEach(cat => {
     const grp = document.createElement('optgroup');
     grp.label = cat.emoji + ' ' + cat.nom;
@@ -1076,6 +1079,14 @@ function buildAddRdvPrestaSelect() {
     });
     sel.appendChild(grp);
   });
+}
+
+function ajouterPrestaAuChampAjout() {
+  const sel = document.getElementById('addrdv-presta-ajout');
+  if (!sel.value) return;
+  const champ = document.getElementById('addrdv-presta');
+  champ.value = champ.value.trim() ? champ.value.trim() + ' + ' + sel.value : sel.value;
+  sel.value = '';
 }
 
 /* ══ MODIFIER PRESTATION ══ */
@@ -1243,6 +1254,7 @@ function ouvrirAjoutRdv() {
   document.getElementById('addrdv-date').value = '';
   document.getElementById('addrdv-creneau-select').innerHTML = '<option value="">-- Choisir un créneau --</option>';
   document.getElementById('addrdv-creneau').value = '';
+  document.getElementById('addrdv-presta').value = '';
   document.getElementById('addrdv-message').value = '';
   document.getElementById('addrdv-statut').value = 'Accepté';
   buildAddRdvPrestaSelect();
@@ -1257,7 +1269,7 @@ function fermerAjoutRdv() {
 async function soumettreAjoutRdv() {
   const prenom = document.getElementById('addrdv-prenom').value.trim();
   const nom = document.getElementById('addrdv-nom').value.trim();
-  const prestation = document.getElementById('addrdv-presta').value;
+  const prestation = document.getElementById('addrdv-presta').value.trim();
   const tel1 = document.getElementById('addrdv-tel').value.trim();
   const tel2 = document.getElementById('addrdv-tel2').value.trim();
   const telephone = tel1 && tel2 ? `${tel1} / ${tel2}` : (tel1 || tel2);
@@ -1280,6 +1292,14 @@ async function soumettreAjoutRdv() {
 
   const creneau = document.getElementById('addrdv-creneau').value.trim() || document.getElementById('addrdv-creneau-select').value;
   const statut = document.getElementById('addrdv-statut').value;
+
+  if (dateVal && creneau) {
+    const conflit = trouverChevauchement(dateVal, creneau, null);
+    if (conflit) {
+      alert(`Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Merci de choisir un autre horaire.`);
+      return;
+    }
+  }
 
   const btn = document.getElementById('btnAddRdvSubmit');
   btn.disabled = true; btn.textContent = 'Ajout en cours...';
@@ -1335,10 +1355,44 @@ function datesDisponiblesTri() {
     .sort();
 }
 
+function creneauVersMinutes(txt) {
+  const m = String(txt || '').match(/(\d{1,2})\s*h\s*(\d{0,2})/i);
+  if (!m) return null;
+  return parseInt(m[1]) * 60 + (m[2] ? parseInt(m[2]) : 0);
+}
+
+// Un créneau "9h00-12h00" couvre toute la plage ; un créneau isolé "8h00" est
+// supposé durer 1h par défaut (même durée que l'export .ics côté client).
+function creneauVersPlage(creneau, dureeDefautMin) {
+  const parts = String(creneau || '').split('-').map(s => s.trim());
+  const debut = creneauVersMinutes(parts[0]);
+  if (debut == null) return null;
+  const finExplicite = parts.length > 1 ? creneauVersMinutes(parts[1]) : null;
+  return { debut, fin: finExplicite != null ? finExplicite : debut + (dureeDefautMin || 60) };
+}
+
+function creneauxSeChevauchent(c1, c2) {
+  const p1 = creneauVersPlage(c1);
+  const p2 = creneauVersPlage(c2);
+  if (!p1 || !p2) return false;
+  return p1.debut < p2.fin && p2.debut < p1.fin;
+}
+
+// Cherche, parmi les RDV en attente/acceptés de ce jour, un rendez-vous dont
+// l'horaire chevauche le créneau donné (pour éviter d'en placer deux en même temps).
+function trouverChevauchement(dateStr, creneau, rowAExclure) {
+  return allBookings.find(b =>
+    b.row !== rowAExclure &&
+    getSortKey(b.date) === dateStr &&
+    (b.status === 'En attente' || b.status === 'Accepté') &&
+    creneauxSeChevauchent(b.creneau, creneau)
+  );
+}
+
 function creneauxDisponiblesPourDeplacement(dateStr) {
   const slots = (dispo[dateStr] || []).filter(s => s !== '__blocked__');
   const pris = getTakenSlots(dateStr).filter(s => !(dateStr === moveRdvDateOrigine && s === moveRdvCreneauOrigine));
-  return slots.filter(s => !pris.includes(s));
+  return slots.filter(s => !pris.some(p => creneauxSeChevauchent(p, s)));
 }
 
 let moveRdvDateOrigine = null, moveRdvCreneauOrigine = null;
@@ -1394,6 +1448,13 @@ async function soumettreDeplacerRdv() {
   const creneauLibre = document.getElementById('moverdv-creneau-libre').value.trim();
   const creneau = creneauLibre || document.getElementById('moverdv-creneau').value;
   if (!dateVal || !creneau) { alert('Merci de choisir une date, et un créneau (dans la liste ou en horaire libre).'); return; }
+
+  const conflit = trouverChevauchement(dateVal, creneau, moveRdvRow);
+  if (conflit) {
+    alert(`Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Merci de choisir un autre horaire.`);
+    return;
+  }
+
   const d = new Date(dateVal + 'T00:00:00');
   const dateLabel = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
 
@@ -2201,7 +2262,10 @@ function renderCurrentSlots() {
   const container = document.getElementById('currentSlots');
   if (!slots.length) { container.innerHTML = '<div class="no-slots">Aucun créneau — ajoutez-en ci-dessus.</div>'; return; }
   const taken = getTakenSlots(selectedDate);
-  container.innerHTML = slots.map((s,i) => `<div class="slot-tag${taken.includes(s) ? ' taken' : ''}">${taken.includes(s) ? '🔒 ' : ''}${s}${taken.includes(s) ? ' (réservé)' : ''}<button onclick="removeSlot(${i})">✕</button></div>`).join('');
+  container.innerHTML = slots.map((s,i) => {
+    const estPris = taken.some(t => creneauxSeChevauchent(t, s));
+    return `<div class="slot-tag${estPris ? ' taken' : ''}">${estPris ? '🔒 ' : ''}${s}${estPris ? ' (réservé)' : ''}<button onclick="removeSlot(${i})">✕</button></div>`;
+  }).join('');
 }
 
 function updatePresetBtns() {
