@@ -340,6 +340,22 @@
     <div id="page-stats" class="page active">
       <div class="page-title">Statistiques</div>
       <div class="page-sub">Vue d'ensemble de votre activité</div>
+
+      <!-- HOROSCOPE DU JOUR -->
+      <div class="chart-box" id="horoscopeCard" style="margin-bottom:24px;background:linear-gradient(135deg, var(--violet-pale), var(--pink-pale));border:1px solid #C4B5FD">
+        <div style="display:flex;align-items:center;gap:14px">
+          <span style="font-size:2.2rem">♍</span>
+          <div style="flex:1">
+            <div style="font-weight:800;color:var(--violet-dark);font-size:0.95rem" id="horoscopeDate">Vierge — Horoscope du jour</div>
+            <div style="font-size:0.9rem;color:var(--dark);margin-top:4px;line-height:1.5" id="horoscopeTexte"></div>
+            <div style="display:flex;gap:16px;margin-top:10px;font-size:0.8rem;color:var(--gray)">
+              <span id="horoscopeCouleur"></span>
+              <span id="horoscopeChiffre"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="stats-row">
         <div class="stat-box"><div class="stat-emoji">📋</div><div class="stat-num c-violet" id="s-total">–</div><div class="stat-label">Total demandes</div></div>
         <div class="stat-box"><div class="stat-emoji">✅</div><div class="stat-num c-green" id="s-accepte">–</div><div class="stat-label">RDV acceptés</div></div>
@@ -778,9 +794,59 @@ const DEFAULT_TARIFS = [
 ];
 
 /* ══ AUTH ══ */
+/* ══ HOROSCOPE DU JOUR (Vierge) — généré localement, sans API externe ══ */
+const HOROSCOPE_INTROS = [
+  "Une belle énergie t'accompagne aujourd'hui,",
+  "La journée s'annonce productive,",
+  "Tu as les idées claires aujourd'hui,",
+  "Un vent de sérénité souffle sur ta journée,",
+  "Ton sens du détail sera ton meilleur allié,",
+  "Les astres t'encouragent à ralentir un peu,",
+  "C'est le moment de faire confiance à ton instinct,",
+  "Une bonne nouvelle pourrait égayer ta journée,",
+  "Ton organisation légendaire va payer aujourd'hui,",
+  "Prends le temps de souffler entre deux rendez-vous,"
+];
+const HOROSCOPE_CONSEILS = [
+  "privilégie la douceur avec toi-même.",
+  "n'hésite pas à déléguer ce qui peut l'être.",
+  "fais confiance à ton travail, il porte ses fruits.",
+  "accorde-toi une petite pause bien méritée.",
+  "les échanges avec tes proches seront particulièrement agréables.",
+  "une surprise pourrait illuminer ta journée.",
+  "ton énergie retombera en fin de journée, prévois du repos.",
+  "c'est un bon jour pour avancer sur tes projets perso.",
+  "garde confiance, les efforts récents vont se concrétiser.",
+  "un brin de spontanéité te fera le plus grand bien.",
+];
+const HOROSCOPE_COULEURS = ['Violet', 'Rose poudré', 'Doré', 'Turquoise', 'Lavande', 'Corail', 'Vert sauge'];
+
+function hashSeedAgenda(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) >>> 0; }
+  return h;
+}
+
+function afficherHoroscopeDuJour() {
+  const today = new Date();
+  const dateKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  const seed = hashSeedAgenda(dateKey);
+  const intro = HOROSCOPE_INTROS[seed % HOROSCOPE_INTROS.length];
+  const conseil = HOROSCOPE_CONSEILS[Math.floor(seed / 7) % HOROSCOPE_CONSEILS.length];
+  const couleur = HOROSCOPE_COULEURS[Math.floor(seed / 13) % HOROSCOPE_COULEURS.length];
+  const chiffre = (seed % 9) + 1;
+
+  const label = today.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  document.getElementById('horoscopeDate').textContent = `♍ Vierge — ${label.charAt(0).toUpperCase() + label.slice(1)}`;
+  document.getElementById('horoscopeTexte').textContent = `${intro} ${conseil}`;
+  document.getElementById('horoscopeCouleur').textContent = `🎨 Couleur du jour : ${couleur}`;
+  document.getElementById('horoscopeChiffre').textContent = `🔢 Chiffre porte-bonheur : ${chiffre}`;
+}
+
 function entrerAdmin() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminUI').style.display = 'block';
+  afficherHoroscopeDuJour();
   loadAll();
 }
 
