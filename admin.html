@@ -654,7 +654,8 @@
 
       <div class="form-group">
         <label>Cliente existante <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
-        <select id="addrdv-client-existant" onchange="remplirClientExistant(this.value)"><option value="">-- Nouvelle cliente --</option></select>
+        <input type="text" id="addrdv-client-existant" list="addrdv-client-datalist" placeholder="Tapez pour chercher..." oninput="remplirClientExistant(this.value)" autocomplete="off" />
+        <datalist id="addrdv-client-datalist"></datalist>
       </div>
 
       <div class="addrdv-modal-grid">
@@ -1222,14 +1223,14 @@ function buildAddRdvClientSelect() {
     .filter(c => c.prenom || c.nom)
     .sort((a, b) => `${a.prenom}${a.nom}`.localeCompare(`${b.prenom}${b.nom}`));
 
-  const sel = document.getElementById('addrdv-client-existant');
-  sel.innerHTML = '<option value="">-- Nouvelle cliente --</option>' +
-    clientsExistants.map((c, i) => `<option value="${i}">${c.prenom} ${c.nom}${c.telephone ? ' — ' + c.telephone : ''}</option>`).join('');
+  const dl = document.getElementById('addrdv-client-datalist');
+  dl.innerHTML = clientsExistants.map(c => `<option value="${(c.prenom + ' ' + c.nom).trim().replace(/"/g,'&quot;')}${c.telephone ? ' — ' + c.telephone : ''}"></option>`).join('');
 }
 
-function remplirClientExistant(index) {
-  if (index === '') return;
-  const c = clientsExistants[index];
+function remplirClientExistant(texte) {
+  const label = String(texte || '').split(' — ')[0].trim().toLowerCase();
+  if (!label) return;
+  const c = clientsExistants.find(c => `${c.prenom} ${c.nom}`.trim().toLowerCase() === label);
   if (!c) return;
   document.getElementById('addrdv-prenom').value = c.prenom;
   document.getElementById('addrdv-nom').value = c.nom;
