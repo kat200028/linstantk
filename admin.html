@@ -2328,10 +2328,11 @@ function buildTarifsEditor(tarifs) {
     box.innerHTML = `
       <div class="tarif-cat-header">
         <span style="font-size:1.4rem">${cat.emoji}</span>
-        <span class="tarif-cat-title">${cat.nom}</span>
+        <input class="tarif-cat-title" value="${cat.nom}" oninput="updateTarifCategorieNom(${ci},this.value)" style="border:none;background:transparent;font-weight:800;font-size:1rem;width:auto;max-width:200px" />
         <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--dark);white-space:nowrap;cursor:pointer;margin-left:auto">
           <input type="checkbox" ${cat.items.length && cat.items.every(it => it.indisponible) ? 'checked' : ''} onchange="toggleCategorieIndisponible(${ci},this.checked)" style="width:18px;height:18px" /> Toute la catégorie indisponible
         </label>
+        <button class="btn-del-row" onclick="delTarifCategorie(${ci})" title="Supprimer toute la catégorie">✕</button>
       </div>
       <div class="tarif-items" id="tarif-items-${ci}">
         ${cat.items.map((item,ii) => renderTarifRow(ci,ii,item)).join('')}
@@ -2340,6 +2341,29 @@ function buildTarifsEditor(tarifs) {
     `;
     container.appendChild(box);
   });
+  const btnCat = document.createElement('button');
+  btnCat.className = 'btn-add-item';
+  btnCat.style.marginTop = '4px';
+  btnCat.textContent = '+ Ajouter une catégorie (ex: Pack)';
+  btnCat.onclick = addTarifCategorie;
+  container.appendChild(btnCat);
+}
+
+function addTarifCategorie() {
+  const nom = prompt('Nom de la nouvelle catégorie (ex: Pack) :');
+  if (!nom || !nom.trim()) return;
+  tarifsData.push({ id: 'cat-' + Date.now(), emoji: '🎁', nom: nom.trim(), items: [] });
+  buildTarifsEditor(tarifsData);
+}
+
+function updateTarifCategorieNom(ci, val) {
+  tarifsData[ci].nom = val;
+}
+
+function delTarifCategorie(ci) {
+  if (!confirm(`Supprimer toute la catégorie "${tarifsData[ci].nom}" et ses prestations ?`)) return;
+  tarifsData.splice(ci, 1);
+  buildTarifsEditor(tarifsData);
 }
 
 function renderTarifRow(ci, ii, item) {
