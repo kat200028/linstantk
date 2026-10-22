@@ -2337,7 +2337,7 @@ function buildTarifsEditor(tarifs) {
         <button class="btn-del-row" onclick="delTarifCategorie(${ci})" title="Supprimer toute la catégorie">✕</button>
       </div>
       <div class="tarif-items" id="tarif-items-${ci}">
-        ${cat.items.map((item,ii) => renderTarifRow(ci,ii,item)).join('')}
+        ${cat.items.map((item,ii) => renderTarifRow(ci,ii,item,cat.items.length)).join('')}
       </div>
       <button class="btn-add-item" onclick="addTarifItem(${ci})">+ Ajouter une prestation</button>
     `;
@@ -2368,9 +2368,13 @@ function delTarifCategorie(ci) {
   buildTarifsEditor(tarifsData);
 }
 
-function renderTarifRow(ci, ii, item) {
+function renderTarifRow(ci, ii, item, total) {
   return `<div class="tarif-row-wrap" id="tarif-row-${ci}-${ii}">
     <div class="tarif-row">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <button class="btn-del-row" onclick="deplacerTarifItem(${ci},${ii},-1)" title="Monter" ${ii === 0 ? 'disabled style="opacity:0.3"' : ''}>▲</button>
+        <button class="btn-del-row" onclick="deplacerTarifItem(${ci},${ii},1)" title="Descendre" ${ii === total - 1 ? 'disabled style="opacity:0.3"' : ''}>▼</button>
+      </div>
       <input class="tarif-nom" value="${item.nom}" oninput="updateTarif(${ci},${ii},'nom',this.value)" placeholder="Nom de la prestation" />
       <input class="tarif-prix" value="${item.prix}" oninput="updateTarif(${ci},${ii},'prix',this.value)" placeholder="Prix" />
       <button class="btn-del-row" onclick="delTarifItem(${ci},${ii})" title="Supprimer">✕</button>
@@ -2379,6 +2383,14 @@ function renderTarifRow(ci, ii, item) {
       <input type="checkbox" ${item.indisponible ? 'checked' : ''} onchange="updateTarif(${ci},${ii},'indisponible',this.checked)" style="width:18px;height:18px" /> Indisponible
     </label>
   </div>`;
+}
+
+function deplacerTarifItem(ci, ii, direction) {
+  const items = tarifsData[ci].items;
+  const cible = ii + direction;
+  if (cible < 0 || cible >= items.length) return;
+  [items[ii], items[cible]] = [items[cible], items[ii]];
+  buildTarifsEditor(tarifsData);
 }
 
 function updateTarif(ci, ii, field, val) {
