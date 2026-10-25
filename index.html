@@ -561,7 +561,7 @@ function renderCal() {
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
   const now = new Date();
-  const limit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const limit = new Date(now.getTime() + 48 * 60 * 60 * 1000);
   limit.setHours(0, 0, 0, 0);
 
   for (let i = 0; i < offset; i++) {
