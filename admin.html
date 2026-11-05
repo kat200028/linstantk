@@ -340,6 +340,22 @@
     <div id="page-stats" class="page active">
       <div class="page-title">Statistiques</div>
       <div class="page-sub">Vue d'ensemble de votre activité</div>
+
+      <!-- HOROSCOPE DU JOUR -->
+      <div class="chart-box" id="horoscopeCard" style="margin-bottom:24px;background:linear-gradient(135deg, var(--violet-pale), var(--pink-pale));border:1px solid #C4B5FD">
+        <div style="display:flex;align-items:center;gap:14px">
+          <span style="font-size:2.2rem">♍</span>
+          <div style="flex:1">
+            <div style="font-weight:800;color:var(--violet-dark);font-size:0.95rem" id="horoscopeDate">Vierge — Horoscope du jour</div>
+            <div style="font-size:0.9rem;color:var(--dark);margin-top:4px;line-height:1.5" id="horoscopeTexte"></div>
+            <div style="display:flex;gap:16px;margin-top:10px;font-size:0.8rem;color:var(--gray)">
+              <span id="horoscopeCouleur"></span>
+              <span id="horoscopeChiffre"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="stats-row">
         <div class="stat-box"><div class="stat-emoji">📋</div><div class="stat-num c-violet" id="s-total">–</div><div class="stat-label">Total demandes</div></div>
         <div class="stat-box"><div class="stat-emoji">✅</div><div class="stat-num c-green" id="s-accepte">–</div><div class="stat-label">RDV acceptés</div></div>
@@ -477,7 +493,7 @@
     <!-- AGENDA COMPLET -->
     <div id="page-agenda" class="page">
       <div class="page-title">Agenda</div>
-      <div class="page-sub">Tous vos RDV clientes + vos rendez-vous perso (kiné, etc.) sur un vrai calendrier</div>
+      <div class="page-sub">Tous vos RDV clientes + vos rendez-vous perso (kiné, coiffeuse, etc.) sur un vrai calendrier</div>
 
       <div class="cal-nav">
         <button class="cal-nav-btn" onclick="changeAgendaMonth(-1)">‹</button>
@@ -494,7 +510,7 @@
     <div id="page-tarifs" class="page">
       <div class="page-title">Tarifs</div>
       <div class="page-sub">Modifiez vos prestations et prix — puis cliquez <strong>Enregistrer</strong></div>
-      <div id="tarifsEditor"></div>
+      <div id="tarifsEditor" style="padding-bottom:90px"></div>
     </div>
 
     <!-- MESSAGES WHATSAPP -->
@@ -570,7 +586,7 @@
       </div>
       <div id="agendaJourListe" style="margin-bottom:18px"></div>
       <div class="form-group">
-        <label>+ Ajouter un rendez-vous perso (kiné, médecin...)</label>
+        <label>+ Ajouter un rendez-vous perso (kiné, coiffeuse...)</label>
         <input type="text" id="agendaperso-titre" placeholder="ex: Kiné" />
       </div>
       <div class="form-group">
@@ -641,7 +657,8 @@
 
       <div class="form-group">
         <label>Cliente existante <span style="font-weight:400;text-transform:none;color:var(--gray)">(optionnel)</span></label>
-        <select id="addrdv-client-existant" onchange="remplirClientExistant(this.value)"><option value="">-- Nouvelle cliente --</option></select>
+        <input type="text" id="addrdv-client-existant" list="addrdv-client-datalist" placeholder="Tapez pour chercher..." oninput="remplirClientExistant(this.value)" autocomplete="off" />
+        <datalist id="addrdv-client-datalist"></datalist>
       </div>
 
       <div class="addrdv-modal-grid">
@@ -778,15 +795,67 @@ const DEFAULT_TARIFS = [
     {nom:'Interfessier',prix:'5€'},{nom:'Demi-jambe',prix:'15€'},{nom:'Jambe entière',prix:'28€'},
     {nom:'Maillot échancré',prix:'25€'},{nom:'Maillot intégral',prix:'30€'},
     {nom:'Vajacial seul',prix:'40€'},{nom:'Épilation intégral + Vajacial',prix:'60€'},
-    {nom:'Pack Aiselle + Demi-jambes + Maillot intégral',prix:'50€',badge:'NEW'},
   ]},
   { id:'massage', emoji:'💆', nom:'Massage', items:[{nom:'Massage relaxant corps entier (45min – 1h)',prix:'60€'}]},
+  { id:'pack', emoji:'🎁', nom:'Pack', items:[
+    {nom:'Pack Aiselle + Demi-jambes + Maillot intégral',prix:'50€',badge:'NEW'},
+  ]},
 ];
 
 /* ══ AUTH ══ */
+/* ══ HOROSCOPE DU JOUR (Vierge) — généré localement, sans API externe ══ */
+const HOROSCOPE_INTROS = [
+  "Une belle énergie t'accompagne aujourd'hui,",
+  "La journée s'annonce productive,",
+  "Tu as les idées claires aujourd'hui,",
+  "Un vent de sérénité souffle sur ta journée,",
+  "Ton sens du détail sera ton meilleur allié,",
+  "Les astres t'encouragent à ralentir un peu,",
+  "C'est le moment de faire confiance à ton instinct,",
+  "Une bonne nouvelle pourrait égayer ta journée,",
+  "Ton organisation légendaire va payer aujourd'hui,",
+  "Prends le temps de souffler entre deux rendez-vous,"
+];
+const HOROSCOPE_CONSEILS = [
+  "privilégie la douceur avec toi-même.",
+  "n'hésite pas à déléguer ce qui peut l'être.",
+  "fais confiance à ton travail, il porte ses fruits.",
+  "accorde-toi une petite pause bien méritée.",
+  "les échanges avec tes proches seront particulièrement agréables.",
+  "une surprise pourrait illuminer ta journée.",
+  "ton énergie retombera en fin de journée, prévois du repos.",
+  "c'est un bon jour pour avancer sur tes projets perso.",
+  "garde confiance, les efforts récents vont se concrétiser.",
+  "un brin de spontanéité te fera le plus grand bien.",
+];
+const HOROSCOPE_COULEURS = ['Violet', 'Rose poudré', 'Doré', 'Turquoise', 'Lavande', 'Corail', 'Vert sauge'];
+
+function hashSeedAgenda(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) >>> 0; }
+  return h;
+}
+
+function afficherHoroscopeDuJour() {
+  const today = new Date();
+  const dateKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  const seed = hashSeedAgenda(dateKey);
+  const intro = HOROSCOPE_INTROS[seed % HOROSCOPE_INTROS.length];
+  const conseil = HOROSCOPE_CONSEILS[Math.floor(seed / 7) % HOROSCOPE_CONSEILS.length];
+  const couleur = HOROSCOPE_COULEURS[Math.floor(seed / 13) % HOROSCOPE_COULEURS.length];
+  const chiffre = (seed % 9) + 1;
+
+  const label = today.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  document.getElementById('horoscopeDate').textContent = `♍ Vierge — ${label.charAt(0).toUpperCase() + label.slice(1)}`;
+  document.getElementById('horoscopeTexte').textContent = `${intro} ${conseil}`;
+  document.getElementById('horoscopeCouleur').textContent = `🎨 Couleur du jour : ${couleur}`;
+  document.getElementById('horoscopeChiffre').textContent = `🔢 Chiffre porte-bonheur : ${chiffre}`;
+}
+
 function entrerAdmin() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminUI').style.display = 'block';
+  afficherHoroscopeDuJour();
   loadAll();
 }
 
@@ -1159,14 +1228,14 @@ function buildAddRdvClientSelect() {
     .filter(c => c.prenom || c.nom)
     .sort((a, b) => `${a.prenom}${a.nom}`.localeCompare(`${b.prenom}${b.nom}`));
 
-  const sel = document.getElementById('addrdv-client-existant');
-  sel.innerHTML = '<option value="">-- Nouvelle cliente --</option>' +
-    clientsExistants.map((c, i) => `<option value="${i}">${c.prenom} ${c.nom}${c.telephone ? ' — ' + c.telephone : ''}</option>`).join('');
+  const dl = document.getElementById('addrdv-client-datalist');
+  dl.innerHTML = clientsExistants.map(c => `<option value="${(c.prenom + ' ' + c.nom).trim().replace(/"/g,'&quot;')}${c.telephone ? ' — ' + c.telephone : ''}"></option>`).join('');
 }
 
-function remplirClientExistant(index) {
-  if (index === '') return;
-  const c = clientsExistants[index];
+function remplirClientExistant(texte) {
+  const label = String(texte || '').split(' — ')[0].trim().toLowerCase();
+  if (!label) return;
+  const c = clientsExistants.find(c => `${c.prenom} ${c.nom}`.trim().toLowerCase() === label);
   if (!c) return;
   document.getElementById('addrdv-prenom').value = c.prenom;
   document.getElementById('addrdv-nom').value = c.nom;
@@ -1993,7 +2062,7 @@ function renderCal() {
     const taken = hasSlots ? getTakenSlots(dateStr) : [];
     const labelTxt = isBlocked ? 'Bloqué' : hasSlots ? slots.map(s => taken.includes(s) ? `🔒${s}` : s).join(', ') : isFerie ? '🎉 Férié' : '';
     const persoJour = evenementsPerso[dateStr] || [];
-    const persoTxt = persoJour.length ? persoJour.map(ev => `🩺 ${ev.titre}${ev.heure ? ' ' + ev.heure : ''}`).join(', ') : '';
+    const persoTxt = persoJour.length ? persoJour.map(ev => `📌 ${ev.titre}${ev.heure ? ' ' + ev.heure : ''}`).join(', ') : '';
     cell.innerHTML = `<div class="cal-cell-num">${d}</div>${labelTxt ? `<div class="cal-cell-label">${labelTxt}</div>` : ''}${persoTxt ? `<div class="cal-cell-label" style="color:#B45309">${persoTxt}</div>` : ''}`;
     if (!isPast) cell.onclick = () => multiMode ? toggleMultiDay(dateStr, cell) : selectDay(dateStr);
     grid.appendChild(cell);
@@ -2071,7 +2140,7 @@ function renderAgenda() {
     cell.className = 'cal-cell' + (isPast ? ' past' : '') + ((rdvs.length || perso.length) ? ' has-slots' : '');
     const items = tout.map(item => item.type === 'rdv'
       ? `<div style="font-size:0.68rem;color:var(--violet-dark);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💅 ${item.data.creneau || ''} ${item.data.prenom||''}</div>`
-      : `<div style="font-size:0.68rem;color:#B45309;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🩺 ${item.data.heure || ''} ${item.data.titre||''}</div>`
+      : `<div style="font-size:0.68rem;color:#B45309;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📌 ${item.data.heure || ''} ${item.data.titre||''}</div>`
     ).join('');
     cell.innerHTML = `<div class="cal-cell-num">${d}</div>${items}`;
     cell.onclick = () => ouvrirAgendaJour(dateStr);
@@ -2100,7 +2169,7 @@ function ouvrirAgendaJour(dateStr) {
     } else {
       const ev = item.data;
       html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F3F4F6">
-        <span style="font-size:1.2rem">🩺</span>
+        <span style="font-size:1.2rem">📌</span>
         <div style="flex:1"><strong>${ev.heure || ''}</strong> — ${ev.titre}</div>
         <button class="btn-block-num" onclick="supprimerEvenementPerso('${dateStr}', ${item.persoIndex})" title="Supprimer">✕</button>
       </div>`;
@@ -2275,23 +2344,51 @@ function buildTarifsEditor(tarifs) {
     box.innerHTML = `
       <div class="tarif-cat-header">
         <span style="font-size:1.4rem">${cat.emoji}</span>
-        <span class="tarif-cat-title">${cat.nom}</span>
+        <input class="tarif-cat-title" value="${cat.nom}" oninput="updateTarifCategorieNom(${ci},this.value)" style="border:none;background:transparent;font-weight:800;font-size:1rem;width:auto;max-width:200px" />
         <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--dark);white-space:nowrap;cursor:pointer;margin-left:auto">
           <input type="checkbox" ${cat.items.length && cat.items.every(it => it.indisponible) ? 'checked' : ''} onchange="toggleCategorieIndisponible(${ci},this.checked)" style="width:18px;height:18px" /> Toute la catégorie indisponible
         </label>
+        <button class="btn-del-row" onclick="delTarifCategorie(${ci})" title="Supprimer toute la catégorie">✕</button>
       </div>
       <div class="tarif-items" id="tarif-items-${ci}">
-        ${cat.items.map((item,ii) => renderTarifRow(ci,ii,item)).join('')}
+        ${cat.items.map((item,ii) => renderTarifRow(ci,ii,item,cat.items.length)).join('')}
       </div>
       <button class="btn-add-item" onclick="addTarifItem(${ci})">+ Ajouter une prestation</button>
     `;
     container.appendChild(box);
   });
+  const btnCat = document.createElement('button');
+  btnCat.className = 'btn-add-item';
+  btnCat.style.marginTop = '4px';
+  btnCat.textContent = '+ Ajouter une catégorie (ex: Pack)';
+  btnCat.onclick = addTarifCategorie;
+  container.appendChild(btnCat);
 }
 
-function renderTarifRow(ci, ii, item) {
+function addTarifCategorie() {
+  const nom = prompt('Nom de la nouvelle catégorie (ex: Pack) :');
+  if (!nom || !nom.trim()) return;
+  tarifsData.push({ id: 'cat-' + Date.now(), emoji: '🎁', nom: nom.trim(), items: [] });
+  buildTarifsEditor(tarifsData);
+}
+
+function updateTarifCategorieNom(ci, val) {
+  tarifsData[ci].nom = val;
+}
+
+function delTarifCategorie(ci) {
+  if (!confirm(`Supprimer toute la catégorie "${tarifsData[ci].nom}" et ses prestations ?`)) return;
+  tarifsData.splice(ci, 1);
+  buildTarifsEditor(tarifsData);
+}
+
+function renderTarifRow(ci, ii, item, total) {
   return `<div class="tarif-row-wrap" id="tarif-row-${ci}-${ii}">
     <div class="tarif-row">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <button class="btn-del-row" onclick="deplacerTarifItem(${ci},${ii},-1)" title="Monter" ${ii === 0 ? 'disabled style="opacity:0.3"' : ''}>▲</button>
+        <button class="btn-del-row" onclick="deplacerTarifItem(${ci},${ii},1)" title="Descendre" ${ii === total - 1 ? 'disabled style="opacity:0.3"' : ''}>▼</button>
+      </div>
       <input class="tarif-nom" value="${item.nom}" oninput="updateTarif(${ci},${ii},'nom',this.value)" placeholder="Nom de la prestation" />
       <input class="tarif-prix" value="${item.prix}" oninput="updateTarif(${ci},${ii},'prix',this.value)" placeholder="Prix" />
       <button class="btn-del-row" onclick="delTarifItem(${ci},${ii})" title="Supprimer">✕</button>
@@ -2300,6 +2397,14 @@ function renderTarifRow(ci, ii, item) {
       <input type="checkbox" ${item.indisponible ? 'checked' : ''} onchange="updateTarif(${ci},${ii},'indisponible',this.checked)" style="width:18px;height:18px" /> Indisponible
     </label>
   </div>`;
+}
+
+function deplacerTarifItem(ci, ii, direction) {
+  const items = tarifsData[ci].items;
+  const cible = ii + direction;
+  if (cible < 0 || cible >= items.length) return;
+  [items[ii], items[cible]] = [items[cible], items[ii]];
+  buildTarifsEditor(tarifsData);
 }
 
 function updateTarif(ci, ii, field, val) {

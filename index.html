@@ -450,10 +450,12 @@ const DEFAULT_TARIFS = [
     {nom:'Maillot intégral',prix:'30€'},
     {nom:'Vajacial seul',prix:'40€'},
     {nom:'Épilation intégral + Vajacial',prix:'60€'},
-    {nom:'Pack Aiselle + Demi-jambes + Maillot intégral',prix:'50€',badge:'NEW'},
   ]},
   { id:'massage', emoji:'💆', nom:'Massage', items:[
     {nom:'Massage relaxant corps entier (45min – 1h)',prix:'60€'},
+  ]},
+  { id:'pack', emoji:'🎁', nom:'Pack', items:[
+    {nom:'Pack Aiselle + Demi-jambes + Maillot intégral',prix:'50€',badge:'NEW'},
   ]},
 ];
 
@@ -559,7 +561,7 @@ function renderCal() {
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
   const now = new Date();
-  const limit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const limit = new Date(now.getTime() + 48 * 60 * 60 * 1000);
   limit.setHours(0, 0, 0, 0);
 
   for (let i = 0; i < offset; i++) {
