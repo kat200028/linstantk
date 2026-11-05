@@ -1516,11 +1516,13 @@ function ouvrirFicheClient(prenom, nom, telephone) {
         const isAnnule = b.status === 'Annulé par cliente';
         const bCls = b.status === 'Accepté' ? 'badge-accepte' : (b.status === 'Refusé') ? 'badge-refuse' : isAnnule ? 'badge-annule' : 'badge-attente';
         const annulable = b.status === 'Accepté' || b.status === 'En attente';
+        const retablissable = b.status === 'Refusé' || isAnnule;
         return `<div class="client-history-item">
           <span class="client-history-date">${b.date ? formatDateFr(b.date) : 'Sans date'}</span>
           <span class="client-history-presta">${b.prestation || ''}${b.creneau ? ' — ' + b.creneau : ''}</span>
           <span class="client-history-status ${bCls}">${b.status}</span>
           ${annulable ? `<button class="btn-block-num" onclick="annulerDepuisFiche(${b.row})" style="font-size:0.72rem;padding:4px 10px;white-space:nowrap">Annuler</button>` : ''}
+          ${retablissable ? `<button class="btn-block-num" onclick="retablirDepuisFiche(${b.row})" style="font-size:0.72rem;padding:4px 10px;white-space:nowrap">↺ Rétablir</button>` : ''}
         </div>`;
       }).join('')
     : '<p class="no-slots">Aucun historique.</p>';
@@ -1538,6 +1540,13 @@ async function annulerDepuisFiche(row) {
   if (!b) return;
   if (!confirm(`Annuler le RDV du ${b.date ? formatDateFr(b.date) : ''} ${b.creneau ? 'à ' + b.creneau : ''} ?`)) return;
   await updateStatus(row, 'Refusé');
+  ouvrirFicheClient(b.prenom, b.nom, b.telephone);
+}
+
+async function retablirDepuisFiche(row) {
+  const b = allBookings.find(x => x.row === row);
+  if (!b) return;
+  await updateStatus(row, 'Accepté');
   ouvrirFicheClient(b.prenom, b.nom, b.telephone);
 }
 
@@ -1671,6 +1680,11 @@ function renderBookings() {
         footerHtml = `<div class="rdv-card-footer">
           <span class="rdv-footer-hint" style="color:var(--gray)">✔ Prestation terminée</span>
           <button class="btn-annuler-admin" onclick="marquerTermine(${b.row}, false)">Annuler la validation</button>
+        </div>`;
+      } else if (b.status === 'Refusé' || isAnnule) {
+        footerHtml = `<div class="rdv-card-footer">
+          <span class="rdv-footer-hint" style="color:var(--gray)">${isAnnule ? '❌ Annulé par la cliente' : '❌ Annulé'}</span>
+          <button class="btn-block-num" onclick="updateStatus(${b.row},'Accepté')" title="Remettre ce RDV">↺ Rétablir ce RDV</button>
         </div>`;
       }
       return `<div class="rdv-card ${cls}" id="card-${b.row}">
