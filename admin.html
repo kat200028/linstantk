@@ -1723,7 +1723,7 @@ function renvoyerWhatsApp(row) {
 }
 
 const MSG_CONFIRMATION_DEFAUT = `Coucou {prenom} 💕✨\nTon rendez-vous du {date} à {creneau} pour {prestation} est confirmé, je t'attends avec plaisir !\nÀ très vite 🥰 — L'Instant K`;
-const MSG_RAPPEL_DEFAUT = `Coucou {prenom} 🌸 petit rappel tout doux : on se retrouve {date} à {creneau} pour {prestation} !\nÀ demain 😘 — L'Instant K`;
+const MSG_RAPPEL_DEFAUT = `Coucou {prenom} 🌸 petit rappel tout doux : on se retrouve {date} à {creneau} pour {prestation} !\nMerci de confirmer ce rendez-vous en répondant à ce message. Sans confirmation, le créneau sera annulé.\nÀ demain 😘 — L'Instant K`;
 const MSG_ANNULATION_DEFAUT = `Coucou {prenom} 💛\nTon rendez-vous du {date} à {creneau} pour {prestation} est annulé.\nN'hésite pas à reprendre un créneau quand tu veux 🥰 — L'Instant K`;
 
 function getMessageTemplate(type) {
