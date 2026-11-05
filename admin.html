@@ -1515,10 +1515,12 @@ function ouvrirFicheClient(prenom, nom, telephone) {
     ? historique.map(b => {
         const isAnnule = b.status === 'Annulé par cliente';
         const bCls = b.status === 'Accepté' ? 'badge-accepte' : (b.status === 'Refusé') ? 'badge-refuse' : isAnnule ? 'badge-annule' : 'badge-attente';
+        const annulable = b.status === 'Accepté' || b.status === 'En attente';
         return `<div class="client-history-item">
           <span class="client-history-date">${b.date ? formatDateFr(b.date) : 'Sans date'}</span>
           <span class="client-history-presta">${b.prestation || ''}${b.creneau ? ' — ' + b.creneau : ''}</span>
           <span class="client-history-status ${bCls}">${b.status}</span>
+          ${annulable ? `<button class="btn-block-num" onclick="annulerDepuisFiche(${b.row})" style="font-size:0.72rem;padding:4px 10px;white-space:nowrap">Annuler</button>` : ''}
         </div>`;
       }).join('')
     : '<p class="no-slots">Aucun historique.</p>';
@@ -1529,6 +1531,14 @@ function ouvrirFicheClient(prenom, nom, telephone) {
 function fermerFicheClient() {
   document.getElementById('clientModal').classList.remove('show');
   ficheClientTel = null;
+}
+
+async function annulerDepuisFiche(row) {
+  const b = allBookings.find(x => x.row === row);
+  if (!b) return;
+  if (!confirm(`Annuler le RDV du ${b.date ? formatDateFr(b.date) : ''} ${b.creneau ? 'à ' + b.creneau : ''} ?`)) return;
+  await updateStatus(row, 'Refusé');
+  ouvrirFicheClient(b.prenom, b.nom, b.telephone);
 }
 
 async function sauvegarderNoteClient() {
