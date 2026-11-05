@@ -509,6 +509,9 @@
         <label style="display:block;font-weight:800;margin:22px 0 8px">⏰ Message de rappel</label>
         <textarea id="msgRappelInput" rows="5" style="width:100%;padding:14px;border:2px solid #E5E7EB;border-radius:12px;font-family:inherit;font-size:0.92rem;resize:vertical"></textarea>
 
+        <label style="display:block;font-weight:800;margin:22px 0 8px">❌ Message d'annulation</label>
+        <textarea id="msgAnnulationInput" rows="5" style="width:100%;padding:14px;border:2px solid #E5E7EB;border-radius:12px;font-family:inherit;font-size:0.92rem;resize:vertical"></textarea>
+
         <div style="display:flex;gap:10px;margin-top:20px;align-items:center">
           <button class="btn-save" onclick="sauvegarderMessagesWhatsApp()">💾 Enregistrer</button>
           <button class="btn-block-num" onclick="reinitialiserMessagesWhatsApp()">↺ Réinitialiser</button>
@@ -1642,9 +1645,11 @@ function renvoyerWhatsApp(row) {
 
 const MSG_CONFIRMATION_DEFAUT = `Coucou {prenom} 💕✨\nTon rendez-vous du {date} à {creneau} pour {prestation} est confirmé, je t'attends avec plaisir !\nÀ très vite 🥰 — L'Instant K`;
 const MSG_RAPPEL_DEFAUT = `Coucou {prenom} 🌸 petit rappel tout doux : on se retrouve {date} à {creneau} pour {prestation} !\nÀ demain 😘 — L'Instant K`;
+const MSG_ANNULATION_DEFAUT = `Coucou {prenom} 💛\nTon rendez-vous du {date} à {creneau} pour {prestation} est annulé.\nN'hésite pas à reprendre un créneau quand tu veux 🥰 — L'Instant K`;
 
 function getMessageTemplate(type) {
-  return localStorage.getItem('wa_msg_' + type) || (type === 'confirmation' ? MSG_CONFIRMATION_DEFAUT : MSG_RAPPEL_DEFAUT);
+  const defauts = { confirmation: MSG_CONFIRMATION_DEFAUT, rappel: MSG_RAPPEL_DEFAUT, annulation: MSG_ANNULATION_DEFAUT };
+  return localStorage.getItem('wa_msg_' + type) || defauts[type] || '';
 }
 
 function remplirTemplate(tpl, b) {
@@ -1674,7 +1679,7 @@ let waConfirmPending = null;
 function demanderEnvoiWa(booking, type) {
   if (!booking || !booking.telephone) return;
   waConfirmPending = { booking, type };
-  const verbe = type === 'rappel' ? 'un rappel' : 'la confirmation';
+  const verbe = type === 'rappel' ? 'un rappel' : type === 'annulation' ? 'l\'annulation' : 'la confirmation';
   document.getElementById('waConfirmTexte').textContent = `Envoyer ${verbe} par WhatsApp à ${booking.prenom} ?`;
   document.getElementById('waConfirmModal').classList.add('show');
 }
@@ -1698,14 +1703,21 @@ function envoyerRappelWhatsApp(row) {
   if (b) demanderEnvoiWa(b, 'rappel');
 }
 
+function envoyerAnnulationWhatsApp(row) {
+  const b = allBookings.find(x => x.row === row);
+  if (b) demanderEnvoiWa(b, 'annulation');
+}
+
 function chargerMessagesWhatsApp() {
   document.getElementById('msgConfirmationInput').value = getMessageTemplate('confirmation');
   document.getElementById('msgRappelInput').value = getMessageTemplate('rappel');
+  document.getElementById('msgAnnulationInput').value = getMessageTemplate('annulation');
 }
 
 function sauvegarderMessagesWhatsApp() {
   localStorage.setItem('wa_msg_confirmation', document.getElementById('msgConfirmationInput').value);
   localStorage.setItem('wa_msg_rappel', document.getElementById('msgRappelInput').value);
+  localStorage.setItem('wa_msg_annulation', document.getElementById('msgAnnulationInput').value);
   const ok = document.getElementById('msgSaveOk');
   ok.style.display = 'inline';
   setTimeout(() => ok.style.display = 'none', 2000);
@@ -1714,6 +1726,7 @@ function sauvegarderMessagesWhatsApp() {
 function reinitialiserMessagesWhatsApp() {
   localStorage.removeItem('wa_msg_confirmation');
   localStorage.removeItem('wa_msg_rappel');
+  localStorage.removeItem('wa_msg_annulation');
   chargerMessagesWhatsApp();
 }
 
@@ -1726,6 +1739,7 @@ async function updateStatus(row, status) {
     if (b) b.status = status;
     renderBookings(); renderStats();
     if (status === 'Accepté' && b && b.telephone) demanderEnvoiWa(b, 'confirmation');
+    if (status === 'Refusé' && b && b.telephone) demanderEnvoiWa(b, 'annulation');
   } catch(e) { if (card) card.style.opacity = '1'; alert('Erreur.'); }
 }
 
