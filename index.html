@@ -704,7 +704,7 @@ function renderSlotsList(dateStr, slots, label) {
       return `<button class="slot-btn${selectedCls}" onclick="selectSlot('${dateStr}','${s}','${label}')">${s}</button>`;
     }
     const message = statut === 'trop_long'
-      ? '⚠️ Vos prestations choisies prennent trop de temps pour cet horaire — ça chevaucherait un autre rendez-vous. Essayez un autre créneau ou une autre date.'
+      ? '⚠️ Prestation trop longue pour cet horaire — essayez un autre créneau, ou contactez-moi sur Instagram en cas de doute.'
       : '🔒 Ce créneau est déjà réservé par quelqu\'un d\'autre.';
     const couleurs = statut === 'trop_long'
       ? 'background:#FFFBEB;border:1px solid #FDE68A;color:#92400E'
