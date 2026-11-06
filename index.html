@@ -320,7 +320,7 @@
             <option value="">-- Choisir une prestation --</option>
           </select>
           <p style="font-size:0.78rem;color:var(--gray);margin-top:6px">Vous pouvez choisir plusieurs prestations</p>
-          <p style="font-size:0.78rem;color:var(--gray);margin-top:6px">ℹ️ En cas d'ongle cassé, le remplissage complet + 5€ de réparation seront facturés sur place.</p>
+          <p id="noticeCassePied" style="display:none;font-size:0.78rem;color:var(--gray);margin-top:6px">ℹ️ En cas d'ongle de pied cassé, +5€ de réparation seront facturés sur place en plus du remplissage.</p>
         </div>
       </div>
       <div class="form-group full" style="margin-top:4px">
@@ -788,11 +788,29 @@ function calculerTotalTexte() {
   return total + '€' + (hasDevis ? ' (+ montant sur devis)' : '');
 }
 
+// Vrai si cette valeur de prestation correspond au "Remplissage" de la
+// catégorie Pédicure (pieds) — c'est le seul sur lequel la casse d'ongle à 5€
+// s'applique, pas celui des mains (Manucure).
+function estRemplissagePieds(valeurPrestation) {
+  const tarifs = TARIFS || DEFAULT_TARIFS;
+  for (const cat of tarifs) {
+    for (const item of cat.items) {
+      if ((item.nom + ' – ' + item.prix) === valeurPrestation) {
+        return cat.id === 'pedicure' && item.nom.toLowerCase() === 'remplissage';
+      }
+    }
+  }
+  return false;
+}
+
 function renderTags() {
   const container = document.getElementById('selectedTags');
   container.innerHTML = selectedPrestations.map((p, i) =>
     `<div class="presta-tag">${p}<button type="button" onclick="removePrestation(${i})">✕</button></div>`
   ).join('');
+
+  const noticeCasse = document.getElementById('noticeCassePied');
+  if (noticeCasse) noticeCasse.style.display = selectedPrestations.some(estRemplissagePieds) ? 'block' : 'none';
 
   const totalEl = document.getElementById('prestaTotal');
   const totalTexte = calculerTotalTexte();
