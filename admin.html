@@ -593,8 +593,8 @@
         <input type="text" id="agendaperso-heure" placeholder="ex: 14h00" />
       </div>
       <div class="form-group">
-        <label>Durée (min)</label>
-        <input type="number" min="5" step="5" id="agendaperso-duree" value="60" style="width:90px" />
+        <label>Durée</label>
+        <input type="text" id="agendaperso-duree" placeholder="ex: 1h30" value="1h" style="width:90px" />
       </div>
       <button class="btn-addrdv-submit" onclick="ajouterEvenementPerso()">Ajouter</button>
     </div>
@@ -2243,7 +2243,7 @@ function ouvrirAgendaJour(dateStr) {
   document.getElementById('agendaJourListe').innerHTML = html;
   document.getElementById('agendaperso-titre').value = '';
   document.getElementById('agendaperso-heure').value = '';
-  document.getElementById('agendaperso-duree').value = '60';
+  document.getElementById('agendaperso-duree').value = '1h';
   document.getElementById('agendaJourModal').classList.add('show');
 }
 
@@ -2262,8 +2262,7 @@ async function ajouterEvenementPerso() {
   if (!agendaJourSelectionne) return;
   const titre = document.getElementById('agendaperso-titre').value.trim();
   const heure = document.getElementById('agendaperso-heure').value.trim();
-  const dureeVal = parseInt(document.getElementById('agendaperso-duree').value, 10);
-  const duree = dureeVal > 0 ? dureeVal : 60;
+  const duree = texteVersDuree(document.getElementById('agendaperso-duree').value);
   if (!titre) { alert('Merci de donner un titre (ex: Kiné).'); return; }
   if (!evenementsPerso[agendaJourSelectionne]) evenementsPerso[agendaJourSelectionne] = [];
   evenementsPerso[agendaJourSelectionne].push({ titre, heure, duree });
@@ -2450,6 +2449,29 @@ function delTarifCategorie(ci) {
   buildTarifsEditor(tarifsData);
 }
 
+// Convertit un nombre de minutes en texte lisible ("1h30", "2h", "45min")
+function dureeVersTexte(min) {
+  min = min || 60;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h === 0) return m + 'min';
+  if (m === 0) return h + 'h';
+  return h + 'h' + String(m).padStart(2, '0');
+}
+
+// Convertit un texte saisi ("1h30", "2h", "45min", ou juste "90") en minutes
+function texteVersDuree(txt) {
+  txt = String(txt || '').trim().toLowerCase();
+  if (!txt) return 60;
+  let m = txt.match(/^(\d+)\s*h\s*(\d{0,2})$/);
+  if (m) return parseInt(m[1]) * 60 + (m[2] ? parseInt(m[2]) : 0);
+  m = txt.match(/^(\d+)\s*m(in)?$/);
+  if (m) return parseInt(m[1]);
+  m = txt.match(/^(\d+)$/);
+  if (m) return parseInt(m[1]);
+  return 60;
+}
+
 function renderTarifRow(ci, ii, item, total) {
   return `<div class="tarif-row-wrap" id="tarif-row-${ci}-${ii}">
     <div class="tarif-row">
@@ -2462,9 +2484,9 @@ function renderTarifRow(ci, ii, item, total) {
       <button class="btn-del-row" onclick="delTarifItem(${ci},${ii})" title="Supprimer">✕</button>
     </div>
     <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--dark);white-space:nowrap;margin-top:6px">
-      Durée (min) :
-      <input type="number" min="5" step="5" class="tarif-prix" style="width:70px" value="${item.duree || 60}" oninput="updateTarif(${ci},${ii},'duree',this.value ? parseInt(this.value) : 60)" />
-      <span style="color:var(--gray);font-weight:400">— temps bloqué sur le planning pour cette prestation</span>
+      Durée :
+      <input type="text" class="tarif-prix" style="width:70px" placeholder="ex: 1h30" value="${dureeVersTexte(item.duree)}" oninput="updateTarif(${ci},${ii},'duree',texteVersDuree(this.value))" />
+      <span style="color:var(--gray);font-weight:400">— temps bloqué sur le planning pour cette prestation (ex: 1h30, 2h, 45min)</span>
     </label>
     <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--dark);white-space:nowrap;cursor:pointer;margin-top:6px">
       <input type="checkbox" ${item.indisponible ? 'checked' : ''} onchange="updateTarif(${ci},${ii},'indisponible',this.checked)" style="width:18px;height:18px" /> Indisponible
