@@ -20,10 +20,7 @@
     /* NAV */
     nav { background: rgba(255,255,255,0.96); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 64px; box-shadow: 0 2px 16px rgba(124,58,237,0.08); }
     .nav-logo { position: relative; display: inline-block; font-size: 1.4rem; font-weight: 900; background: linear-gradient(135deg, var(--violet), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .chapeau-noel { display: none; position: absolute; top: -13px; left: -5px; width: 26px; height: 22px; transform: rotate(-15deg); pointer-events: none; }
-    .chapeau-noel .chapeau-cone { position: absolute; top: 0; left: 4px; width: 18px; height: 15px; background: #D7263D; clip-path: polygon(0% 100%, 100% 100%, 32% 0%); }
-    .chapeau-noel .chapeau-pompon { position: absolute; top: -3px; left: 17px; width: 7px; height: 7px; background: #fff; border: 1px solid rgba(0,0,0,0.12); border-radius: 50%; }
-    .chapeau-noel .chapeau-bord { position: absolute; bottom: 0; left: 0; width: 24px; height: 6px; background: #fff; border: 1px solid rgba(0,0,0,0.12); border-radius: 4px; }
+    .chapeau-noel { display: none; position: absolute; top: -16px; right: -14px; font-size: 1.3rem; transform: rotate(15deg); pointer-events: none; background: none; -webkit-background-clip: initial; background-clip: initial; -webkit-text-fill-color: initial; }
     .nav-links { display: flex; gap: 32px; list-style: none; }
     .nav-links a { color: var(--dark); font-size: 0.9rem; font-weight: 500; transition: color .2s; }
     .nav-links a:hover { color: var(--violet); }
@@ -208,7 +205,7 @@
 <div id="banniereSaison"></div>
 
 <nav>
-  <div class="nav-logo">L'Instant K<span class="chapeau-noel" id="chapeauNoel"><span class="chapeau-cone"></span><span class="chapeau-bord"></span><span class="chapeau-pompon"></span></span></div>
+  <div class="nav-logo">L'Instant K<span class="chapeau-noel" id="chapeauNoel">🎅</span></div>
   <ul class="nav-links">
     <li><a href="#disponibilites">Prendre RDV</a></li>
     <li><a href="#prestations">Prestations</a></li>
