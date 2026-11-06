@@ -1177,7 +1177,8 @@ function genererFloconsRonds(nb) {
   if (saison === 'noel') {
     if (traineau) traineau.style.display = '';
     if (chapeau) chapeau.style.display = 'block';
-    genererFloconsRonds(nb);
+    genererFloconsRonds(Math.round(nb / 2));
+    genererParticules(['❄', '❅', '❆'], Math.round(nb / 2));
   } else if (saison === 'nouvel-an') {
     if (traineau) traineau.style.display = 'none';
     if (banniere) {
