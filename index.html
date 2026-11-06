@@ -367,12 +367,12 @@
 
 <div class="modal-bg" id="modalOK">
   <div class="modal-box">
-    <span class="modal-icon">💌</span>
-    <h3>Demande envoyée !</h3>
-    <p>Votre demande de rendez-vous a bien été reçue. Je vous recontacte très vite pour confirmer. ⭐</p>
-    <p style="background:var(--violet-pale);border-radius:12px;padding:12px 16px;font-size:0.82rem;color:var(--violet-dark)">Pour consulter ou annuler votre rendez-vous, rendez-vous sur la page <strong>« Mon RDV »</strong> (menu en haut du site) avec votre nom et votre téléphone.</p>
+    <span class="modal-icon" id="modalOkIcon">💌</span>
+    <h3 id="modalOkTitre">Demande envoyée !</h3>
+    <p id="modalOkTexte">Votre demande de rendez-vous a bien été reçue. Je vous recontacte très vite pour confirmer. ⭐</p>
+    <p id="modalOkTip" style="background:var(--violet-pale);border-radius:12px;padding:12px 16px;font-size:0.82rem;color:var(--violet-dark)">Pour consulter ou annuler votre rendez-vous, rendez-vous sur la page <strong>« Mon RDV »</strong> (menu en haut du site) avec votre nom et votre téléphone.</p>
     <button onclick="fermerModalOK()">Parfait !</button>
-    <a href="mon-rdv.html" style="display:block;margin-top:10px;font-size:0.82rem;color:var(--violet);font-weight:700">Voir « Mon RDV » →</a>
+    <a href="mon-rdv.html" id="modalOkLien" style="display:block;margin-top:10px;font-size:0.82rem;color:var(--violet);font-weight:700">Voir « Mon RDV » →</a>
   </div>
 </div>
 <div class="modal-bg" id="modalRappel">
@@ -490,6 +490,21 @@ let TARIFS = DEFAULT_TARIFS;
 let DISPONIBILITES = {};
 let BOOKINGS = [];
 let EVENEMENTS_PERSO = {};
+let BLACKLIST = [];
+
+// Une entrée de la liste noire est soit une chaîne (ancien format, numéro seul),
+// soit un objet { telephone, prenom, nom } (bloque aussi sur le nom, pour
+// empêcher de contourner le blocage avec un faux numéro).
+function estNumeroBloque(tel, prenom, nom) {
+  const t = normaliserTel(tel);
+  const nomComplet = `${prenom||''} ${nom||''}`.trim().toLowerCase();
+  return BLACKLIST.some(entry => {
+    if (typeof entry === 'string') return t && normaliserTel(entry) === t;
+    const entryTel = entry.telephone ? normaliserTel(entry.telephone) : '';
+    const entryNom = `${entry.prenom||''} ${entry.nom||''}`.trim().toLowerCase();
+    return (t && entryTel && entryTel === t) || (nomComplet && entryNom && entryNom === nomComplet);
+  });
+}
 let calYear, calMonth, selectedDate = null, selectedSlot = null;
 let semaineIdealeRange = null;
 
@@ -1108,6 +1123,7 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
   const nomVal = document.getElementById('f-nom').value.trim();
   const telVal = document.getElementById('f-tel').value.trim();
   const prestationsSnapshot = [...selectedPrestations];
+  const bloque = estNumeroBloque(telVal, prenomVal, nomVal);
 
   try {
     await fetch(SCRIPT_URL, {
@@ -1126,19 +1142,21 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
         reference: reference
       })
     });
-    // Mémorise la référence localement pour que d'autres réservations dans la même session (même jour) la retrouvent
-    BOOKINGS.push({ telephone: telVal, reference: reference, date_str: dateVal, creneau: creneau, prestation: prestationsSnapshot.join(' + '), status: 'En attente' });
+    if (!bloque) {
+      // Mémorise la référence localement pour que d'autres réservations dans la même session (même jour) la retrouvent
+      BOOKINGS.push({ telephone: telVal, reference: reference, date_str: dateVal, creneau: creneau, prestation: prestationsSnapshot.join(' + '), status: 'En attente' });
 
-    // Propose un RDV de remplissage 3 semaines plus tard si la prestation choisie le nécessite
-    // (le remplissage lui-même, mais aussi une pose extérieure : chablon, Gel X...)
-    const MOTS_CLES_REMPLISSAGE = ['remplissage', 'pose chablon', 'pose gel', 'pose extérieur'];
-    const prestaDeclencheuse = prestationsSnapshot.find(p => {
-      const lower = p.toLowerCase();
-      return MOTS_CLES_REMPLISSAGE.some(mot => lower.includes(mot));
-    });
-    rappelEnAttente = prestaDeclencheuse && dateVal
-      ? { prenom: prenomVal, nom: nomVal, telephone: telVal, prestation: 'Remplissage', baseDateStr: dateVal }
-      : null;
+      // Propose un RDV de remplissage 3 semaines plus tard si la prestation choisie le nécessite
+      // (le remplissage lui-même, mais aussi une pose extérieure : chablon, Gel X...)
+      const MOTS_CLES_REMPLISSAGE = ['remplissage', 'pose chablon', 'pose gel', 'pose extérieur'];
+      const prestaDeclencheuse = prestationsSnapshot.find(p => {
+        const lower = p.toLowerCase();
+        return MOTS_CLES_REMPLISSAGE.some(mot => lower.includes(mot));
+      });
+      rappelEnAttente = prestaDeclencheuse && dateVal
+        ? { prenom: prenomVal, nom: nomVal, telephone: telVal, prestation: 'Remplissage', baseDateStr: dateVal }
+        : null;
+    }
 
     this.reset();
     selectedPrestations = [];
@@ -1149,6 +1167,20 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
     document.getElementById('slotsPanel').classList.remove('show');
     selectedDate = null; selectedSlot = null;
     renderCal();
+
+    if (bloque) {
+      document.getElementById('modalOkIcon').textContent = '🚫';
+      document.getElementById('modalOkTitre').textContent = 'Demande refusée';
+      document.getElementById('modalOkTexte').textContent = 'Votre demande de rendez-vous n\'a pas pu être acceptée.';
+      document.getElementById('modalOkTip').style.display = 'none';
+      document.getElementById('modalOkLien').style.display = 'none';
+    } else {
+      document.getElementById('modalOkIcon').textContent = '💌';
+      document.getElementById('modalOkTitre').textContent = 'Demande envoyée !';
+      document.getElementById('modalOkTexte').textContent = 'Votre demande de rendez-vous a bien été reçue. Je vous recontacte très vite pour confirmer. ⭐';
+      document.getElementById('modalOkTip').style.display = '';
+      document.getElementById('modalOkLien').style.display = '';
+    }
     document.getElementById('modalOK').classList.add('show');
   } catch(err) {
     document.getElementById('modalErr').classList.add('show');
@@ -1183,6 +1215,7 @@ async function init() {
       });
     }
     if (data.evenementsPerso) EVENEMENTS_PERSO = data.evenementsPerso;
+    if (data.blacklist) BLACKLIST = data.blacklist;
   } catch(e) {
     // Fallback silencieux — calendrier vide
   }
