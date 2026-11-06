@@ -420,6 +420,7 @@
       <div class="filters" style="margin-bottom:16px">
         <input type="text" id="searchClientes" class="search-input" placeholder="🔍 Rechercher par nom ou prénom..." oninput="renderClientes()" style="flex:1;min-width:220px;padding:9px 16px;border:2px solid #E5E7EB;border-radius:50px;font-size:0.88rem;color:var(--dark)" />
         <button class="btn-add-rdv" onclick="ouvrirAjoutRdv()">+ Ajouter une cliente</button>
+        <button class="btn-block-num" onclick="ouvrirPersonnesBloquees()">🚫 Personnes bloquées</button>
         <button class="btn-block-num" id="btnSupprimerClientes" onclick="supprimerClientesSelectionnees()" title="Supprimer les clientes sélectionnées" style="display:none;font-size:1rem;padding:8px 14px">🗑️</button>
       </div>
       <div id="clientesList"><div class="loading-msg"><div class="spinner"></div>Chargement...</div></div>
@@ -574,6 +575,17 @@
 
       <div class="client-history-title" id="clientHistoryTitle"></div>
       <div id="clientHistoryList"></div>
+    </div>
+  </div>
+
+  <!-- PERSONNES BLOQUÉES -->
+  <div class="client-modal-bg" id="bloquesModal" onclick="if(event.target===this) fermerPersonnesBloquees()">
+    <div class="client-modal-box">
+      <div class="client-modal-header">
+        <div class="client-modal-title">🚫 Personnes bloquées</div>
+        <button class="client-modal-close" onclick="fermerPersonnesBloquees()">✕</button>
+      </div>
+      <div id="bloquesList"></div>
     </div>
   </div>
 
@@ -1019,6 +1031,35 @@ async function toggleBlacklist(tel, prenom, nom) {
     await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'save_blacklist', blacklist }) });
   } catch(e) { alert('Erreur lors de la sauvegarde de la liste noire.'); }
   renderBookings();
+  if (document.getElementById('bloquesModal').classList.contains('show')) renderBloquesList();
+}
+
+function ouvrirPersonnesBloquees() {
+  renderBloquesList();
+  document.getElementById('bloquesModal').classList.add('show');
+}
+
+function fermerPersonnesBloquees() {
+  document.getElementById('bloquesModal').classList.remove('show');
+}
+
+function renderBloquesList() {
+  const container = document.getElementById('bloquesList');
+  if (!blacklist.length) {
+    container.innerHTML = '<p class="no-slots">Aucune personne bloquée.</p>';
+    return;
+  }
+  container.innerHTML = blacklist.map(entry => {
+    const tel = typeof entry === 'string' ? entry : (entry.telephone || '');
+    const nomComplet = typeof entry === 'string' ? '' : `${entry.prenom||''} ${entry.nom||''}`.trim();
+    const prenomEsc = typeof entry === 'string' ? '' : String(entry.prenom||'').replace(/'/g,"\\'");
+    const nomEsc = typeof entry === 'string' ? '' : String(entry.nom||'').replace(/'/g,"\\'");
+    return `<div class="client-history-item">
+      <span class="client-history-presta">${nomComplet || '(nom inconnu)'}</span>
+      <span class="client-history-date">${tel || '(numéro inconnu)'}</span>
+      <button class="btn-block-num" onclick="toggleBlacklist('${String(tel).replace(/[^\d+ .]/g,'')}', '${prenomEsc}', '${nomEsc}')">Débloquer</button>
+    </div>`;
+  }).join('');
 }
 
 async function marquerTermine(row, termine) {
