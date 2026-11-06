@@ -803,10 +803,23 @@ function estRemplissagePieds(valeurPrestation) {
   return false;
 }
 
+// Emoji de la catégorie à laquelle appartient cette prestation (ex: 🦶 pour
+// Pédicure), pour distinguer d'un coup d'œil deux prestations de même nom
+// dans des catégories différentes (ex: "Remplissage" pieds vs mains).
+function emojiCategoriePrestation(valeurPrestation) {
+  const tarifs = TARIFS || DEFAULT_TARIFS;
+  for (const cat of tarifs) {
+    for (const item of cat.items) {
+      if ((item.nom + ' – ' + item.prix) === valeurPrestation) return cat.emoji || '';
+    }
+  }
+  return '';
+}
+
 function renderTags() {
   const container = document.getElementById('selectedTags');
   container.innerHTML = selectedPrestations.map((p, i) =>
-    `<div class="presta-tag">${p}<button type="button" onclick="removePrestation(${i})">✕</button></div>`
+    `<div class="presta-tag">${emojiCategoriePrestation(p)} ${p}<button type="button" onclick="removePrestation(${i})">✕</button></div>`
   ).join('');
 
   const noticeCasse = document.getElementById('noticeCassePied');
