@@ -1301,7 +1301,7 @@ async function soumettreAjoutRdv() {
 
   if (dateVal && creneau) {
     const conflit = trouverChevauchement(dateVal, creneau, null, dureePrestation(prestation));
-    if (conflit && !confirm(`Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Continuer quand même ?`)) {
+    if (conflit && !confirm(messageConflit(conflit))) {
       return;
     }
   }
@@ -1412,12 +1412,24 @@ function creneauxSeChevauchent(c1, c2, duree1, duree2) {
 // l'horaire (calibré sur la durée réelle des prestations) chevauche le
 // créneau donné (pour éviter d'en placer deux en même temps).
 function trouverChevauchement(dateStr, creneau, rowAExclure, dureeNouveau) {
-  return allBookings.find(b =>
+  const rdv = allBookings.find(b =>
     b.row !== rowAExclure &&
     getSortKey(b.date) === dateStr &&
     (b.status === 'En attente' || b.status === 'Accepté') &&
     creneauxSeChevauchent(b.creneau, creneau, dureePrestation(b.prestation), dureeNouveau)
   );
+  if (rdv) return rdv;
+  // Vos propres rendez-vous perso (kiné, médecin...) bloquent aussi le créneau (défaut 1h).
+  const perso = (evenementsPerso[dateStr] || []).find(ev =>
+    creneauxSeChevauchent(ev.heure, creneau, ev.duree || 60, dureeNouveau)
+  );
+  return perso ? { perso: true, titre: perso.titre, creneau: perso.heure } : null;
+}
+
+function messageConflit(conflit) {
+  return conflit.perso
+    ? `Ce créneau chevauche votre rendez-vous perso "${conflit.titre}" à ${conflit.creneau}. Continuer quand même ?`
+    : `Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Continuer quand même ?`;
 }
 
 function creneauxDisponiblesPourDeplacement(dateStr) {
@@ -1482,7 +1494,7 @@ async function soumettreDeplacerRdv() {
 
   const rdvDeplace = allBookings.find(x => x.row === moveRdvRow);
   const conflit = trouverChevauchement(dateVal, creneau, moveRdvRow, dureePrestation(rdvDeplace && rdvDeplace.prestation));
-  if (conflit && !confirm(`Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Continuer quand même ?`)) {
+  if (conflit && !confirm(messageConflit(conflit))) {
     return;
   }
 

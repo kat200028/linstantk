@@ -488,6 +488,7 @@ const DEFAULT_TARIFS = [
 let TARIFS = DEFAULT_TARIFS;
 let DISPONIBILITES = {};
 let BOOKINGS = [];
+let EVENEMENTS_PERSO = {};
 let calYear, calMonth, selectedDate = null, selectedSlot = null;
 let semaineIdealeRange = null;
 
@@ -592,9 +593,14 @@ function dureePrestation(prestationText) {
 
 // RDV déjà en attente/acceptés ce jour-là, avec leur durée réelle calibrée sur leur prestation
 function creneauxPris(dateStr) {
-  return BOOKINGS
+  const rdvs = BOOKINGS
     .filter(b => b.date_str === dateStr && (b.status === 'En attente' || b.status === 'Accepté'))
     .map(b => ({ creneau: b.creneau, duree: dureePrestation(b.prestation) }));
+  // Les rendez-vous personnels (kiné, médecin...) bloquent aussi le créneau,
+  // pour ne jamais proposer une prestation qui empièterait dessus (défaut 1h).
+  const perso = (EVENEMENTS_PERSO[dateStr] || [])
+    .map(ev => ({ creneau: ev.heure, duree: ev.duree || 60 }));
+  return rdvs.concat(perso);
 }
 
 // Statut d'un créneau pour le jour donné, en tenant compte des prestations
@@ -1112,6 +1118,7 @@ async function init() {
         return { ...b, date_str: raw.split('T')[0] };
       });
     }
+    if (data.evenementsPerso) EVENEMENTS_PERSO = data.evenementsPerso;
   } catch(e) {
     // Fallback silencieux — calendrier vide
   }
