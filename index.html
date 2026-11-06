@@ -176,10 +176,10 @@
       .cal-label { font-size: 0.55rem; }
     }
 
-    /* ══ DÉCO DE NOËL ══ */
-    #neige { position: fixed; inset: 0; pointer-events: none; z-index: 9000; overflow: hidden; }
-    .flocon { position: absolute; top: -5vh; color: #fff; text-shadow: 0 0 3px rgba(0,0,0,0.15); user-select: none; animation: tomberFlocon linear infinite; }
-    @keyframes tomberFlocon {
+    /* ══ DÉCO SAISONNIÈRE (Noël du 5 nov au 31 déc, Nouvel An tout janvier) ══ */
+    #particules { position: fixed; inset: 0; pointer-events: none; z-index: 9000; overflow: hidden; }
+    .particule { position: absolute; top: -5vh; text-shadow: 0 0 3px rgba(0,0,0,0.15); user-select: none; animation: tomberParticule linear infinite; }
+    @keyframes tomberParticule {
       0%   { transform: translateY(0) translateX(0) rotate(0deg); }
       50%  { transform: translateY(55vh) translateX(20px) rotate(180deg); }
       100% { transform: translateY(110vh) translateX(-10px) rotate(360deg); }
@@ -190,15 +190,18 @@
       18%  { left: 110%; }
       100% { left: 110%; }
     }
+    #banniereSaison { display: none; position: relative; text-align: center; font-weight: 800; padding: 10px 16px; background: linear-gradient(90deg,#FFD700,#FFA500); color: #4A2E00; font-size: 0.95rem; letter-spacing: 0.3px; }
     @media (max-width: 600px) {
       #traineau { font-size: 1.8rem; top: 4%; }
+      #banniereSaison { font-size: 0.82rem; }
     }
   </style>
 </head>
 <body>
 
-<div id="neige"></div>
+<div id="particules"></div>
 <div id="traineau">🦌🦌🛷🎅</div>
+<div id="banniereSaison"></div>
 
 <nav>
   <div class="nav-logo">L'Instant K</div>
@@ -1116,22 +1119,52 @@ async function init() {
 
 init();
 
-/* ══ DÉCO DE NOËL ══ */
-(function genererNeige() {
-  const container = document.getElementById('neige');
+/* ══ DÉCO SAISONNIÈRE ══ */
+// Noël : du 5 novembre au 31 décembre — Nouvel An "Happy New Hair" : tout janvier
+function getSaisonDeco() {
+  const d = new Date();
+  const mois = d.getMonth() + 1; // 1-12
+  const jour = d.getDate();
+  if (mois === 1) return 'nouvel-an';
+  if (mois === 12) return 'noel';
+  if (mois === 11 && jour >= 5) return 'noel';
+  return null;
+}
+
+function genererParticules(symboles, nb) {
+  const container = document.getElementById('particules');
   if (!container) return;
-  const flocons = ['❄', '❅', '❆'];
-  const nbFlocons = window.innerWidth < 600 ? 22 : 40;
-  for (let i = 0; i < nbFlocons; i++) {
-    const f = document.createElement('span');
-    f.className = 'flocon';
-    f.textContent = flocons[Math.floor(Math.random() * flocons.length)];
-    f.style.left = Math.random() * 100 + 'vw';
-    f.style.fontSize = (0.6 + Math.random() * 1.2) + 'rem';
-    f.style.opacity = 0.4 + Math.random() * 0.5;
-    f.style.animationDuration = (8 + Math.random() * 10) + 's';
-    f.style.animationDelay = -(Math.random() * 15) + 's';
-    container.appendChild(f);
+  for (let i = 0; i < nb; i++) {
+    const p = document.createElement('span');
+    p.className = 'particule';
+    p.textContent = symboles[Math.floor(Math.random() * symboles.length)];
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.fontSize = (0.6 + Math.random() * 1.2) + 'rem';
+    p.style.opacity = 0.4 + Math.random() * 0.5;
+    p.style.animationDuration = (8 + Math.random() * 10) + 's';
+    p.style.animationDelay = -(Math.random() * 15) + 's';
+    container.appendChild(p);
+  }
+}
+
+(function initDecoSaison() {
+  const saison = getSaisonDeco();
+  const nb = window.innerWidth < 600 ? 22 : 40;
+  const traineau = document.getElementById('traineau');
+  const banniere = document.getElementById('banniereSaison');
+
+  if (saison === 'noel') {
+    if (traineau) traineau.style.display = '';
+    genererParticules(['❄', '❅', '❆'], nb);
+  } else if (saison === 'nouvel-an') {
+    if (traineau) traineau.style.display = 'none';
+    if (banniere) {
+      banniere.textContent = '✨ Happy New Hair — Bonne année ! ✨';
+      banniere.style.display = 'block';
+    }
+    genererParticules(['🎉', '✨', '🎊'], nb);
+  } else {
+    if (traineau) traineau.style.display = 'none';
   }
 })();
 </script>
