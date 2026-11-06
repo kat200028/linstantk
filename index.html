@@ -708,9 +708,15 @@ function selectDay(dateStr, slots) {
     const statut = statutCreneau(dateStr, s);
     if (statut === 'libre') return `<button class="slot-btn" onclick="selectSlot('${dateStr}','${s}','${label}')">${s}</button>`;
     const message = statut === 'trop_long'
-      ? 'Vos prestations choisies prennent trop de temps pour cet horaire — ça chevaucherait un autre rendez-vous'
-      : 'Déjà réservé';
-    return `<div class="slot-btn slot-indispo" title="${message}" style="opacity:0.5;cursor:not-allowed;text-decoration:line-through">${s}<div style="font-size:0.68rem;text-decoration:none;font-weight:400;white-space:normal">${message}</div></div>`;
+      ? '⚠️ Vos prestations choisies prennent trop de temps pour cet horaire — ça chevaucherait un autre rendez-vous. Essayez un autre créneau ou une autre date.'
+      : '🔒 Ce créneau est déjà réservé par quelqu\'un d\'autre.';
+    const couleurs = statut === 'trop_long'
+      ? 'background:#FFFBEB;border:1px solid #FDE68A;color:#92400E'
+      : 'background:#F3F4F6;border:1px solid #E5E7EB;color:#6B7280';
+    return `<div class="slot-btn slot-indispo" style="${couleurs};cursor:not-allowed;text-align:left;display:block;width:100%">
+      <div style="font-weight:800;text-decoration:line-through">${s}</div>
+      <div style="font-size:0.78rem;font-weight:600;margin-top:2px">${message}</div>
+    </div>`;
   }).join('');
 
   const panel = document.getElementById('slotsPanel');
