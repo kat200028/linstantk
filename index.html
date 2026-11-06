@@ -793,7 +793,9 @@ function rafraichirDisponibilites() {
   // Le créneau déjà choisi ne devient invalide (et donc désélectionné) que
   // si les nouvelles prestations le rendent vraiment impossible — sinon la
   // sélection et le récap restent affichés tels quels, sans rien faire bouger.
+  let devientInvalide = false;
   if (selectedSlot && statutCreneau(selectedDate, selectedSlot) !== 'libre') {
+    devientInvalide = true;
     selectedSlot = null;
     document.getElementById('f-date').value = '';
     document.getElementById('f-creneau').value = '';
@@ -802,6 +804,9 @@ function rafraichirDisponibilites() {
   const d = new Date(selectedDate + 'T00:00:00');
   const label = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
   renderSlotsList(selectedDate, slots, label);
+  if (devientInvalide) {
+    document.getElementById('slotsPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function calculerTotalTexte() {
