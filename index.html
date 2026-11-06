@@ -181,6 +181,7 @@
     /* ══ DÉCO SAISONNIÈRE (Noël du 5 nov au 31 déc, Nouvel An tout janvier) ══ */
     #particules { position: fixed; inset: 0; pointer-events: none; z-index: 9000; overflow: hidden; }
     .particule { position: absolute; top: -5vh; text-shadow: 0 0 3px rgba(0,0,0,0.15); user-select: none; animation: tomberParticule linear infinite; }
+    .flocon-rond { background: #fff; border-radius: 50%; box-shadow: 0 0 4px rgba(255,255,255,0.9); }
     @keyframes tomberParticule {
       0%   { transform: translateY(0) translateX(0) rotate(0deg); }
       50%  { transform: translateY(55vh) translateX(20px) rotate(180deg); }
@@ -1149,6 +1150,24 @@ function genererParticules(symboles, nb) {
   }
 }
 
+// De vrais petits flocons ronds (pas des symboles en forme d'étoile)
+function genererFloconsRonds(nb) {
+  const container = document.getElementById('particules');
+  if (!container) return;
+  for (let i = 0; i < nb; i++) {
+    const p = document.createElement('span');
+    p.className = 'particule flocon-rond';
+    const taille = 0.25 + Math.random() * 0.6;
+    p.style.width = taille + 'rem';
+    p.style.height = taille + 'rem';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.opacity = 0.5 + Math.random() * 0.5;
+    p.style.animationDuration = (8 + Math.random() * 10) + 's';
+    p.style.animationDelay = -(Math.random() * 15) + 's';
+    container.appendChild(p);
+  }
+}
+
 (function initDecoSaison() {
   const saison = getSaisonDeco();
   const nb = window.innerWidth < 600 ? 22 : 40;
@@ -1159,7 +1178,7 @@ function genererParticules(symboles, nb) {
   if (saison === 'noel') {
     if (traineau) traineau.style.display = '';
     if (chapeau) chapeau.style.display = 'block';
-    genererParticules(['❄', '❅', '❆'], nb);
+    genererFloconsRonds(nb);
   } else if (saison === 'nouvel-an') {
     if (traineau) traineau.style.display = 'none';
     if (banniere) {
