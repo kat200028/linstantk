@@ -780,10 +780,7 @@ function rafraichirDisponibilites() {
     const rawSlots = DISPONIBILITES[selectedDate] || [];
     const isBlockedDay = rawSlots[0] === '__blocked__';
     const slots = (isBlockedDay || estJourFerie(selectedDate)) ? [] : rawSlots;
-    // Ne redéfile vers le panneau que si le créneau déjà choisi vient de
-    // devenir impossible avec les nouvelles prestations — sinon ça reste sur place.
-    const devientInvalide = selectedSlot && statutCreneau(selectedDate, selectedSlot) !== 'libre';
-    if (slots.length) selectDay(selectedDate, slots, devientInvalide);
+    if (slots.length) selectDay(selectedDate, slots, false);
   }
 }
 
