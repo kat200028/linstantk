@@ -592,6 +592,10 @@
       <div class="form-group">
         <input type="text" id="agendaperso-heure" placeholder="ex: 14h00" />
       </div>
+      <div class="form-group">
+        <label>Durée (min)</label>
+        <input type="number" min="5" step="5" id="agendaperso-duree" value="60" style="width:90px" />
+      </div>
       <button class="btn-addrdv-submit" onclick="ajouterEvenementPerso()">Ajouter</button>
     </div>
   </div>
@@ -2239,6 +2243,7 @@ function ouvrirAgendaJour(dateStr) {
   document.getElementById('agendaJourListe').innerHTML = html;
   document.getElementById('agendaperso-titre').value = '';
   document.getElementById('agendaperso-heure').value = '';
+  document.getElementById('agendaperso-duree').value = '60';
   document.getElementById('agendaJourModal').classList.add('show');
 }
 
@@ -2257,9 +2262,11 @@ async function ajouterEvenementPerso() {
   if (!agendaJourSelectionne) return;
   const titre = document.getElementById('agendaperso-titre').value.trim();
   const heure = document.getElementById('agendaperso-heure').value.trim();
+  const dureeVal = parseInt(document.getElementById('agendaperso-duree').value, 10);
+  const duree = dureeVal > 0 ? dureeVal : 60;
   if (!titre) { alert('Merci de donner un titre (ex: Kiné).'); return; }
   if (!evenementsPerso[agendaJourSelectionne]) evenementsPerso[agendaJourSelectionne] = [];
-  evenementsPerso[agendaJourSelectionne].push({ titre, heure });
+  evenementsPerso[agendaJourSelectionne].push({ titre, heure, duree });
   await sauvegarderEvenementsPerso();
   renderAgenda();
   ouvrirAgendaJour(agendaJourSelectionne);
