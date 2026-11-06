@@ -564,6 +564,29 @@ function dureePrestation(prestationText) {
   return total || 60;
 }
 
+// RDV déjà en attente/acceptés ce jour-là, avec leur durée réelle calibrée sur leur prestation
+function creneauxPris(dateStr) {
+  return BOOKINGS
+    .filter(b => b.date_str === dateStr && (b.status === 'En attente' || b.status === 'Accepté'))
+    .map(b => ({ creneau: b.creneau, duree: dureePrestation(b.prestation) }));
+}
+
+// Statut d'un créneau pour le jour donné, en tenant compte des prestations
+// actuellement sélectionnées par la cliente :
+// - 'pris' : déjà occupé par un autre RDV, quelle que soit la sélection actuelle
+// - 'trop_long' : libre en soi, mais les prestations choisies dureraient trop
+//   longtemps et chevaucheraient un RDV déjà prévu après ce créneau
+// - 'libre' : disponible
+function statutCreneau(dateStr, slot) {
+  const pris = creneauxPris(dateStr);
+  if (pris.some(p => creneauxSeChevauchent(p.creneau, slot, p.duree))) return 'pris';
+  if (selectedPrestations.length) {
+    const dureeActuelle = dureePrestation(selectedPrestations.join(' + '));
+    if (pris.some(p => creneauxSeChevauchent(p.creneau, slot, p.duree, dureeActuelle))) return 'trop_long';
+  }
+  return 'libre';
+}
+
 function changeMonth(dir) {
   calMonth += dir;
   if (calMonth > 11) { calMonth = 0; calYear++; }
@@ -603,11 +626,8 @@ function renderCal() {
     const isBlockedDay = rawSlots[0] === '__blocked__';
     const slots = (isBlockedDay || isFerie) ? [] : rawSlots;
 
-    // Créneaux déjà pris (En attente ou Accepté), avec leur durée réelle calibrée sur la prestation
-    const pris = BOOKINGS
-      .filter(b => b.date_str === dateStr && (b.status === 'En attente' || b.status === 'Accepté'))
-      .map(b => ({ creneau: b.creneau, duree: dureePrestation(b.prestation) }));
-    const dispo = slots.filter(s => !pris.some(p => creneauxSeChevauchent(p.creneau, s, p.duree)));
+    const statuts = slots.map(s => statutCreneau(dateStr, s));
+    const dispo = slots.filter((s, i) => statuts[i] === 'libre');
     const isComplet = slots.length > 0 && dispo.length === 0;
     const hasDispo = dispo.length > 0;
     const isSelected = selectedDate === dateStr;
@@ -630,14 +650,16 @@ function renderCal() {
 
     cell.innerHTML = `<div class="cal-num">${d}</div>${labelTxt ? `<div class="cal-label">${labelTxt}</div>` : ''}`;
 
-    if (!isPast && !isFerie && hasDispo) {
-      cell.onclick = () => selectDay(dateStr, dispo);
+    // Cliquable dès qu'au moins un créneau existe ce jour-là (même complet),
+    // pour pouvoir expliquer pourquoi chaque créneau n'est pas disponible.
+    if (!isPast && !isFerie && slots.length > 0) {
+      cell.onclick = () => selectDay(dateStr, slots);
     }
     grid.appendChild(cell);
   }
 }
 
-function selectDay(dateStr, dispo) {
+function selectDay(dateStr, slots) {
   selectedDate = dateStr;
   selectedSlot = null;
   document.getElementById('f-date').value = '';
@@ -649,9 +671,14 @@ function selectDay(dateStr, dispo) {
   const label = JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
 
   document.getElementById('slotsPanelTitle').textContent = '📅 ' + label.charAt(0).toUpperCase() + label.slice(1);
-  document.getElementById('slotsList').innerHTML = dispo.map(s =>
-    `<button class="slot-btn" onclick="selectSlot('${dateStr}','${s}','${label}')">${s}</button>`
-  ).join('');
+  document.getElementById('slotsList').innerHTML = slots.map(s => {
+    const statut = statutCreneau(dateStr, s);
+    if (statut === 'libre') return `<button class="slot-btn" onclick="selectSlot('${dateStr}','${s}','${label}')">${s}</button>`;
+    const message = statut === 'trop_long'
+      ? 'Vos prestations choisies prennent trop de temps pour cet horaire — ça chevaucherait un autre rendez-vous'
+      : 'Déjà réservé';
+    return `<div class="slot-btn slot-indispo" title="${message}" style="opacity:0.5;cursor:not-allowed;text-decoration:line-through">${s}<div style="font-size:0.68rem;text-decoration:none;font-weight:400;white-space:normal">${message}</div></div>`;
+  }).join('');
 
   const panel = document.getElementById('slotsPanel');
   panel.classList.add('show');
@@ -694,12 +721,27 @@ function addPrestation(sel) {
   if (!selectedPrestations.includes(val)) {
     selectedPrestations.push(val);
     renderTags();
+    rafraichirDisponibilites();
   }
 }
 
 function removePrestation(i) {
   selectedPrestations.splice(i, 1);
   renderTags();
+  rafraichirDisponibilites();
+}
+
+// Recalcule le calendrier (et la liste de créneaux déjà ouverte, s'il y en a une)
+// après un changement de prestations, puisque leur durée totale influence
+// quels créneaux restent disponibles.
+function rafraichirDisponibilites() {
+  renderCal();
+  if (selectedDate && document.getElementById('slotsPanel').classList.contains('show')) {
+    const rawSlots = DISPONIBILITES[selectedDate] || [];
+    const isBlockedDay = rawSlots[0] === '__blocked__';
+    const slots = (isBlockedDay || estJourFerie(selectedDate)) ? [] : rawSlots;
+    if (slots.length) selectDay(selectedDate, slots);
+  }
 }
 
 function calculerTotalTexte() {
