@@ -420,8 +420,8 @@ const DEFAULT_TARIFS = [
     {nom:'Nail art',prix:'Sur devis'},
   ]},
   { id:'pedicure', emoji:'🦶', nom:'Pédicure', items:[
-    {nom:'Vernis semi-perm simple',prix:'20€'},
-    {nom:'Semi-Perm avec extension gros orteil',prix:'35€'},
+    {nom:'Vernis semi-perm simple',prix:'20€',duree:40},
+    {nom:'Semi-Perm avec extension gros orteil',prix:'35€',duree:60},
     {nom:'Dépose + Repose vernis simple',prix:'25€'},
     {nom:'Remplissage',prix:'30€'},
     {nom:'Dépose acrylique',prix:'20€'},
@@ -430,17 +430,17 @@ const DEFAULT_TARIFS = [
   ]},
   { id:'soins-pieds', emoji:'✨', nom:'Soins des pieds', items:[
     {nom:'Talon express',prix:'25€'},
-    {nom:'Soins des Pieds',prix:'40€'},
-    {nom:'Soins + vernis semi-perm simple',prix:'50€'},
+    {nom:'Soins des Pieds',prix:'40€',duree:60},
+    {nom:'Soins + vernis semi-perm simple',prix:'50€',duree:90},
     {nom:'Soins dépose + repose + vernis sp',prix:'60€'},
     {nom:'Soins + remplissage',prix:'65€'},
-    {nom:'Soins + vernis sp + extension gros orteil',prix:'70€'},
+    {nom:'Soins + vernis sp + extension gros orteil',prix:'70€',duree:100},
   ]},
   { id:'soins-visage', emoji:'🌸', nom:'Soins du visage', items:[
     {nom:'Soins du visage',prix:'45€'},
   ]},
   { id:'epilation', emoji:'🌿', nom:'Épilations', items:[
-    {nom:'Sourcils',prix:'10€'},
+    {nom:'Sourcils',prix:'10€',duree:20},
     {nom:'Lèvre',prix:'10€'},
     {nom:'Aiselles',prix:'10€'},
     {nom:'Interfessier',prix:'5€'},
@@ -533,11 +533,35 @@ function creneauVersPlage(creneau, dureeDefautMin) {
   return { debut, fin: finExplicite != null ? finExplicite : debut + (dureeDefautMin || 60) };
 }
 
-function creneauxSeChevauchent(c1, c2) {
-  const p1 = creneauVersPlage(c1);
-  const p2 = creneauVersPlage(c2);
+function creneauxSeChevauchent(c1, c2, duree1, duree2) {
+  const p1 = creneauVersPlage(c1, duree1);
+  const p2 = creneauVersPlage(c2, duree2);
   if (!p1 || !p2) return false;
   return p1.debut < p2.fin && p2.debut < p1.fin;
+}
+
+// Additionne la durée de chaque prestation d'un RDV (plusieurs prestations
+// jointes par " + "), retrouvées dans les Tarifs. Certains noms de
+// prestation contiennent eux-mêmes un " + " (ex: "Soins + vernis sp +
+// extension gros orteil") : on reconnaît donc en priorité les libellés
+// complets les plus longs du catalogue avant de couper sur " + ". 60 min
+// par défaut pour tout morceau non reconnu.
+function dureePrestation(prestationText) {
+  const tarifs = TARIFS || DEFAULT_TARIFS;
+  const catalogue = [];
+  tarifs.forEach(cat => cat.items.forEach(it => catalogue.push({ texte: it.nom + ' – ' + it.prix, duree: it.duree })));
+  catalogue.sort((a, b) => b.texte.length - a.texte.length);
+
+  let reste = String(prestationText || '').trim();
+  let total = 0;
+  while (reste) {
+    const trouve = catalogue.find(c => reste === c.texte || reste.startsWith(c.texte + ' + '));
+    if (!trouve) break;
+    total += trouve.duree ? Number(trouve.duree) : 60;
+    reste = reste === trouve.texte ? '' : reste.slice(trouve.texte.length + 3);
+  }
+  if (reste) total += reste.split(' + ').map(s => s.trim()).filter(Boolean).length * 60;
+  return total || 60;
 }
 
 function changeMonth(dir) {
@@ -579,11 +603,11 @@ function renderCal() {
     const isBlockedDay = rawSlots[0] === '__blocked__';
     const slots = (isBlockedDay || isFerie) ? [] : rawSlots;
 
-    // Créneaux déjà pris (En attente ou Accepté)
+    // Créneaux déjà pris (En attente ou Accepté), avec leur durée réelle calibrée sur la prestation
     const pris = BOOKINGS
       .filter(b => b.date_str === dateStr && (b.status === 'En attente' || b.status === 'Accepté'))
-      .map(b => b.creneau);
-    const dispo = slots.filter(s => !pris.some(p => creneauxSeChevauchent(p, s)));
+      .map(b => ({ creneau: b.creneau, duree: dureePrestation(b.prestation) }));
+    const dispo = slots.filter(s => !pris.some(p => creneauxSeChevauchent(p.creneau, s, p.duree)));
     const isComplet = slots.length > 0 && dispo.length === 0;
     const hasDispo = dispo.length > 0;
     const isSelected = selectedDate === dateStr;
@@ -663,8 +687,8 @@ function addPrestation(sel) {
   sel.value = '';
   sel.blur(); // ferme le menu déroulant natif sur tous les navigateurs/appareils
   if (!val) return;
-  if (selectedPrestations.length >= 2) {
-    alert('Maximum 2 prestations par rendez-vous.');
+  if (selectedPrestations.length >= 4) {
+    alert('Maximum 4 prestations par rendez-vous.');
     return;
   }
   if (!selectedPrestations.includes(val)) {
@@ -749,8 +773,8 @@ function slotsDispoPourDate(dateStr) {
   if (rawSlots[0] === '__blocked__') return [];
   const pris = BOOKINGS
     .filter(b => b.date_str === dateStr && (b.status === 'En attente' || b.status === 'Accepté'))
-    .map(b => b.creneau);
-  return rawSlots.filter(s => !pris.some(p => creneauxSeChevauchent(p, s)));
+    .map(b => ({ creneau: b.creneau, duree: dureePrestation(b.prestation) }));
+  return rawSlots.filter(s => !pris.some(p => creneauxSeChevauchent(p.creneau, s, p.duree)));
 }
 
 function fermerModalOK() {
@@ -902,7 +926,7 @@ async function confirmerRappel(slot) {
         reference: reference
       })
     });
-    BOOKINGS.push({ telephone: rappelEnAttente.telephone, reference, date_str: dateStr, creneau: slot, status: 'En attente' });
+    BOOKINGS.push({ telephone: rappelEnAttente.telephone, reference, date_str: dateStr, creneau: slot, prestation, status: 'En attente' });
     renderCal();
   } catch(err) {}
 
@@ -965,7 +989,7 @@ document.getElementById('rdvForm').addEventListener('submit', async function(e) 
       })
     });
     // Mémorise la référence localement pour que d'autres réservations dans la même session (même jour) la retrouvent
-    BOOKINGS.push({ telephone: telVal, reference: reference, date_str: dateVal, creneau: creneau, status: 'En attente' });
+    BOOKINGS.push({ telephone: telVal, reference: reference, date_str: dateVal, creneau: creneau, prestation: prestationsSnapshot.join(' + '), status: 'En attente' });
 
     // Propose un RDV de remplissage 3 semaines plus tard si la prestation choisie le nécessite
     // (le remplissage lui-même, mais aussi une pose extérieure : chablon, Gel X...)

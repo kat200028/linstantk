@@ -779,19 +779,19 @@ const DEFAULT_TARIFS = [
     {nom:'Dépose',prix:'15€'},{nom:'Nail art',prix:'Sur devis'},
   ]},
   { id:'pedicure', emoji:'🦶', nom:'Pédicure', items:[
-    {nom:'Vernis semi-perm simple',prix:'20€'},{nom:'Semi-Perm avec extension gros orteil',prix:'35€'},
+    {nom:'Vernis semi-perm simple',prix:'20€',duree:40},{nom:'Semi-Perm avec extension gros orteil',prix:'35€',duree:60},
     {nom:'Dépose + Repose vernis simple',prix:'25€'},{nom:'Remplissage',prix:'30€'},
     {nom:'Dépose acrylique',prix:'20€'},{nom:'Dépose',prix:'15€'},
     {nom:'Deco (strass, dessin, French élaboré)',prix:'5€'},
   ]},
   { id:'soins-pieds', emoji:'✨', nom:'Soins des pieds', items:[
-    {nom:'Talon express',prix:'25€'},{nom:'Soins des Pieds',prix:'40€'},
-    {nom:'Soins + vernis semi-perm simple',prix:'50€'},{nom:'Soins dépose + repose + vernis sp',prix:'60€'},
-    {nom:'Soins + remplissage',prix:'65€'},{nom:'Soins + vernis sp + extension gros orteil',prix:'70€'},
+    {nom:'Talon express',prix:'25€'},{nom:'Soins des Pieds',prix:'40€',duree:60},
+    {nom:'Soins + vernis semi-perm simple',prix:'50€',duree:90},{nom:'Soins dépose + repose + vernis sp',prix:'60€'},
+    {nom:'Soins + remplissage',prix:'65€'},{nom:'Soins + vernis sp + extension gros orteil',prix:'70€',duree:100},
   ]},
   { id:'soins-visage', emoji:'🌸', nom:'Soins du visage', items:[{nom:'Soins du visage',prix:'45€'}]},
   { id:'epilation', emoji:'🌿', nom:'Épilations', items:[
-    {nom:'Sourcils',prix:'10€'},{nom:'Lèvre',prix:'10€'},{nom:'Aiselles',prix:'10€'},
+    {nom:'Sourcils',prix:'10€',duree:20},{nom:'Lèvre',prix:'10€'},{nom:'Aiselles',prix:'10€'},
     {nom:'Interfessier',prix:'5€'},{nom:'Demi-jambe',prix:'15€'},{nom:'Jambe entière',prix:'28€'},
     {nom:'Maillot échancré',prix:'25€'},{nom:'Maillot intégral',prix:'30€'},
     {nom:'Vajacial seul',prix:'40€'},{nom:'Épilation intégral + Vajacial',prix:'60€'},
@@ -1300,9 +1300,8 @@ async function soumettreAjoutRdv() {
   const statut = document.getElementById('addrdv-statut').value;
 
   if (dateVal && creneau) {
-    const conflit = trouverChevauchement(dateVal, creneau, null);
-    if (conflit) {
-      alert(`Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Merci de choisir un autre horaire.`);
+    const conflit = trouverChevauchement(dateVal, creneau, null, dureePrestation(prestation));
+    if (conflit && !confirm(`Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Continuer quand même ?`)) {
       return;
     }
   }
@@ -1367,8 +1366,8 @@ function creneauVersMinutes(txt) {
   return parseInt(m[1]) * 60 + (m[2] ? parseInt(m[2]) : 0);
 }
 
-// Un créneau "9h00-12h00" couvre toute la plage ; un créneau isolé "8h00" est
-// supposé durer 1h par défaut (même durée que l'export .ics côté client).
+// Un créneau "9h00-12h00" couvre toute la plage ; un créneau isolé "8h00" dure
+// par défaut la durée passée (ou 1h si rien n'est précisé/trouvé).
 function creneauVersPlage(creneau, dureeDefautMin) {
   const parts = String(creneau || '').split('-').map(s => s.trim());
   const debut = creneauVersMinutes(parts[0]);
@@ -1377,28 +1376,54 @@ function creneauVersPlage(creneau, dureeDefautMin) {
   return { debut, fin: finExplicite != null ? finExplicite : debut + (dureeDefautMin || 60) };
 }
 
-function creneauxSeChevauchent(c1, c2) {
-  const p1 = creneauVersPlage(c1);
-  const p2 = creneauVersPlage(c2);
+// Additionne la durée de chaque prestation d'un RDV (plusieurs prestations
+// jointes par " + ", ex: "Pose Gel X – 40€ + Pédicure – 20€"), retrouvées
+// dans les Tarifs. Certains noms de prestation contiennent eux-mêmes un
+// " + " (ex: "Soins + vernis sp + extension gros orteil") : on reconnaît
+// donc en priorité les libellés complets les plus longs du catalogue avant
+// de couper sur " + ", pour ne pas les découper à tort. 60 min par défaut
+// pour tout morceau non reconnu (prestation introuvable ou sans durée).
+function dureePrestation(prestationText) {
+  const tarifs = tarifsData || DEFAULT_TARIFS;
+  const catalogue = [];
+  tarifs.forEach(cat => cat.items.forEach(it => catalogue.push({ texte: it.nom + ' – ' + it.prix, duree: it.duree })));
+  catalogue.sort((a, b) => b.texte.length - a.texte.length);
+
+  let reste = String(prestationText || '').trim();
+  let total = 0;
+  while (reste) {
+    const trouve = catalogue.find(c => reste === c.texte || reste.startsWith(c.texte + ' + '));
+    if (!trouve) break;
+    total += trouve.duree ? Number(trouve.duree) : 60;
+    reste = reste === trouve.texte ? '' : reste.slice(trouve.texte.length + 3);
+  }
+  if (reste) total += reste.split(' + ').map(s => s.trim()).filter(Boolean).length * 60;
+  return total || 60;
+}
+
+function creneauxSeChevauchent(c1, c2, duree1, duree2) {
+  const p1 = creneauVersPlage(c1, duree1);
+  const p2 = creneauVersPlage(c2, duree2);
   if (!p1 || !p2) return false;
   return p1.debut < p2.fin && p2.debut < p1.fin;
 }
 
 // Cherche, parmi les RDV en attente/acceptés de ce jour, un rendez-vous dont
-// l'horaire chevauche le créneau donné (pour éviter d'en placer deux en même temps).
-function trouverChevauchement(dateStr, creneau, rowAExclure) {
+// l'horaire (calibré sur la durée réelle des prestations) chevauche le
+// créneau donné (pour éviter d'en placer deux en même temps).
+function trouverChevauchement(dateStr, creneau, rowAExclure, dureeNouveau) {
   return allBookings.find(b =>
     b.row !== rowAExclure &&
     getSortKey(b.date) === dateStr &&
     (b.status === 'En attente' || b.status === 'Accepté') &&
-    creneauxSeChevauchent(b.creneau, creneau)
+    creneauxSeChevauchent(b.creneau, creneau, dureePrestation(b.prestation), dureeNouveau)
   );
 }
 
 function creneauxDisponiblesPourDeplacement(dateStr) {
   const slots = (dispo[dateStr] || []).filter(s => s !== '__blocked__');
-  const pris = getTakenSlots(dateStr).filter(s => !(dateStr === moveRdvDateOrigine && s === moveRdvCreneauOrigine));
-  return slots.filter(s => !pris.some(p => creneauxSeChevauchent(p, s)));
+  const pris = getTakenSlots(dateStr).filter(p => !(dateStr === moveRdvDateOrigine && p.creneau === moveRdvCreneauOrigine));
+  return slots.filter(s => !pris.some(p => creneauxSeChevauchent(p.creneau, s, p.duree)));
 }
 
 let moveRdvDateOrigine = null, moveRdvCreneauOrigine = null;
@@ -1455,9 +1480,9 @@ async function soumettreDeplacerRdv() {
   const creneau = creneauLibre || document.getElementById('moverdv-creneau').value;
   if (!dateVal || !creneau) { alert('Merci de choisir une date, et un créneau (dans la liste ou en horaire libre).'); return; }
 
-  const conflit = trouverChevauchement(dateVal, creneau, moveRdvRow);
-  if (conflit) {
-    alert(`Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Merci de choisir un autre horaire.`);
+  const rdvDeplace = allBookings.find(x => x.row === moveRdvRow);
+  const conflit = trouverChevauchement(dateVal, creneau, moveRdvRow, dureePrestation(rdvDeplace && rdvDeplace.prestation));
+  if (conflit && !confirm(`Ce créneau chevauche le rendez-vous de ${conflit.prenom} ${conflit.nom} à ${conflit.creneau}. Continuer quand même ?`)) {
     return;
   }
 
@@ -2084,7 +2109,7 @@ function renderCal() {
     cell.className = cls;
 
     const taken = hasSlots ? getTakenSlots(dateStr) : [];
-    const labelTxt = isBlocked ? 'Bloqué' : hasSlots ? slots.map(s => taken.includes(s) ? `🔒${s}` : s).join(', ') : isFerie ? '🎉 Férié' : '';
+    const labelTxt = isBlocked ? 'Bloqué' : hasSlots ? slots.map(s => taken.some(t => creneauxSeChevauchent(t.creneau, s, t.duree)) ? `🔒${s}` : s).join(', ') : isFerie ? '🎉 Férié' : '';
     const persoJour = evenementsPerso[dateStr] || [];
     const persoTxt = persoJour.length ? persoJour.map(ev => `📌 ${ev.titre}${ev.heure ? ' ' + ev.heure : ''}`).join(', ') : '';
     cell.innerHTML = `<div class="cal-cell-num">${d}</div>${labelTxt ? `<div class="cal-cell-label">${labelTxt}</div>` : ''}${persoTxt ? `<div class="cal-cell-label" style="color:#B45309">${persoTxt}</div>` : ''}`;
@@ -2295,7 +2320,7 @@ function toggleBlockDay() {
 function getTakenSlots(dateStr) {
   return allBookings
     .filter(b => getSortKey(b.date) === dateStr && (b.status === 'En attente' || b.status === 'Accepté'))
-    .map(b => b.creneau);
+    .map(b => ({ creneau: b.creneau, duree: dureePrestation(b.prestation) }));
 }
 
 function renderCurrentSlots() {
@@ -2304,7 +2329,7 @@ function renderCurrentSlots() {
   if (!slots.length) { container.innerHTML = '<div class="no-slots">Aucun créneau — ajoutez-en ci-dessus.</div>'; return; }
   const taken = getTakenSlots(selectedDate);
   container.innerHTML = slots.map((s,i) => {
-    const estPris = taken.some(t => creneauxSeChevauchent(t, s));
+    const estPris = taken.some(t => creneauxSeChevauchent(t.creneau, s, t.duree));
     return `<div class="slot-tag${estPris ? ' taken' : ''}">${estPris ? '🔒 ' : ''}${s}${estPris ? ' (réservé)' : ''}<button onclick="removeSlot(${i})">✕</button></div>`;
   }).join('');
 }
@@ -2417,6 +2442,11 @@ function renderTarifRow(ci, ii, item, total) {
       <input class="tarif-prix" value="${item.prix}" oninput="updateTarif(${ci},${ii},'prix',this.value)" placeholder="Prix" />
       <button class="btn-del-row" onclick="delTarifItem(${ci},${ii})" title="Supprimer">✕</button>
     </div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--dark);white-space:nowrap;margin-top:6px">
+      Durée (min) :
+      <input type="number" min="5" step="5" class="tarif-prix" style="width:70px" value="${item.duree || 60}" oninput="updateTarif(${ci},${ii},'duree',this.value ? parseInt(this.value) : 60)" />
+      <span style="color:var(--gray);font-weight:400">— temps bloqué sur le planning pour cette prestation</span>
+    </label>
     <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--dark);white-space:nowrap;cursor:pointer;margin-top:6px">
       <input type="checkbox" ${item.indisponible ? 'checked' : ''} onchange="updateTarif(${ci},${ii},'indisponible',this.checked)" style="width:18px;height:18px" /> Indisponible
     </label>
@@ -2441,7 +2471,7 @@ function toggleCategorieIndisponible(ci, val) {
 }
 
 function addTarifItem(ci) {
-  tarifsData[ci].items.push({ nom: '', prix: '' });
+  tarifsData[ci].items.push({ nom: '', prix: '', duree: 60 });
   buildTarifsEditor(tarifsData);
 }
 
