@@ -19,7 +19,7 @@ function doPost(e) {
 
     if (data.action === 'new') {
       const s = getSheet('RDV');
-      const bloque = estDansListeNoire(data.telephone);
+      const bloque = estDansListeNoire(data.telephone, data.prenom, data.nom);
       s.appendRow([
         new Date().toLocaleString('fr-FR'),
         data.prenom || '',
@@ -32,7 +32,8 @@ function doPost(e) {
         data.message || '',
         data.reference || ''
       ]);
-      if (!bloque) notifyTelegramNewRdv(data);
+      if (bloque) notifyTelegramTentativeBloquee(data);
+      else notifyTelegramNewRdv(data);
       return jsonResponse({ success: true });
     }
 
@@ -254,6 +255,18 @@ function notifyTelegramNewRdv(data) {
   sendTelegramMessage(lines.join('\n'));
 }
 
+function notifyTelegramTentativeBloquee(data) {
+  const lines = [
+    '🚫 Tentative de réservation bloquée',
+    `${data.prenom || ''} ${data.nom || ''}`.trim(),
+    data.prestation ? `Prestation : ${data.prestation}` : '',
+    data.date ? `Date : ${data.date}` : '',
+    data.creneau ? `Créneau : ${data.creneau}` : '',
+    data.telephone ? `Téléphone : ${data.telephone}` : ''
+  ].filter(Boolean);
+  sendTelegramMessage(lines.join('\n'));
+}
+
 function notifyTelegramAnnulation(data) {
   const lines = [
     '❌ Annulation RDV par cliente',
@@ -276,13 +289,21 @@ function normaliserTelServeur(tel) {
   return digits.slice(-9); // les 9 derniers chiffres (ignore le 0 initial ou +33)
 }
 
-function estDansListeNoire(tel) {
+// Une entrée de la liste noire est soit une chaîne (ancien format, numéro
+// seul), soit un objet { telephone, prenom, nom } (bloque aussi sur le nom,
+// pour empêcher de contourner le blocage avec un faux numéro).
+function estDansListeNoire(tel, prenom, nom) {
   try {
     const val = getSheet('Config').getRange('C1').getValue();
     const liste = val ? JSON.parse(val) : [];
     const t = normaliserTelServeur(tel);
-    if (!t) return false;
-    return liste.some(function(n) { return normaliserTelServeur(n) === t; });
+    const nomComplet = (String(prenom || '') + ' ' + String(nom || '')).trim().toLowerCase();
+    return liste.some(function(entry) {
+      if (typeof entry === 'string') return t && normaliserTelServeur(entry) === t;
+      const entryTel = entry.telephone ? normaliserTelServeur(entry.telephone) : '';
+      const entryNom = (String(entry.prenom || '') + ' ' + String(entry.nom || '')).trim().toLowerCase();
+      return (t && entryTel && entryTel === t) || (nomComplet && entryNom && entryNom === nomComplet);
+    });
   } catch (err) {
     return false;
   }
