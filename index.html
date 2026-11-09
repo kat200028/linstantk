@@ -60,9 +60,11 @@
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
     .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-    .service-item { background: var(--bg); border-radius: 14px; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #EDE9FE; transition: all .2s; }
+    .service-item { background: var(--bg); border-radius: 14px; padding: 18px 22px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #EDE9FE; transition: all .2s; }
     .service-item:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(124,58,237,0.1); }
+    .service-item-row { display: flex; justify-content: space-between; align-items: center; }
     .service-name { font-weight: 600; font-size: 0.93rem; color: var(--dark); }
+    .service-desc { font-size: 0.8rem; color: var(--gray); line-height: 1.4; }
     .service-price { font-weight: 800; font-size: 1.05rem; margin-left: 12px; white-space: nowrap; background: linear-gradient(135deg, var(--violet), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .badge { display: inline-block; background: linear-gradient(135deg, var(--pink), var(--violet)); color: white; font-size: 0.6rem; font-weight: 800; padding: 2px 8px; border-radius: 50px; margin-left: 6px; vertical-align: middle; }
 
@@ -457,8 +459,8 @@ const DEFAULT_TARIFS = [
     {nom:'Deco (strass, dessin, French élaboré)',prix:'5€',duree:30},
   ]},
   { id:'soins-pieds', emoji:'✨', nom:'Soins des pieds', items:[
-    {nom:'Talon express',prix:'25€'},
-    {nom:'Soins des Pieds',prix:'40€',duree:60},
+    {nom:'Talon express',prix:'25€',description:'Polissage du talon pour retrouver une peau douce comme un bébé, en quelques minutes.'},
+    {nom:'Soins des Pieds',prix:'40€',duree:60,description:'Nettoyage des cuticules, extraction des peaux mortes, gommage, massage.'},
     {nom:'Soins + vernis semi-perm simple',prix:'50€',duree:90},
     {nom:'Soins dépose + repose + vernis sp',prix:'60€'},
     {nom:'Soins + remplissage',prix:'65€'},
@@ -535,8 +537,11 @@ function buildPrestations(tarifs) {
     pane.className = 'tab-pane' + (i === 0 ? ' active' : '');
     pane.innerHTML = '<div class="services-grid">' + cat.items.map(item =>
       `<div class="service-item"${item.indisponible ? ' style="opacity:0.45"' : ''}>
-        <span class="service-name">${item.nom}${item.badge ? `<span class="badge">${item.badge}</span>` : ''}${item.indisponible ? ' <span style="color:var(--gray);font-weight:600;font-size:0.78rem">(temporairement indisponible)</span>' : ''}</span>
-        <span class="service-price">${item.prix}</span>
+        <div class="service-item-row">
+          <span class="service-name">${item.nom}${item.badge ? `<span class="badge">${item.badge}</span>` : ''}${item.indisponible ? ' <span style="color:var(--gray);font-weight:600;font-size:0.78rem">(temporairement indisponible)</span>' : ''}</span>
+          <span class="service-price">${item.prix}</span>
+        </div>
+        ${item.description ? `<div class="service-desc">${item.description}</div>` : ''}
       </div>`
     ).join('') + '</div>';
     content.appendChild(pane);

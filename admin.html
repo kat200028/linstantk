@@ -801,7 +801,7 @@ const DEFAULT_TARIFS = [
     {nom:'Deco (strass, dessin, French élaboré)',prix:'5€',duree:30},
   ]},
   { id:'soins-pieds', emoji:'✨', nom:'Soins des pieds', items:[
-    {nom:'Talon express',prix:'25€'},{nom:'Soins des Pieds',prix:'40€',duree:60},
+    {nom:'Talon express',prix:'25€',description:'Polissage du talon pour retrouver une peau douce comme un bébé, en quelques minutes.'},{nom:'Soins des Pieds',prix:'40€',duree:60,description:'Nettoyage des cuticules, extraction des peaux mortes, gommage, massage.'},
     {nom:'Soins + vernis semi-perm simple',prix:'50€',duree:90},{nom:'Soins dépose + repose + vernis sp',prix:'60€'},
     {nom:'Soins + remplissage',prix:'65€'},{nom:'Soins + vernis sp + extension gros orteil',prix:'70€',duree:100},
   ]},
@@ -2543,6 +2543,10 @@ function renderTarifRow(ci, ii, item, total) {
       Durée :
       <input type="text" class="tarif-prix" style="width:70px" placeholder="ex: 1h30" value="${dureeVersTexte(item.duree)}" oninput="updateTarif(${ci},${ii},'duree',texteVersDuree(this.value))" />
       <span style="color:var(--gray);font-weight:400">— temps bloqué sur le planning pour cette prestation (ex: 1h30, 2h, 45min)</span>
+    </label>
+    <label style="display:block;font-size:0.82rem;color:var(--dark);margin-top:6px">
+      Description <span style="font-weight:400;color:var(--gray)">(optionnel, visible par les clientes sous le nom)</span>
+      <textarea rows="2" style="width:100%;margin-top:4px;padding:8px 10px;border:2px solid #E5E7EB;border-radius:8px;font-family:inherit;font-size:0.85rem" placeholder="ex: Polissage du talon pour une peau douce..." oninput="updateTarif(${ci},${ii},'description',this.value)">${item.description || ''}</textarea>
     </label>
     <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--dark);white-space:nowrap;cursor:pointer;margin-top:6px">
       <input type="checkbox" ${item.indisponible ? 'checked' : ''} onchange="updateTarif(${ci},${ii},'indisponible',this.checked)" style="width:18px;height:18px" /> Indisponible
