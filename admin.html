@@ -529,6 +529,9 @@
         <label style="display:block;font-weight:800;margin:22px 0 8px">❌ Message d'annulation</label>
         <textarea id="msgAnnulationInput" rows="5" style="width:100%;padding:14px;border:2px solid #E5E7EB;border-radius:12px;font-family:inherit;font-size:0.92rem;resize:vertical"></textarea>
 
+        <label style="display:block;font-weight:800;margin:22px 0 8px">🎁 Message proposition pack</label>
+        <textarea id="msgPackInput" rows="7" style="width:100%;padding:14px;border:2px solid #E5E7EB;border-radius:12px;font-family:inherit;font-size:0.92rem;resize:vertical"></textarea>
+
         <div style="display:flex;gap:10px;margin-top:20px;align-items:center">
           <button class="btn-save" onclick="sauvegarderMessagesWhatsApp()">💾 Enregistrer</button>
           <button class="btn-block-num" onclick="reinitialiserMessagesWhatsApp()">↺ Réinitialiser</button>
@@ -1774,6 +1777,7 @@ function renderBookings() {
           <div style="display:flex;gap:8px">
             <button class="btn-block-num" onclick="renvoyerWhatsApp(${b.row})" title="Renvoyer le message de confirmation WhatsApp" style="font-size:0.85rem;padding:8px 14px">💬 Confirmation</button>
             <button class="btn-block-num" onclick="envoyerRappelWhatsApp(${b.row})" title="Envoyer un message de rappel WhatsApp" style="font-size:0.85rem;padding:8px 14px">⏰ Rappel</button>
+            <button class="btn-block-num" onclick="proposerPackWhatsApp(${b.row})" title="Proposer les packs de Noël par WhatsApp" style="font-size:0.85rem;padding:8px 14px">🎁 Proposer pack</button>
             <button class="btn-annuler-admin" onclick="updateStatus(${b.row},'Refusé')">Annuler ce RDV</button>
           </div>
         </div>`;
@@ -1840,9 +1844,10 @@ function renvoyerWhatsApp(row) {
 const MSG_CONFIRMATION_DEFAUT = `Coucou {prenom} 💕✨\nTon rendez-vous du {date} à {creneau} pour {prestation} est confirmé, je t'attends avec plaisir !\nÀ très vite 🥰 — L'Instant K`;
 const MSG_RAPPEL_DEFAUT = `Coucou {prenom} 🌸 petit rappel tout doux : on se retrouve {date} à {creneau} pour {prestation} !\nMerci de confirmer ce rendez-vous en répondant à ce message. Sans confirmation, le créneau sera annulé.\nÀ demain 😘 — L'Instant K`;
 const MSG_ANNULATION_DEFAUT = `Coucou {prenom} 💛\nTon rendez-vous du {date} à {creneau} pour {prestation} est annulé.\nN'hésite pas à reprendre un créneau quand tu veux 🥰 — L'Instant K`;
+const MSG_PACK_DEFAUT = `Coucou {prenom} 🎄✨\nPetite info avant ton RDV : j'ai sorti mes packs spéciaux fêtes (du 20 novembre au 5 janvier) !\n🎁 Pack Aiselle + Demi-jambes + Maillot intégral — 50€\n🎁 Mains + Pieds (vernis simple) — 50€\n🎁 Soins des pieds + Vernis + Mains — 90€\n🎁 Talon express + Vernis simple pieds — 40€\n🎁 Vernis + extension gros orteil + Talon express — 55€\n(Déco non incluse, 5 à 20€ selon la demande)\nDis-moi si un pack t'intéresse pour ton rendez-vous 🥰 — L'Instant K`;
 
 function getMessageTemplate(type) {
-  const defauts = { confirmation: MSG_CONFIRMATION_DEFAUT, rappel: MSG_RAPPEL_DEFAUT, annulation: MSG_ANNULATION_DEFAUT };
+  const defauts = { confirmation: MSG_CONFIRMATION_DEFAUT, rappel: MSG_RAPPEL_DEFAUT, annulation: MSG_ANNULATION_DEFAUT, pack: MSG_PACK_DEFAUT };
   return localStorage.getItem('wa_msg_' + type) || defauts[type] || '';
 }
 
@@ -1873,7 +1878,7 @@ let waConfirmPending = null;
 function demanderEnvoiWa(booking, type) {
   if (!booking || !booking.telephone) return;
   waConfirmPending = { booking, type };
-  const verbe = type === 'rappel' ? 'un rappel' : type === 'annulation' ? 'l\'annulation' : 'la confirmation';
+  const verbe = type === 'rappel' ? 'un rappel' : type === 'annulation' ? 'l\'annulation' : type === 'pack' ? 'les packs de Noël' : 'la confirmation';
   document.getElementById('waConfirmTexte').textContent = `Envoyer ${verbe} par WhatsApp à ${booking.prenom} ?`;
   document.getElementById('waConfirmModal').classList.add('show');
 }
@@ -1897,6 +1902,11 @@ function envoyerRappelWhatsApp(row) {
   if (b) demanderEnvoiWa(b, 'rappel');
 }
 
+function proposerPackWhatsApp(row) {
+  const b = allBookings.find(x => x.row === row);
+  if (b) demanderEnvoiWa(b, 'pack');
+}
+
 function envoyerAnnulationWhatsApp(row) {
   const b = allBookings.find(x => x.row === row);
   if (b) demanderEnvoiWa(b, 'annulation');
@@ -1906,12 +1916,14 @@ function chargerMessagesWhatsApp() {
   document.getElementById('msgConfirmationInput').value = getMessageTemplate('confirmation');
   document.getElementById('msgRappelInput').value = getMessageTemplate('rappel');
   document.getElementById('msgAnnulationInput').value = getMessageTemplate('annulation');
+  document.getElementById('msgPackInput').value = getMessageTemplate('pack');
 }
 
 function sauvegarderMessagesWhatsApp() {
   localStorage.setItem('wa_msg_confirmation', document.getElementById('msgConfirmationInput').value);
   localStorage.setItem('wa_msg_rappel', document.getElementById('msgRappelInput').value);
   localStorage.setItem('wa_msg_annulation', document.getElementById('msgAnnulationInput').value);
+  localStorage.setItem('wa_msg_pack', document.getElementById('msgPackInput').value);
   const ok = document.getElementById('msgSaveOk');
   ok.style.display = 'inline';
   setTimeout(() => ok.style.display = 'none', 2000);
@@ -1921,6 +1933,7 @@ function reinitialiserMessagesWhatsApp() {
   localStorage.removeItem('wa_msg_confirmation');
   localStorage.removeItem('wa_msg_rappel');
   localStorage.removeItem('wa_msg_annulation');
+  localStorage.removeItem('wa_msg_pack');
   chargerMessagesWhatsApp();
 }
 
