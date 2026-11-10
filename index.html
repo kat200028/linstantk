@@ -527,6 +527,18 @@ function estDansPeriodePromo(item) {
   return true;
 }
 
+function formatDatePromoFr(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.getDate() + ' ' + MOIS[d.getMonth()];
+}
+
+function periodePromoTexte(item) {
+  if (!item.promoDebut && !item.promoFin) return '';
+  if (item.promoDebut && item.promoFin) return `🎄 Offre valable du ${formatDatePromoFr(item.promoDebut)} au ${formatDatePromoFr(item.promoFin)}`;
+  if (item.promoDebut) return `🎄 Offre valable à partir du ${formatDatePromoFr(item.promoDebut)}`;
+  return `🎄 Offre valable jusqu'au ${formatDatePromoFr(item.promoFin)}`;
+}
+
 function buildPrestations(tarifs) {
   const tabs = document.getElementById('prestaTabs');
   const content = document.getElementById('prestaContent');
@@ -557,6 +569,7 @@ function buildPrestations(tarifs) {
           <span class="service-price">${item.prix}</span>
         </div>
         ${item.description ? `<div class="service-desc">${item.description}</div>` : ''}
+        ${periodePromoTexte(item) ? `<div class="service-desc" style="color:#B45309;font-weight:700">${periodePromoTexte(item)}</div>` : ''}
       </div>`
     ).join('') + '</div>';
     content.appendChild(pane);
