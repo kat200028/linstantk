@@ -29,7 +29,7 @@ function doPost(e) {
         data.date || '',
         data.creneau || '',
         bloque ? 'Refusé' : 'En attente',
-        data.message || '',
+        texteBrut(data.message),
         data.reference || ''
       ]);
       if (bloque) notifyTelegramTentativeBloquee(data);
@@ -70,7 +70,7 @@ function doPost(e) {
         data.date || '',
         data.creneau || '',
         data.status || 'Accepté',
-        data.message || '',
+        texteBrut(data.message),
         data.reference || ''
       ]);
       return jsonResponse({ success: true });
