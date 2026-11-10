@@ -486,6 +486,10 @@ const DEFAULT_TARIFS = [
   ]},
   { id:'pack', emoji:'🎁', nom:'Pack', items:[
     {nom:'Pack Aiselle + Demi-jambes + Maillot intégral',prix:'50€',badge:'NEW'},
+    {nom:'Mains + Pieds (vernis simple)',prix:'50€',description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-12-01',promoFin:'2027-01-05'},
+    {nom:'Soins des pieds + Vernis + Mains',prix:'90€',description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-12-01',promoFin:'2027-01-05'},
+    {nom:'Talon express + Vernis simple pieds',prix:'40€',description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-12-01',promoFin:'2027-01-05'},
+    {nom:'Vernis + extension gros orteil + Talon express',prix:'55€',description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-12-01',promoFin:'2027-01-05'},
   ]},
 ];
 
@@ -515,14 +519,25 @@ let semaineIdealeRange = null;
 function toggleMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
 
 /* ══ TARIFS ══ */
+function estDansPeriodePromo(item) {
+  if (!item.promoDebut && !item.promoFin) return true;
+  const today = fmtDateStrGlobal(new Date());
+  if (item.promoDebut && today < item.promoDebut) return false;
+  if (item.promoFin && today > item.promoFin) return false;
+  return true;
+}
+
 function buildPrestations(tarifs) {
   const tabs = document.getElementById('prestaTabs');
   const content = document.getElementById('prestaContent');
   tabs.innerHTML = '';
   content.innerHTML = '';
   tarifs.forEach((cat, i) => {
+    const itemsVisibles = cat.items.filter(estDansPeriodePromo);
+    if (!itemsVisibles.length) return;
+
     const btn = document.createElement('button');
-    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    btn.className = 'tab-btn' + (tabs.children.length === 0 ? ' active' : '');
     btn.textContent = cat.emoji + ' ' + cat.nom;
     btn.onclick = function() {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -534,8 +549,8 @@ function buildPrestations(tarifs) {
 
     const pane = document.createElement('div');
     pane.id = 'tab-' + cat.id;
-    pane.className = 'tab-pane' + (i === 0 ? ' active' : '');
-    pane.innerHTML = '<div class="services-grid">' + cat.items.map(item =>
+    pane.className = 'tab-pane' + (content.children.length === 0 ? ' active' : '');
+    pane.innerHTML = '<div class="services-grid">' + itemsVisibles.map(item =>
       `<div class="service-item"${item.indisponible ? ' style="opacity:0.45"' : ''}>
         <div class="service-item-row">
           <span class="service-name">${item.nom}${item.badge ? `<span class="badge">${item.badge}</span>` : ''}${item.indisponible ? ' <span style="color:var(--gray);font-weight:600;font-size:0.78rem">(temporairement indisponible)</span>' : ''}</span>
@@ -547,11 +562,11 @@ function buildPrestations(tarifs) {
     content.appendChild(pane);
   });
 
-  // Remplir le select du formulaire (les prestations indisponibles sont exclues)
+  // Remplir le select du formulaire (les prestations indisponibles ou hors période promo sont exclues)
   const sel = document.getElementById('f-service');
   sel.innerHTML = '<option value="">-- Choisir une prestation --</option>';
   tarifs.forEach(cat => {
-    const items = cat.items.filter(item => !item.indisponible);
+    const items = cat.items.filter(item => !item.indisponible && estDansPeriodePromo(item));
     if (!items.length) return;
     const grp = document.createElement('optgroup');
     grp.label = cat.emoji + ' ' + cat.nom;
