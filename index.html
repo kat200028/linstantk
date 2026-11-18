@@ -486,10 +486,10 @@ const DEFAULT_TARIFS = [
   ]},
   { id:'pack', emoji:'🎁', nom:'Pack', items:[
     {nom:'Pack Aiselle + Demi-jambes + Maillot intégral',prix:'50€',badge:'NEW'},
-    {nom:'Mains + Pieds (vernis simple)',prix:'50€',duree:160,description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-11-20',promoFin:'2027-01-05'},
-    {nom:'Soins des pieds + Vernis + Mains',prix:'90€',duree:210,description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-11-20',promoFin:'2027-01-05'},
-    {nom:'Talon express + Vernis simple pieds',prix:'40€',duree:100,description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-11-20',promoFin:'2027-01-05'},
-    {nom:'Vernis + extension gros orteil + Talon express',prix:'55€',duree:120,description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-11-20',promoFin:'2027-01-05'},
+    {nom:'Mains + Pieds (vernis simple)',prix:'50€',duree:160,description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-11-20',promoFin:'2027-01-05',promoValiditeDebut:'2026-12-01',promoValiditeFin:'2027-01-05'},
+    {nom:'Soins des pieds + Vernis + Mains',prix:'90€',duree:210,description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-11-20',promoFin:'2027-01-05',promoValiditeDebut:'2026-12-01',promoValiditeFin:'2027-01-05'},
+    {nom:'Talon express + Vernis simple pieds',prix:'40€',duree:100,description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-11-20',promoFin:'2027-01-05',promoValiditeDebut:'2026-12-01',promoValiditeFin:'2027-01-05'},
+    {nom:'Vernis + extension gros orteil + Talon express',prix:'55€',duree:120,description:'Déco non incluse (5 à 20€ selon la demande).',promoDebut:'2026-11-20',promoFin:'2027-01-05',promoValiditeDebut:'2026-12-01',promoValiditeFin:'2027-01-05'},
   ]},
 ];
 
@@ -532,11 +532,17 @@ function formatDatePromoFr(dateStr) {
   return d.getDate() + ' ' + MOIS[d.getMonth()];
 }
 
+// promoValiditeDebut/Fin (optionnel) affiche une période différente de
+// promoDebut/promoFin, qui elles contrôlent juste quand la prestation
+// devient réservable (ex: réservable dès le 20 nov, mais valable seulement
+// du 1er déc au 5 janv pour la date du rendez-vous lui-même).
 function periodePromoTexte(item) {
-  if (!item.promoDebut && !item.promoFin) return '';
-  if (item.promoDebut && item.promoFin) return `🎄 Offre valable du ${formatDatePromoFr(item.promoDebut)} au ${formatDatePromoFr(item.promoFin)}`;
-  if (item.promoDebut) return `🎄 Offre valable à partir du ${formatDatePromoFr(item.promoDebut)}`;
-  return `🎄 Offre valable jusqu'au ${formatDatePromoFr(item.promoFin)}`;
+  const debut = item.promoValiditeDebut || item.promoDebut;
+  const fin = item.promoValiditeFin || item.promoFin;
+  if (!debut && !fin) return '';
+  if (debut && fin) return `🎄 Offre valable du ${formatDatePromoFr(debut)} au ${formatDatePromoFr(fin)}`;
+  if (debut) return `🎄 Offre valable à partir du ${formatDatePromoFr(debut)}`;
+  return `🎄 Offre valable jusqu'au ${formatDatePromoFr(fin)}`;
 }
 
 function buildPrestations(tarifs) {
