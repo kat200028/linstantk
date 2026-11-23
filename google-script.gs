@@ -181,6 +181,31 @@ function doPost(e) {
       return jsonResponse({ success: true });
     }
 
+    if (data.action === 'demande_bon_cadeau') {
+      const s = getSheet('BonsCadeaux');
+      s.appendRow([
+        new Date().toLocaleString('fr-FR'),
+        data.prenom || '',
+        data.nom || '',
+        texteBrut(data.telephone),
+        texteBrut(data.montant),
+        texteBrut(data.destinataire),
+        texteBrut(data.message),
+        'Demandé',
+        ''
+      ]);
+      notifyTelegramBonCadeau(data);
+      return jsonResponse({ success: true });
+    }
+
+    if (data.action === 'update_bon_cadeau') {
+      const s = getSheet('BonsCadeaux');
+      const row = parseInt(data.row);
+      if (data.statut !== undefined) s.getRange(row, 8).setValue(data.statut);
+      if (data.code !== undefined) s.getRange(row, 9).setValue(data.code);
+      return jsonResponse({ success: true });
+    }
+
     return jsonResponse({ success: false, error: 'Action inconnue' });
 
   } catch (err) {
@@ -226,9 +251,28 @@ function doGet(e) {
       });
     }
 
+    const bcSheet = getSheet('BonsCadeaux');
+    const bcRows = bcSheet.getDataRange().getValues();
+    const bonsCadeaux = [];
+    for (let i = 1; i < bcRows.length; i++) {
+      bonsCadeaux.push({
+        row: i + 1,
+        date_soumission: bcRows[i][0],
+        prenom: bcRows[i][1],
+        nom: bcRows[i][2],
+        telephone: bcRows[i][3],
+        montant: bcRows[i][4],
+        destinataire: bcRows[i][5],
+        message: bcRows[i][6],
+        statut: bcRows[i][7] || 'Demandé',
+        code: bcRows[i][8] || ''
+      });
+    }
+
     return jsonResponse({
       success: true,
       bookings: bookings,
+      bonsCadeaux: bonsCadeaux,
       disponibilites: dispoVal ? JSON.parse(dispoVal) : {},
       tarifs: tarifsVal ? JSON.parse(tarifsVal) : null,
       blacklist: blacklistVal ? JSON.parse(blacklistVal) : [],
@@ -263,6 +307,18 @@ function notifyTelegramTentativeBloquee(data) {
     data.date ? `Date : ${data.date}` : '',
     data.creneau ? `Créneau : ${data.creneau}` : '',
     data.telephone ? `Téléphone : ${data.telephone}` : ''
+  ].filter(Boolean);
+  sendTelegramMessage(lines.join('\n'));
+}
+
+function notifyTelegramBonCadeau(data) {
+  const lines = [
+    '🎁 Nouvelle demande de bon cadeau',
+    `${data.prenom || ''} ${data.nom || ''}`.trim(),
+    data.telephone ? `Téléphone : ${data.telephone}` : '',
+    data.montant ? `Montant/prestation : ${data.montant}` : '',
+    data.destinataire ? `Pour : ${data.destinataire}` : '',
+    data.message ? `Message : ${data.message}` : ''
   ].filter(Boolean);
   sendTelegramMessage(lines.join('\n'));
 }

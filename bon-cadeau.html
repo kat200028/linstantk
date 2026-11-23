@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bon cadeau – L'Instant K</title>
+  <script src="config.js"></script>
+  <style>
+    :root {
+      --violet: #7C3AED; --violet-dark: #5B21B6; --violet-pale: #EDE9FE;
+      --pink: #EC4899; --pink-pale: #FCE7F3; --dark: #1E1B4B; --gray: #6B7280;
+      --bg: #FAF5FF; --green: #10B981; --red: #EF4444; --orange: #F59E0B;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
+
+    nav { background: rgba(255,255,255,0.96); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 64px; box-shadow: 0 2px 16px rgba(124,58,237,0.08); }
+    .nav-logo { font-size: 1.4rem; font-weight: 900; background: linear-gradient(135deg, var(--violet), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+    .nav-back { color: var(--gray); font-size: 0.9rem; font-weight: 500; text-decoration: none; }
+    .nav-back:hover { color: var(--violet); }
+
+    .hero { background: linear-gradient(135deg, #1E1B4B 0%, #4C1D95 60%, #831843 100%); padding: 60px 24px 50px; text-align: center; }
+    .hero h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 900; color: white; margin-bottom: 10px; }
+    .hero h1 em { font-style: normal; background: linear-gradient(135deg, #F9A8D4, #67E8F9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { color: rgba(255,255,255,0.6); font-size: 1rem; }
+
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    .form-card { background: white; border-radius: 24px; padding: 36px 32px; box-shadow: 0 8px 40px rgba(124,58,237,0.12); border: 1px solid #EDE9FE; margin-bottom: 32px; }
+    .form-card h2 { font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; }
+    .form-card > p { color: var(--gray); font-size: 0.88rem; margin-bottom: 26px; line-height: 1.6; }
+
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; color: var(--dark); }
+    .form-group .optionnel { font-weight: 400; color: var(--gray); text-transform: none; }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 13px 16px; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 0.95rem; color: var(--dark); font-family: inherit; transition: border-color .2s; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--violet); }
+    .form-textarea { resize: vertical; }
+
+    .btn-submit { width: 100%; background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 15px 24px; border-radius: 50px; font-weight: 800; font-size: 1rem; cursor: pointer; transition: opacity .2s; margin-top: 8px; }
+    .btn-submit:hover { opacity: 0.88; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .info-box { background: var(--violet-pale); border-radius: 14px; padding: 18px 20px; font-size: 0.85rem; color: var(--violet-dark); line-height: 1.7; margin-bottom: 28px; }
+    .info-box strong { display: block; margin-bottom: 4px; }
+
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; padding: 20px; }
+    .modal-bg.show { display: flex; }
+    .modal-box { background: white; border-radius: 24px; padding: 40px 32px; text-align: center; max-width: 380px; width: 100%; }
+    .modal-icon { font-size: 3rem; margin-bottom: 14px; display: block; }
+    .modal-box h3 { font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+    .modal-box p { color: var(--gray); line-height: 1.6; margin-bottom: 24px; font-size: 0.92rem; }
+    .modal-box button { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 0.92rem; cursor: pointer; }
+    .modal-box button:hover { opacity: 0.88; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">L'Instant K</a>
+  <a href="index.html" class="nav-back">← Retour au site</a>
+</nav>
+
+<div class="hero">
+  <h1>🎁 Bon <em>cadeau</em></h1>
+  <p>Offrez un moment de beauté à quelqu'un que vous aimez</p>
+</div>
+
+<div class="container">
+
+  <div class="info-box">
+    <strong>Comment ça marche ?</strong>
+    Remplissez le formulaire ci-dessous. Je vous recontacte très vite par WhatsApp pour organiser le paiement (via Lydia), puis je vous envoie votre bon cadeau avec un code unique à présenter en salon.
+  </div>
+
+  <div class="form-card">
+    <h2>Faire une demande de bon cadeau</h2>
+    <p>Pour un montant précis, une prestation en particulier, ou si vous ne savez pas encore — écrivez-le simplement dans le message.</p>
+
+    <form id="bonCadeauForm" onsubmit="soumettreBonCadeau(event)">
+      <div class="form-group">
+        <label>Votre prénom *</label>
+        <input type="text" class="form-input" id="bc-prenom" required />
+      </div>
+      <div class="form-group">
+        <label>Votre nom *</label>
+        <input type="text" class="form-input" id="bc-nom" required />
+      </div>
+      <div class="form-group">
+        <label>Votre téléphone *</label>
+        <input type="tel" class="form-input" id="bc-tel" placeholder="06 XX XX XX XX" required />
+      </div>
+      <div class="form-group">
+        <label>Montant ou prestation souhaité(e) <span class="optionnel">(optionnel)</span></label>
+        <input type="text" class="form-input" id="bc-montant" placeholder="ex: 50€, ou une Pose Gel X" />
+      </div>
+      <div class="form-group">
+        <label>Pour qui ? <span class="optionnel">(optionnel)</span></label>
+        <input type="text" class="form-input" id="bc-destinataire" placeholder="ex: pour ma sœur" />
+      </div>
+      <div class="form-group">
+        <label>Message <span class="optionnel">(optionnel)</span></label>
+        <textarea class="form-textarea" id="bc-message" rows="3" placeholder="Une précision, une date pour l'offrir..."></textarea>
+      </div>
+      <button type="submit" class="btn-submit" id="bc-submit-btn">Envoyer ma demande</button>
+    </form>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="modalOK">
+  <div class="modal-box">
+    <span class="modal-icon">🎁</span>
+    <h3>Demande envoyée !</h3>
+    <p>Votre demande de bon cadeau a bien été reçue. Je vous recontacte très vite par WhatsApp pour la suite ⭐</p>
+    <button onclick="document.getElementById('modalOK').classList.remove('show')">Parfait !</button>
+  </div>
+</div>
+
+<script>
+async function soumettreBonCadeau(e) {
+  e.preventDefault();
+  const btn = document.getElementById('bc-submit-btn');
+  btn.disabled = true; btn.textContent = 'Envoi en cours...';
+
+  const data = {
+    action: 'demande_bon_cadeau',
+    prenom: document.getElementById('bc-prenom').value.trim(),
+    nom: document.getElementById('bc-nom').value.trim(),
+    telephone: document.getElementById('bc-tel').value.trim(),
+    montant: document.getElementById('bc-montant').value.trim(),
+    destinataire: document.getElementById('bc-destinataire').value.trim(),
+    message: document.getElementById('bc-message').value.trim()
+  };
+
+  try {
+    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    document.getElementById('bonCadeauForm').reset();
+    document.getElementById('modalOK').classList.add('show');
+  } catch (err) {
+    alert('Erreur lors de l\'envoi. Merci de réessayer ou de me contacter directement sur Instagram.');
+  }
+  btn.disabled = false; btn.textContent = 'Envoyer ma demande';
+}
+</script>
+
+</body>
+</html>

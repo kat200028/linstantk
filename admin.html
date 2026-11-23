@@ -331,6 +331,7 @@
     <button class="tab-nav-btn" onclick="showPage('dispo',this)">📅 Disponibilités</button>
     <button class="tab-nav-btn" onclick="showPage('agenda',this)">🗓️ Agenda</button>
     <button class="tab-nav-btn" onclick="showPage('tarifs',this)">💰 Tarifs</button>
+    <button class="tab-nav-btn" onclick="showPage('boncadeau',this)" style="background:#FEE2E2">🎁 Bons cadeaux</button>
     <button class="tab-nav-btn" onclick="showPage('messages',this)" style="background:#A7F3D0">💬 Messages</button>
   </div>
 
@@ -514,6 +515,13 @@
       <div class="page-title">Tarifs</div>
       <div class="page-sub">Modifiez vos prestations et prix — puis cliquez <strong>Enregistrer</strong></div>
       <div id="tarifsEditor" style="padding-bottom:90px"></div>
+    </div>
+
+    <!-- BONS CADEAUX -->
+    <div id="page-boncadeau" class="page">
+      <div class="page-title">🎁 Bons cadeaux</div>
+      <div class="page-sub">Demandes reçues via le formulaire "Bon cadeau" du site</div>
+      <div id="bonCadeauList"><div class="loading-msg"><div class="spinner"></div>Chargement...</div></div>
     </div>
 
     <!-- MESSAGES WHATSAPP -->
@@ -971,6 +979,7 @@ function showPage(id, btn) {
 
 /* ══ CHARGEMENT ══ */
 let allBookings = [], currentFilter = 'tous';
+let allBonsCadeaux = [];
 let dispo = {}, tarifsData = null, blacklist = [], clientNotes = {}, evenementsPerso = {};
 let calYear, calMonth, selectedDate = null;
 let agendaYear, agendaMonth;
@@ -985,6 +994,7 @@ async function loadAll() {
     if (data.blacklist) blacklist = data.blacklist;
     if (data.clientNotes) clientNotes = data.clientNotes;
     if (data.evenementsPerso) evenementsPerso = data.evenementsPerso;
+    if (data.bonsCadeaux) allBonsCadeaux = data.bonsCadeaux.reverse();
   } catch(e) {
     document.getElementById('rdvList').innerHTML = '<div class="empty-msg">Impossible de charger les données. Vérifiez votre connexion et réessayez.</div>';
     document.getElementById('clientesList').innerHTML = '<div class="empty-msg">Impossible de charger les données.</div>';
@@ -999,6 +1009,7 @@ async function loadAll() {
   try { renderCal(); } catch(e) { console.error('renderCal', e); }
   try { renderAgenda(); } catch(e) { console.error('renderAgenda', e); }
   try { buildTarifsEditor(tarifsData || DEFAULT_TARIFS); } catch(e) { console.error('buildTarifsEditor', e); }
+  try { renderBonsCadeaux(); } catch(e) { console.error('renderBonsCadeaux', e); document.getElementById('bonCadeauList').innerHTML = '<div class="empty-msg">Erreur d\'affichage.</div>'; }
 }
 
 /* ══ LISTE NOIRE ══ */
@@ -1836,6 +1847,89 @@ function formatNumeroWhatsApp(tel) {
   if (digits.startsWith('596')) return digits;
   if (digits.startsWith('33')) return digits; // au cas où un numéro serait déjà en +33
   return '596' + digits;
+}
+
+/* ══ BONS CADEAUX ══ */
+function genererCodeBonCadeau() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let code = 'NOEL-';
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function renderBonsCadeaux() {
+  const container = document.getElementById('bonCadeauList');
+  if (!allBonsCadeaux.length) { container.innerHTML = '<div class="empty-msg">Aucune demande de bon cadeau pour le moment.</div>'; return; }
+
+  const styles = {
+    'Demandé': { bg: '#FEF3C7', color: '#92400E' },
+    'Payé': { bg: '#DBEAFE', color: '#1E40AF' },
+    'Envoyé': { bg: '#A7F3D0', color: '#065F46' },
+    'Utilisé': { bg: '#E5E7EB', color: '#6B7280' },
+  };
+
+  container.innerHTML = allBonsCadeaux.map(bc => {
+    const st = styles[bc.statut] || styles['Demandé'];
+    let actionsHtml = '';
+    if (bc.statut === 'Demandé') {
+      actionsHtml = `<button class="btn-save" onclick="marquerBonCadeauPaye(${bc.row})" style="padding:8px 16px;font-size:0.85rem">✅ Marquer payé</button>`;
+    } else if (bc.statut === 'Payé') {
+      actionsHtml = `<button class="btn-save" onclick="genererEtEnvoyerBonCadeau(${bc.row})" style="padding:8px 16px;font-size:0.85rem">🎁 Générer et envoyer le bon</button>`;
+    } else if (bc.statut === 'Envoyé') {
+      actionsHtml = `<span style="font-weight:800;color:var(--violet-dark);font-size:0.9rem">🎟 Code : ${bc.code}</span>
+        <button class="btn-block-num" onclick="marquerBonCadeauUtilise(${bc.row})" style="padding:8px 16px;font-size:0.85rem">✅ Marquer utilisé</button>`;
+    } else if (bc.statut === 'Utilisé') {
+      actionsHtml = `<span style="font-weight:800;color:var(--gray);font-size:0.9rem">🎟 Code : ${bc.code} — utilisé</span>`;
+    }
+    return `<div class="rdv-card" style="margin-bottom:14px">
+      <div class="rdv-datebar">
+        <span class="rdv-datebar-date">${bc.date_soumission || ''}</span>
+        <span class="rdv-status-badge" style="background:${st.bg};color:${st.color};margin-left:auto">${bc.statut}</span>
+      </div>
+      <div class="rdv-card-body">
+        <div class="rdv-main">
+          <div class="rdv-name">${bc.prenom} ${bc.nom}</div>
+          <div class="rdv-contact"><span>📞 ${bc.telephone || '(non renseigné)'}</span></div>
+          ${bc.montant ? `<div class="rdv-prestation">💰 ${bc.montant}</div>` : ''}
+          ${bc.destinataire ? `<div class="rdv-message">🎁 Pour : ${bc.destinataire}</div>` : ''}
+          ${bc.message ? `<div class="rdv-message">💬 ${bc.message}</div>` : ''}
+        </div>
+      </div>
+      <div class="rdv-card-footer" style="flex-wrap:wrap">${actionsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+async function majStatutBonCadeau(row, statut, code) {
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'update_bon_cadeau', row, statut, code }) });
+    const bc = allBonsCadeaux.find(x => x.row === row);
+    if (bc) { bc.statut = statut; if (code !== undefined) bc.code = code; }
+    renderBonsCadeaux();
+  } catch(e) { alert('Erreur lors de la mise à jour.'); }
+}
+
+function marquerBonCadeauPaye(row) {
+  majStatutBonCadeau(row, 'Payé', undefined);
+}
+
+function marquerBonCadeauUtilise(row) {
+  majStatutBonCadeau(row, 'Utilisé', undefined);
+}
+
+async function genererEtEnvoyerBonCadeau(row) {
+  const bc = allBonsCadeaux.find(x => x.row === row);
+  if (!bc) return;
+  const code = genererCodeBonCadeau();
+  // Ouvre la fenêtre WhatsApp tout de suite (au clic) pour éviter le blocage de pop-up,
+  // la sauvegarde se fait en parallèle sans bloquer l'ouverture.
+  const waWindow = bc.telephone ? window.open('', '_blank') : null;
+  await majStatutBonCadeau(row, 'Envoyé', code);
+  if (waWindow) {
+    const texte = `Coucou ${bc.prenom} 🎁✨\nVoici ton bon cadeau L'Instant K${bc.montant ? ' (' + bc.montant + ')' : ''} !\nCode à présenter en salon : *${code}*\nMerci pour ta confiance et à très vite 🥰 — L'Instant K`;
+    const numero = formatNumeroWhatsApp(bc.telephone);
+    waWindow.location = `https://wa.me/${numero}?text=${encodeURIComponent(texte)}`;
+  }
 }
 
 function renvoyerWhatsApp(row) {
