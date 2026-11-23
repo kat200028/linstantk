@@ -514,6 +514,7 @@
     <div id="page-tarifs" class="page">
       <div class="page-title">Tarifs</div>
       <div class="page-sub">Modifiez vos prestations et prix — puis cliquez <strong>Enregistrer</strong></div>
+      <button class="btn-save" onclick="completerPacksNoel()" style="margin-bottom:16px">🎄 Compléter les packs de Noël manquants</button>
       <div id="tarifsEditor" style="padding-bottom:90px"></div>
     </div>
 
@@ -2570,6 +2571,28 @@ async function saveDispo() {
 }
 
 /* ══ TARIFS EDITOR ══ */
+function completerPacksNoel() {
+  const packsDefaut = DEFAULT_TARIFS.find(c => c.id === 'pack');
+  if (!packsDefaut) return;
+  let cat = tarifsData.find(c => c.id === 'pack' || c.nom.toLowerCase() === 'pack');
+  if (!cat) {
+    cat = JSON.parse(JSON.stringify(packsDefaut));
+    cat.items = [];
+    tarifsData.push(cat);
+  }
+  let ajoutes = 0;
+  packsDefaut.items.forEach(itemDefaut => {
+    const existe = cat.items.some(it => it.nom === itemDefaut.nom);
+    if (!existe) { cat.items.push(JSON.parse(JSON.stringify(itemDefaut))); ajoutes++; }
+  });
+  buildTarifsEditor(tarifsData);
+  if (ajoutes > 0) {
+    alert(`${ajoutes} pack(s) ajouté(s) ! Clique maintenant sur "Enregistrer" en bas pour les sauvegarder.`);
+  } else {
+    alert('Tous les packs de Noël sont déjà présents.');
+  }
+}
+
 function buildTarifsEditor(tarifs) {
   tarifsData = JSON.parse(JSON.stringify(tarifs));
   const container = document.getElementById('tarifsEditor');
