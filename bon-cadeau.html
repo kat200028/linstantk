@@ -75,7 +75,7 @@
 
   <div class="form-card">
     <h2>Faire une demande de bon cadeau</h2>
-    <p>Pour un montant précis, une prestation en particulier, ou si vous ne savez pas encore — écrivez-le simplement dans le message.</p>
+    <p>Choisissez la prestation à offrir dans la liste ci-dessous.</p>
 
     <form id="bonCadeauForm" onsubmit="soumettreBonCadeau(event)">
       <div class="form-group">
@@ -91,8 +91,10 @@
         <input type="tel" class="form-input" id="bc-tel" placeholder="06 XX XX XX XX" required />
       </div>
       <div class="form-group">
-        <label>Montant ou prestation souhaité(e) <span class="optionnel">(optionnel)</span></label>
-        <input type="text" class="form-input" id="bc-montant" placeholder="ex: 50€, ou une Pose Gel X" />
+        <label>Prestation à offrir *</label>
+        <select class="form-select" id="bc-prestation" required>
+          <option value="">-- Choisir une prestation --</option>
+        </select>
       </div>
       <div class="form-group">
         <label>Pour qui ? <span class="optionnel">(optionnel)</span></label>
@@ -118,6 +120,44 @@
 </div>
 
 <script>
+function estDansPeriodePromoBC(item) {
+  if (!item.promoDebut && !item.promoFin) return true;
+  const d = new Date();
+  const today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  if (item.promoDebut && today < item.promoDebut) return false;
+  if (item.promoFin && today > item.promoFin) return false;
+  return true;
+}
+
+function remplirSelectPrestations(tarifs) {
+  const sel = document.getElementById('bc-prestation');
+  sel.innerHTML = '<option value="">-- Choisir une prestation --</option>';
+  tarifs.forEach(cat => {
+    const items = (cat.items || []).filter(item => !item.indisponible && estDansPeriodePromoBC(item));
+    if (!items.length) return;
+    const grp = document.createElement('optgroup');
+    grp.label = cat.emoji + ' ' + cat.nom;
+    items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.nom + (item.prix ? ' (' + item.prix + ')' : '');
+      opt.textContent = item.nom + (item.prix ? ' – ' + item.prix : '');
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  });
+}
+
+(async function chargerPrestations() {
+  try {
+    const r = await fetch(SCRIPT_URL + '?type=all&t=' + Date.now());
+    const data = await r.json();
+    if (data.tarifs) remplirSelectPrestations(data.tarifs);
+  } catch (err) {
+    document.getElementById('bc-submit-btn').disabled = true;
+    document.getElementById('bc-submit-btn').textContent = 'Erreur de chargement, réessayez';
+  }
+})();
+
 async function soumettreBonCadeau(e) {
   e.preventDefault();
   const btn = document.getElementById('bc-submit-btn');
@@ -128,7 +168,7 @@ async function soumettreBonCadeau(e) {
     prenom: document.getElementById('bc-prenom').value.trim(),
     nom: document.getElementById('bc-nom').value.trim(),
     telephone: document.getElementById('bc-tel').value.trim(),
-    montant: document.getElementById('bc-montant').value.trim(),
+    montant: document.getElementById('bc-prestation').value,
     destinataire: document.getElementById('bc-destinataire').value.trim(),
     message: document.getElementById('bc-message').value.trim()
   };

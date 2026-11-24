@@ -495,6 +495,29 @@ const DEFAULT_TARIFS = [
   ]},
 ];
 
+// Fusionne les tarifs sauvegardés (Sheets) avec les tarifs par défaut du code :
+// garde les modifications de l'admin, mais n'efface jamais une catégorie/prestation
+// ajoutée dans le code après la dernière sauvegarde (ex: les packs de Noël).
+function fusionnerTarifs(defauts, sauvegarde) {
+  if (!sauvegarde) return defauts;
+  const categories = defauts.map(catDefaut => {
+    const catSauvegarde = sauvegarde.find(c => c.id === catDefaut.id);
+    if (!catSauvegarde) return catDefaut;
+    const items = catDefaut.items.map(itemDefaut => {
+      const itemSauvegarde = catSauvegarde.items.find(it => it.nom === itemDefaut.nom);
+      return itemSauvegarde || itemDefaut;
+    });
+    catSauvegarde.items.forEach(itemSauvegarde => {
+      if (!items.some(it => it.nom === itemSauvegarde.nom)) items.push(itemSauvegarde);
+    });
+    return { ...catDefaut, ...catSauvegarde, items };
+  });
+  sauvegarde.forEach(catSauvegarde => {
+    if (!categories.some(c => c.id === catSauvegarde.id)) categories.push(catSauvegarde);
+  });
+  return categories;
+}
+
 let TARIFS = DEFAULT_TARIFS;
 let DISPONIBILITES = {};
 let BOOKINGS = [];
@@ -1245,7 +1268,7 @@ async function init() {
     if (data.disponibilites) DISPONIBILITES = data.disponibilites;
 
     if (data.tarifs) {
-      TARIFS = data.tarifs;
+      TARIFS = fusionnerTarifs(DEFAULT_TARIFS, data.tarifs);
       buildPrestations(TARIFS);
     }
 

@@ -801,6 +801,29 @@ function estJourFerie(dateStr) {
   return joursFeriesAnnee(parseInt(dateStr.slice(0, 4))).includes(dateStr);
 }
 
+// Fusionne les tarifs sauvegardés (Sheets) avec les tarifs par défaut du code :
+// garde les modifications de l'admin, mais n'efface jamais une catégorie/prestation
+// ajoutée dans le code après la dernière sauvegarde (ex: les packs de Noël).
+function fusionnerTarifs(defauts, sauvegarde) {
+  if (!sauvegarde) return defauts;
+  const categories = defauts.map(catDefaut => {
+    const catSauvegarde = sauvegarde.find(c => c.id === catDefaut.id);
+    if (!catSauvegarde) return catDefaut;
+    const items = catDefaut.items.map(itemDefaut => {
+      const itemSauvegarde = catSauvegarde.items.find(it => it.nom === itemDefaut.nom);
+      return itemSauvegarde || itemDefaut;
+    });
+    catSauvegarde.items.forEach(itemSauvegarde => {
+      if (!items.some(it => it.nom === itemSauvegarde.nom)) items.push(itemSauvegarde);
+    });
+    return { ...catDefaut, ...catSauvegarde, items };
+  });
+  sauvegarde.forEach(catSauvegarde => {
+    if (!categories.some(c => c.id === catSauvegarde.id)) categories.push(catSauvegarde);
+  });
+  return categories;
+}
+
 const DEFAULT_TARIFS = [
   { id:'manucure', emoji:'💅', nom:'Manucure', items:[
     {nom:'Gainage sur ongle naturel',prix:'35€'},{nom:'Pose Gel X',prix:'40€'},
@@ -991,7 +1014,7 @@ async function loadAll() {
     const data = await r.json();
     allBookings = (data.bookings || []).reverse();
     if (data.disponibilites) dispo = data.disponibilites;
-    if (data.tarifs) tarifsData = data.tarifs;
+    if (data.tarifs) tarifsData = fusionnerTarifs(DEFAULT_TARIFS, data.tarifs);
     if (data.blacklist) blacklist = data.blacklist;
     if (data.clientNotes) clientNotes = data.clientNotes;
     if (data.evenementsPerso) evenementsPerso = data.evenementsPerso;
