@@ -44,6 +44,10 @@
     .info-box { background: var(--violet-pale); border-radius: 14px; padding: 18px 20px; font-size: 0.85rem; color: var(--violet-dark); line-height: 1.7; margin-bottom: 28px; }
     .info-box strong { display: block; margin-bottom: 4px; }
 
+    .presta-tag { display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, var(--violet-pale), var(--pink-pale)); color: var(--violet); font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 50px; }
+    .presta-tag button { background: none; border: none; cursor: pointer; color: var(--violet); opacity: 0.6; font-size: 0.9rem; padding: 0; line-height: 1; }
+    .presta-tag button:hover { opacity: 1; color: var(--red); }
+
     .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; padding: 20px; }
     .modal-bg.show { display: flex; }
     .modal-box { background: white; border-radius: 24px; padding: 40px 32px; text-align: center; max-width: 380px; width: 100%; }
@@ -91,10 +95,13 @@
         <input type="tel" class="form-input" id="bc-tel" placeholder="06 XX XX XX XX" required />
       </div>
       <div class="form-group">
-        <label>Prestation à offrir *</label>
-        <select class="form-select" id="bc-prestation" required>
+        <label>Prestation(s) à offrir *</label>
+        <p id="bc-compteur" style="display:none;font-size:0.82rem;font-weight:700;color:var(--violet);margin-bottom:8px"></p>
+        <div id="bc-selectedTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:0"></div>
+        <select class="form-select" id="bc-prestation" onchange="bcAddPrestation(this)">
           <option value="">-- Choisir une prestation --</option>
         </select>
+        <p style="font-size:0.78rem;color:var(--gray);margin-top:6px">Vous pouvez choisir jusqu'à 4 prestations</p>
       </div>
       <div class="form-group">
         <label>Pour qui ? <span class="optionnel">(optionnel)</span></label>
@@ -147,6 +154,39 @@ function remplirSelectPrestations(tarifs) {
   });
 }
 
+let bcSelectedPrestations = [];
+
+function bcAddPrestation(sel) {
+  const val = sel.value;
+  sel.value = '';
+  sel.blur();
+  if (!val) return;
+  if (bcSelectedPrestations.length >= 4) {
+    alert('Maximum 4 prestations par bon cadeau.');
+    return;
+  }
+  if (!bcSelectedPrestations.includes(val)) {
+    bcSelectedPrestations.push(val);
+    bcRenderTags();
+  }
+}
+
+function bcRemovePrestation(i) {
+  bcSelectedPrestations.splice(i, 1);
+  bcRenderTags();
+}
+
+function bcRenderTags() {
+  document.getElementById('bc-selectedTags').innerHTML = bcSelectedPrestations.map((p, i) =>
+    `<div class="presta-tag">${p}<button type="button" onclick="bcRemovePrestation(${i})">✕</button></div>`
+  ).join('');
+
+  const compteurEl = document.getElementById('bc-compteur');
+  const n = bcSelectedPrestations.length;
+  if (!n) { compteurEl.style.display = 'none'; }
+  else { compteurEl.style.display = 'block'; compteurEl.textContent = '✅ ' + n + ' prestation' + (n > 1 ? 's' : '') + ' choisie' + (n > 1 ? 's' : ''); }
+}
+
 (async function chargerPrestations() {
   try {
     const r = await fetch(SCRIPT_URL + '?type=all&t=' + Date.now());
@@ -160,6 +200,7 @@ function remplirSelectPrestations(tarifs) {
 
 async function soumettreBonCadeau(e) {
   e.preventDefault();
+  if (!bcSelectedPrestations.length) { alert('Veuillez choisir au moins une prestation.'); return; }
   const btn = document.getElementById('bc-submit-btn');
   btn.disabled = true; btn.textContent = 'Envoi en cours...';
 
@@ -168,7 +209,7 @@ async function soumettreBonCadeau(e) {
     prenom: document.getElementById('bc-prenom').value.trim(),
     nom: document.getElementById('bc-nom').value.trim(),
     telephone: document.getElementById('bc-tel').value.trim(),
-    montant: document.getElementById('bc-prestation').value,
+    montant: bcSelectedPrestations.join(' + '),
     destinataire: document.getElementById('bc-destinataire').value.trim(),
     message: document.getElementById('bc-message').value.trim()
   };
@@ -176,6 +217,8 @@ async function soumettreBonCadeau(e) {
   try {
     await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     document.getElementById('bonCadeauForm').reset();
+    bcSelectedPrestations = [];
+    bcRenderTags();
     document.getElementById('modalOK').classList.add('show');
   } catch (err) {
     alert('Erreur lors de l\'envoi. Merci de réessayer ou de me contacter directement sur Instagram.');

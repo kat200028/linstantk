@@ -318,6 +318,7 @@
         </div>
         <div class="form-group full">
           <label>Prestation(s) souhaitée(s) *</label>
+          <p id="prestaCompteur" style="display:none;font-size:0.82rem;font-weight:700;color:var(--violet);margin-bottom:8px"></p>
           <div id="selectedTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:0"></div>
           <p id="prestaTotal" style="display:none;font-size:0.9rem;font-weight:800;color:var(--violet);margin-bottom:10px"></p>
           <select id="f-service" onchange="addPrestation(this)">
@@ -936,6 +937,13 @@ function renderTags() {
 
   const noticeCasse = document.getElementById('noticeCassePied');
   if (noticeCasse) noticeCasse.style.display = selectedPrestations.some(estRemplissagePieds) ? 'block' : 'none';
+
+  const compteurEl = document.getElementById('prestaCompteur');
+  if (compteurEl) {
+    const n = selectedPrestations.length;
+    if (!n) { compteurEl.style.display = 'none'; }
+    else { compteurEl.style.display = 'block'; compteurEl.textContent = '✅ ' + n + ' prestation' + (n > 1 ? 's' : '') + ' choisie' + (n > 1 ? 's' : ''); }
+  }
 
   const totalEl = document.getElementById('prestaTotal');
   const totalTexte = calculerTotalTexte();
